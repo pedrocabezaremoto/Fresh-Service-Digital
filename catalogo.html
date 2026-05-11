@@ -300,6 +300,17 @@
       margin: 3.5rem 0;
     }
 
+    /* —— GRID 2 COLUMNAS RESPONSIVE —— */
+    .services-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    @media (max-width: 640px) {
+      .services-grid-2 { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 1024px) {
       .services-grid-3,
       .services-grid-tons { grid-template-columns: repeat(2, 1fr); }
@@ -373,7 +384,7 @@
         <div class="section-eyebrow">Tipo 1</div>
         <h3 style="font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--text-700); margin-bottom:1.5rem;">Aires de Ventana</h3>
       </div>
-      <div class="services-grid-3" style="grid-template-columns: repeat(2,1fr); margin-bottom: 2.5rem;">
+      <div class="services-grid-2">
         <div class="service-card">
           <div class="service-card-header">
             <div class="service-icon icon-ventana">🪟</div>
@@ -427,7 +438,7 @@
         <div class="section-eyebrow">Tipo 2</div>
         <h3 style="font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--text-700); margin-bottom:1.5rem;">Aires Tipo Split</h3>
       </div>
-      <div class="services-grid-3" style="grid-template-columns: repeat(2,1fr); margin-bottom: 2.5rem;">
+      <div class="services-grid-2">
         <div class="service-card">
           <div class="service-card-header">
             <div class="service-icon icon-split">🔧</div>
