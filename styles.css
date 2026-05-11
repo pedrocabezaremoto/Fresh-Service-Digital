@@ -1,10 +1,10 @@
 /* =====================================================
    FRESH SERVICE DIGITAL – GLOBAL STYLESHEET
    Paleta: Blanco puro + Azules de hielo/glaciar
-   Tipografía: Exo 2 (display) + Nunito (body)
+   Tipografía: Exo 2 (display) + Inter (body)
    ===================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* === VARIABLES === */
 :root {
@@ -35,11 +35,11 @@
   --danger-bg:    #FEE2E2;
   --danger-text:  #991B1B;
 
-  --shadow-xs:    0 1px 4px rgba(2,132,199,0.07);
-  --shadow-sm:    0 2px 10px rgba(2,132,199,0.10);
-  --shadow-md:    0 4px 24px rgba(2,132,199,0.14);
-  --shadow-lg:    0 8px 40px rgba(2,132,199,0.20);
-  --shadow-xl:    0 16px 64px rgba(2,132,199,0.26);
+  --shadow-xs:    0 1px 3px rgba(15,23,42,0.06);
+  --shadow-sm:    0 2px 8px rgba(15,23,42,0.08);
+  --shadow-md:    0 4px 20px rgba(15,23,42,0.10);
+  --shadow-lg:    0 8px 32px rgba(15,23,42,0.14);
+  --shadow-xl:    0 16px 56px rgba(15,23,42,0.18);
 
   --radius-xs:    6px;
   --radius-sm:    10px;
@@ -49,7 +49,7 @@
   --radius-full:  9999px;
 
   --font-display: 'Exo 2', sans-serif;
-  --font-body:    'Nunito', sans-serif;
+  --font-body:    'Inter', sans-serif;
 
   --nav-height:   70px;
   --container:    1200px;
@@ -57,14 +57,20 @@
 
 /* === RESET === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; overflow-x: clip; }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
 body {
   font-family: var(--font-body);
-  background: var(--ice-50);
+  background: #F8FAFC;
   color: var(--text-900);
-  line-height: 1.65;
-  min-height: 100vh;
+  line-height: 1.6;
+  min-height: 100dvh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; display: block; }
 a { text-decoration: none; color: inherit; }
@@ -97,8 +103,8 @@ input, select, textarea { font-family: var(--font-body); }
   background: var(--white);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-bottom: 1px solid var(--ice-200);
-  box-shadow: var(--shadow-xs);
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(15,23,42,0.06);
 }
 
 .navbar-brand {
@@ -204,12 +210,13 @@ input, select, textarea { font-family: var(--font-body); }
   gap: 8px;
   padding: 13px 30px;
   border-radius: var(--radius-full);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.95rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   border: 2px solid transparent;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 .btn-primary {
   background: var(--blue-600);
@@ -490,4 +497,8 @@ select.form-control {
   .nav-links.open { transform: translateY(0); }
   .section { padding: 64px 5%; }
   .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
