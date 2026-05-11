@@ -60,7 +60,6 @@
 html {
   scroll-behavior: smooth;
   font-size: 16px;
-  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
 }
 body {
@@ -69,7 +68,7 @@ body {
   color: var(--text-900);
   line-height: 1.6;
   min-height: 100dvh;
-  overflow-x: hidden;
+  padding-top: var(--nav-height);
   -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; display: block; }
@@ -92,8 +91,10 @@ input, select, textarea { font-family: var(--font-body); }
 
 /* === NAVBAR === */
 .navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 900;
   height: var(--nav-height);
   display: flex;
