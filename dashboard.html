@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Administrador – Fresh Service Digital</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* —— ADMIN LAYOUT —— */
+    body { background: #F1F5F9; }
+    .page-bg { display: none; }
+
+    .admin-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* —— SIDEBAR —— */
+    .admin-sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--blue-950) 0%, var(--blue-900) 100%);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      overflow-y: auto;
+      z-index: 200;
+      transition: transform 0.3s ease;
+    }
+    .sidebar-logo {
+      padding: 1.6rem 1.5rem 1.4rem;
+      border-bottom: 1px solid rgba(186,230,253,0.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sidebar-logo-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-400));
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      animation: flake-spin 12s linear infinite;
+      flex-shrink: 0;
+    }
+    .sidebar-logo-text {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 0.95rem; color: var(--white); line-height: 1.25;
+    }
+    .sidebar-logo-sub {
+      font-size: 0.72rem; font-weight: 500;
+      color: var(--blue-400); text-transform: uppercase; letter-spacing: 0.07em;
+    }
+
+    .sidebar-nav { flex: 1; padding: 1.2rem 0; }
+    .sidebar-section-label {
+      font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: rgba(125,211,252,0.5);
+      padding: 0.5rem 1.5rem 0.3rem;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 1.5rem;
+      font-size: 0.88rem; font-weight: 600;
+      color: rgba(255,255,255,0.65);
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+    }
+    .sidebar-link:hover {
+      color: var(--white);
+      background: rgba(255,255,255,0.06);
+      border-left-color: rgba(56,189,248,0.4);
+    }
+    .sidebar-link.active {
+      color: var(--white);
+      background: rgba(56,189,248,0.12);
+      border-left-color: var(--blue-400);
+    }
+    .sidebar-link .s-icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-badge {
+      margin-left: auto;
+      background: var(--blue-500);
+      color: var(--white);
+      font-size: 0.7rem; font-weight: 800;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+    .sidebar-badge.red { background: #EF4444; }
+
+    .sidebar-footer {
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid rgba(186,230,253,0.08);
+    }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-avatar {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .sidebar-user-info { flex: 1; min-width: 0; }
+    .sidebar-user-name { font-size: 0.86rem; font-weight: 700; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-role { font-size: 0.73rem; color: var(--blue-400); }
+
+    /* —— MAIN CONTENT —— */
+    .admin-main {
+      flex: 1;
+      margin-left: 260px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .admin-topbar {
+      background: var(--white);
+      border-bottom: 1px solid #E2E8F0;
+      padding: 0 2rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .topbar-title {
+      font-family: var(--font-display); font-size: 1.05rem;
+      font-weight: 700; color: var(--text-900);
+    }
+    .topbar-subtitle { font-size: 0.78rem; color: var(--text-500); margin-top: 1px; }
+    .topbar-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .topbar-date {
+      font-size: 0.82rem; color: var(--text-500);
+      background: var(--ice-50); border: 1px solid var(--ice-200);
+      padding: 6px 14px; border-radius: var(--radius-full);
+    }
+    .notification-btn {
+      width: 36px; height: 36px;
+      background: var(--ice-50); border: 1px solid var(--ice-200);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; cursor: pointer; transition: background .2s;
+      position: relative;
+    }
+    .notification-btn:hover { background: var(--ice-100); }
+    .notif-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 8px; height: 8px;
+      background: #EF4444; border-radius: 50%;
+      border: 2px solid var(--white);
+    }
+
+    /* —— CONTENT AREA —— */
+    .admin-content { padding: 2rem; flex: 1; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--white);
+      border: 1px solid #E2E8F0;
+      border-radius: var(--radius-md);
+      padding: 1.4rem 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: transform .25s, box-shadow .25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .stat-card.total::before { background: var(--blue-600); }
+    .stat-card.pending::before { background: #F59E0B; }
+    .stat-card.progress::before { background: #3B82F6; }
+    .stat-card.done::before { background: #10B981; }
+
+    .stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.9rem; }
+    .stat-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    .stat-icon.total-i  { background: rgba(2,132,199,0.1); }
+    .stat-icon.pend-i   { background: rgba(245,158,11,0.1); }
+    .stat-icon.prog-i   { background: rgba(59,130,246,0.1); }
+    .stat-icon.done-i   { background: rgba(16,185,129,0.1); }
+
+    .stat-trend {
+      font-size: 0.75rem; font-weight: 700;
+      padding: 2px 8px; border-radius: var(--radius-full);
+    }
+    .stat-trend.up { background: #D1FAE5; color: #065F46; }
+    .stat-trend.warn { background: #FEF3C7; color: #92400E; }
+
+    .stat-value {
+      font-family: var(--font-display); font-size: 2rem;
+      font-weight: 800; color: var(--text-900); line-height: 1;
+      margin-bottom: 5px;
+    }
+    .stat-label { font-size: 0.82rem; font-weight: 600; color: var(--text-500); }
+
+    /* —— TABLE AREA —— */
+    .table-card {
+      background: var(--white);
+      border: 1px solid #E2E8F0;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 1.3rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      border-bottom: 1px solid #F1F5F9;
+    }
+    .table-header-left h3 {
+      font-family: var(--font-display); font-size: 1rem;
+      font-weight: 700; color: var(--text-900); margin-bottom: 2px;
+    }
+    .table-header-left p { font-size: 0.8rem; color: var(--text-500); }
+
+    .table-controls { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    .search-box {
+      display: flex; align-items: center;
+      background: var(--ice-50); border: 1.5px solid var(--ice-200);
+      border-radius: var(--radius-full);
+      padding: 7px 14px; gap: 7px;
+    }
+    .search-box input {
+      background: none; border: none; outline: none;
+      font-family: var(--font-body); font-size: 0.85rem;
+      color: var(--text-700); width: 180px;
+    }
+    .search-box input::placeholder { color: var(--text-300); }
+
+    .filter-select {
+      background: var(--ice-50); border: 1.5px solid var(--ice-200);
+      border-radius: var(--radius-full); padding: 7px 14px;
+      font-family: var(--font-body); font-size: 0.85rem;
+      color: var(--text-700); cursor: pointer; outline: none;
+      appearance: none; padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234A7A9B' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+
+    .table-wrapper { overflow-x: auto; }
+    table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    thead {
+      background: #F8FAFC;
+      border-bottom: 2px solid #E2E8F0;
+    }
+    th {
+      padding: 11px 14px;
+      text-align: left;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-500);
+      white-space: nowrap;
+    }
+    th:first-child { padding-left: 1.75rem; }
+    th:last-child { padding-right: 1.75rem; }
+
+    tbody tr {
+      border-bottom: 1px solid #F1F5F9;
+      transition: background .15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #F8FAFC; }
+
+    td {
+      padding: 14px 14px;
+      color: var(--text-700);
+      vertical-align: middle;
+    }
+    td:first-child { padding-left: 1.75rem; }
+    td:last-child { padding-right: 1.75rem; }
+
+    .client-cell { display: flex; align-items: center; gap: 10px; }
+    .client-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800; color: white; flex-shrink: 0;
+    }
+    .av-1 { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
+    .av-2 { background: linear-gradient(135deg, #EC4899, #F43F5E); }
+    .av-3 { background: linear-gradient(135deg, #10B981, #059669); }
+    .av-4 { background: linear-gradient(135deg, #F59E0B, #EF4444); }
+    .av-5 { background: linear-gradient(135deg, #0EA5E9, #6366F1); }
+    .av-6 { background: linear-gradient(135deg, #14B8A6, #0EA5E9); }
+
+    .client-name { font-weight: 700; color: var(--text-900); font-size: 0.87rem; }
+    .client-cedula { font-size: 0.75rem; color: var(--text-500); margin-top: 1px; }
+
+    .service-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--ice-100); color: var(--blue-700);
+      border: 1px solid var(--ice-200);
+      padding: 3px 10px; border-radius: var(--radius-full);
+      font-size: 0.76rem; font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .addr-cell { max-width: 180px; }
+    .addr-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.83rem; }
+    .addr-short { font-size: 0.76rem; color: var(--text-300); margin-top: 2px; }
+
+    .date-cell { font-size: 0.83rem; color: var(--text-700); }
+    .date-time { font-size: 0.75rem; color: var(--text-300); margin-top: 2px; }
+
+    .phone-cell { font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
+
+    .actions-cell { display: flex; align-items: center; gap: 6px; }
+    .action-btn {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-xs);
+      border: 1.5px solid var(--ice-200);
+      background: var(--ice-50);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; cursor: pointer; transition: all .2s;
+    }
+    .action-btn:hover { background: var(--ice-100); border-color: var(--blue-300); }
+
+    .table-footer {
+      padding: 1rem 1.75rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid #F1F5F9;
+      flex-wrap: wrap; gap: 0.75rem;
+    }
+    .table-footer-info { font-size: 0.82rem; color: var(--text-500); }
+    .pagination { display: flex; align-items: center; gap: 4px; }
+    .page-btn {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-xs);
+      border: 1.5px solid var(--ice-200);
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      color: var(--text-700); transition: all .2s;
+    }
+    .page-btn:hover { background: var(--ice-100); }
+    .page-btn.active { background: var(--blue-600); color: white; border-color: var(--blue-600); }
+
+    .sidebar-toggle {
+      display: none;
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      width: 48px; height: 48px;
+      background: var(--blue-600);
+      border-radius: 50%;
+      border: none;
+      align-items: center; justify-content: center;
+      font-size: 1.2rem; color: white; z-index: 300;
+      box-shadow: 0 4px 16px rgba(2,132,199,.4);
+    }
+
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .admin-sidebar { transform: translateX(-100%); }
+      .admin-sidebar.open { transform: translateX(0); }
+      .admin-main { margin-left: 0; }
+      .sidebar-toggle { display: flex; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .admin-content { padding: 1.25rem; }
+      .topbar-date { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">❄</div>
+        <div>
+          <div class="sidebar-logo-text">Fresh Service</div>
+          <div class="sidebar-logo-sub">Panel Administrativo</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Principal</div>
+        <a class="sidebar-link active">
+          <span class="s-icon">📊</span> Dashboard
+        </a>
+        <a class="sidebar-link">
+          <span class="s-icon">📋</span> Solicitudes
+          <span class="sidebar-badge red">3</span>
+        </a>
+        <a class="sidebar-link">
+          <span class="s-icon">👥</span> Clientes
+        </a>
+        <a class="sidebar-link">
+          <span class="s-icon">📅</span> Agenda
+        </a>
+
+        <div class="sidebar-section-label" style="margin-top:1rem;">Técnicos</div>
+        <a class="sidebar-link">
+          <span class="s-icon">🔧</span> Equipo Técnico
+        </a>
+        <a class="sidebar-link">
+          <span class="s-icon">📍</span> En Campo
+          <span class="sidebar-badge">2</span>
+        </a>
+
+        <div class="sidebar-section-label" style="margin-top:1rem;">Sistema</div>
+        <a class="sidebar-link">
+          <span class="s-icon">📈</span> Reportes
+        </a>
+        <a class="sidebar-link">
+          <span class="s-icon">⚙️</span> Configuración
+        </a>
+
+        <div style="margin-top: 1.5rem; padding: 0 1rem;">
+          <a href="index.html" class="btn btn-secondary btn-sm btn-full" style="font-size:.82rem;">
+            ← Ver sitio web
+          </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">A</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Administrador</div>
+            <div class="sidebar-user-role">Taller · San Juan de los Morros</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+
+      <!-- Top Bar -->
+      <div class="admin-topbar">
+        <div>
+          <div class="topbar-title">Panel de Control</div>
+          <div class="topbar-subtitle">Fresh Service Digital – Taller de Refrigeración</div>
+        </div>
+        <div class="topbar-actions">
+          <div class="topbar-date">📅 Hoy: Lunes 14 de julio, 2025</div>
+          <div class="notification-btn">🔔<div class="notif-dot"></div></div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="admin-content">
+
+        <!-- STATS ROW -->
+        <div class="stats-grid">
+          <div class="stat-card total">
+            <div class="stat-top">
+              <div class="stat-icon total-i">📋</div>
+              <div class="stat-trend up">↑ +12%</div>
+            </div>
+            <div class="stat-value">24</div>
+            <div class="stat-label">Solicitudes este mes</div>
+          </div>
+          <div class="stat-card pending">
+            <div class="stat-top">
+              <div class="stat-icon pend-i">⏳</div>
+              <div class="stat-trend warn">3 nuevas</div>
+            </div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">Pendientes de atender</div>
+          </div>
+          <div class="stat-card progress">
+            <div class="stat-top">
+              <div class="stat-icon prog-i">🔧</div>
+              <div class="stat-trend up">En curso</div>
+            </div>
+            <div class="stat-value">4</div>
+            <div class="stat-label">En proceso hoy</div>
+          </div>
+          <div class="stat-card done">
+            <div class="stat-top">
+              <div class="stat-icon done-i">✅</div>
+              <div class="stat-trend up">↑ +8%</div>
+            </div>
+            <div class="stat-value">14</div>
+            <div class="stat-label">Completados este mes</div>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-header-left">
+              <h3>Solicitudes de Servicio</h3>
+              <p>Mostrando 6 de 24 solicitudes · Julio 2025</p>
+            </div>
+            <div class="table-controls">
+              <div class="search-box">
+                <span>🔍</span>
+                <input type="text" placeholder="Buscar cliente o cédula…" />
+              </div>
+              <select class="filter-select">
+                <option>Todos los estados</option>
+                <option>Pendiente</option>
+                <option>En Proceso</option>
+                <option>Completado</option>
+              </select>
+              <select class="filter-select">
+                <option>Todos los servicios</option>
+                <option>Aire Split</option>
+                <option>Aire Ventana</option>
+                <option>1 Tonelada</option>
+                <option>2 Toneladas</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Cliente</th>
+                  <th>Cédula</th>
+                  <th>Servicio Solicitado</th>
+                  <th>Fecha / Hora</th>
+                  <th>Dirección</th>
+                  <th>WhatsApp</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#001</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-1">JM</div>
+                      <div>
+                        <div class="client-name">Juan Medina Torres</div>
+                        <div class="client-cedula">V-18.234.561</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>V-18.234.561</td>
+                  <td><span class="service-tag">❄ Split · Reparación</span></td>
+                  <td>
+                    <div class="date-cell">14/07/2025</div>
+                    <div class="date-time">09:15 AM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Urb. Los Samanes, Calle 3, Casa #15, frente al parque">Urb. Los Samanes, C/ 3, Casa #15</div>
+                    <div class="addr-short">San Juan de los Morros</div>
+                  </td>
+                  <td class="phone-cell">+58 412-8341256</td>
+                  <td><span class="badge badge-new">Nueva</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Asignar técnico">🔧</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#002</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-2">MR</div>
+                      <div>
+                        <div class="client-name">María Rodríguez</div>
+                        <div class="client-cedula">V-22.109.887</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>V-22.109.887</td>
+                  <td><span class="service-tag">❄ 2 Ton · Mantenimiento</span></td>
+                  <td>
+                    <div class="date-cell">14/07/2025</div>
+                    <div class="date-time">10:30 AM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Sector El Calvario, Calle Bolívar, Edif. Res. Guárico, Piso 3, Apto 3-B">Sector El Calvario, Res. Guárico 3-B</div>
+                    <div class="addr-short">San Juan de los Morros</div>
+                  </td>
+                  <td class="phone-cell">+58 414-5678901</td>
+                  <td><span class="badge badge-progress">En Proceso</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Actualizar estado">🔄</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#003</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-3">CR</div>
+                      <div>
+                        <div class="client-name">Carlos Rondón Pérez</div>
+                        <div class="client-cedula">V-14.556.223</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>V-14.556.223</td>
+                  <td><span class="service-tag">🪟 Ventana · Reparación</span></td>
+                  <td>
+                    <div class="date-cell">13/07/2025</div>
+                    <div class="date-time">02:00 PM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Barrio Andrés Bello, Calle 12, Casa s/n, al lado de la bodega El Buen Precio">B. Andrés Bello, C/ 12, bodega ref.</div>
+                    <div class="addr-short">San Juan de los Morros</div>
+                  </td>
+                  <td class="phone-cell">+58 416-7234512</td>
+                  <td><span class="badge badge-done">Completado</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Ver factura">🧾</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#004</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-4">LA</div>
+                      <div>
+                        <div class="client-name">Luisa Alfonzo Vega</div>
+                        <div class="client-cedula">E-82.345.001</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>E-82.345.001</td>
+                  <td><span class="service-tag">❄ 1 Ton · Gas Refrigerante</span></td>
+                  <td>
+                    <div class="date-cell">14/07/2025</div>
+                    <div class="date-time">11:00 AM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Urb. Vistas del Llano, Qta. Las Palmas, Calle Principal, detrás del supermercado">Urb. Vistas del Llano, Qta. Las Palmas</div>
+                    <div class="addr-short">San Juan de los Morros</div>
+                  </td>
+                  <td class="phone-cell">+58 424-1234567</td>
+                  <td><span class="badge badge-new">Nueva</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Asignar técnico">🔧</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#005</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-5">PG</div>
+                      <div>
+                        <div class="client-name">Pedro García López</div>
+                        <div class="client-cedula">V-9.876.542</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>V-9.876.542</td>
+                  <td><span class="service-tag">❄ 3 Ton · Instalación</span></td>
+                  <td>
+                    <div class="date-cell">13/07/2025</div>
+                    <div class="date-time">08:30 AM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Local Comercial Ferretería El Martillo, Av. Monagas con Calle 5, PB Local 2">Ferretería El Martillo, Av. Monagas</div>
+                    <div class="addr-short">San Juan de los Morros · Local</div>
+                  </td>
+                  <td class="phone-cell">+58 426-9988001</td>
+                  <td><span class="badge badge-progress">En Proceso</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Actualizar estado">🔄</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#006</td>
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar av-6">YF</div>
+                      <div>
+                        <div class="client-name">Yolanda Fuentes M.</div>
+                        <div class="client-cedula">V-17.002.318</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>V-17.002.318</td>
+                  <td><span class="service-tag">❄ Split · Mantenimiento</span></td>
+                  <td>
+                    <div class="date-cell">12/07/2025</div>
+                    <div class="date-time">03:45 PM</div>
+                  </td>
+                  <td class="addr-cell">
+                    <div class="addr-text" title="Sector La Candelaria, Calle 8, Casa #7, cerca de la escuela Simón Bolívar">Sector La Candelaria, C/8 Casa #7</div>
+                    <div class="addr-short">San Juan de los Morros</div>
+                  </td>
+                  <td class="phone-cell">+58 412-3340098</td>
+                  <td><span class="badge badge-pending">Pendiente</span></td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn" title="Ver detalle">👁</button>
+                      <button class="action-btn" title="Asignar técnico">🔧</button>
+                      <button class="action-btn" title="WhatsApp">💬</button>
+                    </div>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div class="table-footer-info">Mostrando 1–6 de 24 solicitudes</div>
+            <div class="pagination">
+              <button class="page-btn">‹</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">4</button>
+              <button class="page-btn">›</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('adminSidebar').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      const sidebar = document.getElementById('adminSidebar');
+      const toggle = document.getElementById('sidebarToggle');
+      if (window.innerWidth <= 900 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>

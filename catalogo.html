@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de Servicios – Fresh Service Digital</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* —— PAGE HERO —— */
+    .page-hero {
+      background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+      padding: 80px 5% 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-hero::after {
+      content: '❄';
+      position: absolute;
+      font-size: 380px;
+      right: 4%;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.05;
+      pointer-events: none;
+    }
+    .page-hero-content { position: relative; z-index: 1; max-width: var(--container); margin: 0 auto; }
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 1.2rem;
+    }
+    .breadcrumb a { color: rgba(255,255,255,0.7); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--white); }
+    .breadcrumb-sep { opacity: 0.5; }
+    .page-hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 0.75rem;
+      line-height: 1.15;
+    }
+    .page-hero-sub {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.75);
+      max-width: 520px;
+    }
+
+    /* —— FILTER TABS —— */
+    .filter-tabs {
+      background: var(--white);
+      border-bottom: 2px solid var(--ice-200);
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 100;
+      padding: 0 5%;
+    }
+    .filter-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    .filter-inner::-webkit-scrollbar { display: none; }
+    .filter-tab {
+      padding: 16px 22px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-500);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--font-body);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .filter-tab:hover { color: var(--blue-600); }
+    .filter-tab.active {
+      color: var(--blue-600);
+      border-bottom-color: var(--blue-600);
+    }
+
+    /* —— CATALOG SECTION —— */
+    .catalog-section {
+      background: var(--ice-50);
+      padding: 72px 5%;
+    }
+    .catalog-inner { max-width: var(--container); margin: 0 auto; }
+
+    .category-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2.2rem;
+      flex-wrap: wrap;
+    }
+    .category-title {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--text-900);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .category-title .cat-icon {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 4px 12px rgba(2,132,199,0.3);
+    }
+    .category-count {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-500);
+      margin-top: 4px;
+      margin-left: 58px;
+    }
+
+    /* —— SERVICE CARDS GRID —— */
+    .services-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+    .service-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--ice-200);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+    .service-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+
+    .service-card-header {
+      padding: 2rem 1.75rem 1.25rem;
+      background: linear-gradient(135deg, var(--ice-100), var(--white));
+      border-bottom: 1px solid var(--ice-200);
+      display: flex;
+      align-items: flex-start;
+      gap: 1.1rem;
+    }
+    .service-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+    .icon-ventana { background: linear-gradient(135deg, #E0F2FE, #BAE6FD); }
+    .icon-split    { background: linear-gradient(135deg, #DBEAFE, #BAE6FD); }
+    .icon-1t       { background: linear-gradient(135deg, #EEF2FF, #C7D2FE); }
+    .icon-2t       { background: linear-gradient(135deg, #E0E7FF, #A5B4FC); }
+    .icon-3t       { background: linear-gradient(135deg, #EDE9FE, #C4B5FD); }
+
+    .service-name {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-900);
+      margin-bottom: 4px;
+    }
+    .service-meta {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--blue-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .service-card-body { padding: 1.5rem 1.75rem; flex: 1; }
+    .service-desc {
+      font-size: 0.91rem;
+      color: var(--text-500);
+      line-height: 1.7;
+      margin-bottom: 1.2rem;
+    }
+    .service-includes {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .service-includes li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.86rem;
+      color: var(--text-700);
+    }
+    .service-includes li::before {
+      content: '✓';
+      color: var(--blue-600);
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .service-card-footer {
+      padding: 1.25rem 1.75rem;
+      border-top: 1px solid var(--ice-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--ice-50);
+    }
+    .service-price {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      color: var(--text-500);
+      font-weight: 600;
+    }
+    .service-price strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--blue-700);
+    }
+
+    /* —— TONELADAS ROW —— */
+    .services-grid-tons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .tons-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--ice-100);
+      color: var(--blue-700);
+      border: 1px solid var(--ice-200);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    /* —— CTA BOTTOM —— */
+    .catalog-cta {
+      background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+      border-radius: var(--radius-xl);
+      padding: 3.5rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .catalog-cta::after {
+      content: '❄';
+      position: absolute;
+      right: 2%;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 200px;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .catalog-cta-text h3 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+    .catalog-cta-text p { font-size: 0.95rem; color: rgba(255,255,255,0.75); }
+    .catalog-cta-actions { display: flex; gap: 1rem; flex-wrap: wrap; flex-shrink: 0; }
+
+    /* —— SECTION SEPARATOR —— */
+    .section-sep {
+      border: none;
+      border-top: 2px dashed var(--ice-200);
+      margin: 3.5rem 0;
+    }
+
+    @media (max-width: 1024px) {
+      .services-grid-3,
+      .services-grid-tons { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .services-grid-3,
+      .services-grid-tons { grid-template-columns: 1fr; }
+      .catalog-cta { flex-direction: column; text-align: center; }
+      .catalog-cta-actions { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bg"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="brand-icon">❄</div>
+      <span class="brand-text">Fresh<span> Service Digital</span></span>
+    </a>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="catalogo.html" class="active">Servicios</a></li>
+      <li><a href="login.html">Mi Cuenta</a></li>
+      <li><a href="solicitud.html" class="nav-cta">Solicitar Servicio ›</a></li>
+    </ul>
+  </nav>
+
+  <!-- PAGE HERO -->
+  <section class="page-hero">
+    <div class="page-hero-content">
+      <div class="breadcrumb">
+        <a href="index.html">Inicio</a>
+        <span class="breadcrumb-sep">/</span>
+        <span>Catálogo de Servicios</span>
+      </div>
+      <h1 class="page-hero-title">Catálogo de Servicios</h1>
+      <p class="page-hero-sub">Soluciones profesionales de climatización a domicilio. Cobertura en San Juan de los Morros y alrededores.</p>
+    </div>
+  </section>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <div class="filter-inner">
+      <button class="filter-tab active">❄ Aires Acondicionados</button>
+      <button class="filter-tab" style="opacity:0.5; cursor:default;" title="Próximamente">🧊 Neveras (Próximamente)</button>
+    </div>
+  </div>
+
+  <!-- CATALOG CONTENT -->
+  <section class="catalog-section">
+    <div class="catalog-inner">
+
+      <!-- CATEGORY: AIRES ACONDICIONADOS -->
+      <div class="category-header">
+        <div>
+          <div class="category-title">
+            <div class="cat-icon">❄</div>
+            Aires Acondicionados
+          </div>
+          <div class="category-count">5 tipos de servicio disponibles · Todas las marcas</div>
+        </div>
+      </div>
+
+      <!-- TIPO 1: VENTANA -->
+      <div style="margin-bottom: 1rem;">
+        <div class="section-eyebrow">Tipo 1</div>
+        <h3 style="font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--text-700); margin-bottom:1.5rem;">Aires de Ventana</h3>
+      </div>
+      <div class="services-grid-3" style="grid-template-columns: repeat(2,1fr); margin-bottom: 2.5rem;">
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-ventana">🪟</div>
+            <div>
+              <div class="service-name">Reparación – Aire de Ventana</div>
+              <div class="service-meta">Diagnóstico + Reparación</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Evaluación técnica completa y reparación de fallas en unidades de ventana. Revisamos motor, compresor, termostato y sistema eléctrico.</p>
+            <ul class="service-includes">
+              <li>Diagnóstico completo incluido</li>
+              <li>Revisión eléctrica y mecánica</li>
+              <li>Prueba de funcionamiento</li>
+              <li>Informe técnico del estado</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Desde<strong>Consultar precio</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-ventana">🧹</div>
+            <div>
+              <div class="service-name">Mantenimiento – Aire de Ventana</div>
+              <div class="service-meta">Limpieza + Revisión</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Limpieza profunda de filtros, evaporador y condensador. Mantenimiento preventivo para prolongar la vida útil del equipo y mejorar su eficiencia.</p>
+            <ul class="service-includes">
+              <li>Lavado de filtros y tinas</li>
+              <li>Limpieza de serpentines</li>
+              <li>Revisión del compresor</li>
+              <li>Recarga de gas refrigerante (si aplica)</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Desde<strong>Consultar precio</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-sep" />
+
+      <!-- TIPO 2: SPLIT -->
+      <div style="margin-bottom: 1rem;">
+        <div class="section-eyebrow">Tipo 2</div>
+        <h3 style="font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--text-700); margin-bottom:1.5rem;">Aires Tipo Split</h3>
+      </div>
+      <div class="services-grid-3" style="grid-template-columns: repeat(2,1fr); margin-bottom: 2.5rem;">
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-split">🔧</div>
+            <div>
+              <div class="service-name">Reparación – Aire Split</div>
+              <div class="service-meta">Unidad Mini + Maxi Split</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Reparación integral para sistemas Split, tanto la unidad interior como la exterior. Revisión de plaquetas, compresor y sistema de refrigeración.</p>
+            <ul class="service-includes">
+              <li>Diagnóstico de unidad interior y exterior</li>
+              <li>Revisión de plaquetas electrónicas</li>
+              <li>Verificación de tuberías y conexiones</li>
+              <li>Recarga y verificación de gas</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Desde<strong>Consultar precio</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-split">✨</div>
+            <div>
+              <div class="service-name">Mantenimiento – Aire Split</div>
+              <div class="service-meta">Preventivo + Correctivo</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Mantenimiento completo para sistemas Split. Limpieza a presión de unidad interna, revisión de la unidad externa y verificación de parámetros operativos.</p>
+            <ul class="service-includes">
+              <li>Desmontaje y lavado a presión</li>
+              <li>Limpieza de drenaje</li>
+              <li>Revisión del condensador externo</li>
+              <li>Control de temperatura y rendimiento</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Desde<strong>Consultar precio</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+      </div>
+
+      <hr class="section-sep" />
+
+      <!-- TIPO 3: TONELADAS -->
+      <div style="margin-bottom: 1rem;">
+        <div class="section-eyebrow">Tipo 3</div>
+        <h3 style="font-family:var(--font-display); font-size:1.25rem; font-weight:700; color:var(--text-700); margin-bottom:1.5rem;">Aires por Capacidad (Toneladas)</h3>
+      </div>
+      <div class="services-grid-tons">
+        <!-- 1 Tonelada -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-1t">1️⃣</div>
+            <div>
+              <div class="tons-badge">🧊 1 Tonelada</div>
+              <div class="service-name">Servicio 1 Ton</div>
+              <div class="service-meta">Hasta 30 m²</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Ideal para habitaciones y espacios pequeños. Equipos de 9.000 a 12.000 BTU. Mantenimiento, reparación e instalación.</p>
+            <ul class="service-includes">
+              <li>Apto para cuartos y oficinas pequeñas</li>
+              <li>Revisión y recarga de gas R-22/R-410A</li>
+              <li>Instalación de soportes y líneas</li>
+              <li>Mantenimiento preventivo</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Capacidad<strong>9.000–12.000 BTU</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+
+        <!-- 2 Toneladas -->
+        <div class="service-card" style="border-color: var(--blue-300); box-shadow: 0 4px 24px rgba(2,132,199,0.18);">
+          <div style="background: var(--blue-600); color:white; text-align:center; padding:6px; font-size:0.75rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;">⭐ Más solicitado</div>
+          <div class="service-card-header">
+            <div class="service-icon icon-2t">2️⃣</div>
+            <div>
+              <div class="tons-badge">🧊 2 Toneladas</div>
+              <div class="service-name">Servicio 2 Ton</div>
+              <div class="service-meta">Hasta 55 m²</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">El servicio más solicitado. Ideal para salas de estar, oficinas medianas y comedores. Equipos de 18.000 a 24.000 BTU.</p>
+            <ul class="service-includes">
+              <li>Apto para salas y oficinas medianas</li>
+              <li>Revisión completa del sistema</li>
+              <li>Recarga de gas y hermeticidad</li>
+              <li>Limpieza profunda de serpentines</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Capacidad<strong>18.000–24.000 BTU</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+
+        <!-- 3 Toneladas -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon icon-3t">3️⃣</div>
+            <div>
+              <div class="tons-badge">🧊 3 Toneladas</div>
+              <div class="service-name">Servicio 3 Ton</div>
+              <div class="service-meta">Hasta 80 m²</div>
+            </div>
+          </div>
+          <div class="service-card-body">
+            <p class="service-desc">Para espacios grandes, locales comerciales y oficinas amplias. Equipos de 30.000 a 36.000 BTU. Servicio especializado.</p>
+            <ul class="service-includes">
+              <li>Apto para locales y espacios abiertos</li>
+              <li>Revisión trifásica si aplica</li>
+              <li>Instalación de línea dedicada</li>
+              <li>Diagnóstico avanzado de compresor</li>
+            </ul>
+          </div>
+          <div class="service-card-footer">
+            <div class="service-price">Capacidad<strong>30.000–36.000 BTU</strong></div>
+            <a href="login.html" class="btn btn-primary btn-sm">Solicitar</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM CTA -->
+      <div class="catalog-cta">
+        <div class="catalog-cta-text">
+          <h3>¿Encontraste el servicio que necesitas?</h3>
+          <p>Regístrate gratis y solicita tu servicio a domicilio en minutos.</p>
+        </div>
+        <div class="catalog-cta-actions">
+          <a href="registro.html" class="btn btn-primary btn-lg">Crear Cuenta Gratis</a>
+          <a href="login.html" class="btn btn-outline-white btn-lg">Ya tengo cuenta</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">❄ Fresh Service Digital</div>
+        <p class="footer-desc">Servicios de refrigeración y climatización a domicilio en San Juan de los Morros.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Servicios</div>
+        <ul class="footer-links">
+          <li><a href="catalogo.html">Aires de Ventana</a></li>
+          <li><a href="catalogo.html">Aires Split</a></li>
+          <li><a href="catalogo.html">1, 2 y 3 Toneladas</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Cuenta</div>
+        <ul class="footer-links">
+          <li><a href="login.html">Iniciar Sesión</a></li>
+          <li><a href="registro.html">Registrarse</a></li>
+          <li><a href="solicitud.html">Solicitar</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Empresa</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Inicio</a></li>
+          <li><a href="#">WhatsApp</a></li>
+          <li><a href="dashboard.html">Panel Admin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2025 Fresh Service Digital · San Juan de los Morros, Guárico</div>
+  </footer>
+
+  <script>
+    function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
+  </script>
+</body>
+</html>

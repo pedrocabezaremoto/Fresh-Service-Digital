@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fresh Service Digital — Refrigeración a Domicilio</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── HERO CAROUSEL ── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      height: calc(100vh - var(--nav-height));
+      min-height: 560px;
+      max-height: 780px;
+    }
+    .carousel-track {
+      display: flex;
+      width: 300%;
+      height: 100%;
+      animation: carousel-auto 15s cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+    .slide {
+      width: 33.333%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 8%;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: inherit;
+      z-index: 0;
+    }
+    .slide-1 {
+      background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 45%, var(--blue-500) 100%);
+    }
+    .slide-2 {
+      background: linear-gradient(135deg, var(--blue-800) 0%, var(--blue-600) 45%, var(--blue-400) 100%);
+    }
+    .slide-3 {
+      background: linear-gradient(135deg, var(--blue-950) 0%, var(--blue-800) 45%, var(--blue-600) 100%);
+    }
+    .slide-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 75% 50%, rgba(255,255,255,0.06) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    /* large ice crystal decoration */
+    .slide-decor {
+      position: absolute;
+      right: 6%;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: clamp(160px, 22vw, 320px);
+      opacity: 0.07;
+      user-select: none;
+      pointer-events: none;
+      animation: flake-spin 20s linear infinite;
+    }
+    .slide-content {
+      position: relative;
+      z-index: 2;
+      max-width: 580px;
+    }
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255,255,255,0.15);
+      color: var(--ice-200);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      backdrop-filter: blur(8px);
+      margin-bottom: 1.4rem;
+    }
+    .slide-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.2rem;
+    }
+    .slide-title span { color: var(--blue-300); }
+    .slide-desc {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.7;
+      margin-bottom: 2.2rem;
+      max-width: 460px;
+    }
+    .slide-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    /* Carousel dots */
+    .carousel-dots {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.4);
+      transition: all 0.3s;
+    }
+    .dot.active { background: var(--white); width: 28px; }
+    /* Animate dots in sync with carousel */
+    .dot-1 { animation: dot-active-1 15s infinite; }
+    .dot-2 { animation: dot-active-2 15s infinite; }
+    .dot-3 { animation: dot-active-3 15s infinite; }
+
+    @keyframes carousel-auto {
+      0%,  28%  { transform: translateX(0); }
+      33%,  61% { transform: translateX(-33.333%); }
+      66%,  94% { transform: translateX(-66.666%); }
+      100%      { transform: translateX(0); }
+    }
+    @keyframes dot-active-1 {
+      0%,28%  { width: 28px; background: var(--white); }
+      33%,94% { width: 8px;  background: rgba(255,255,255,0.4); }
+      100%    { width: 28px; background: var(--white); }
+    }
+    @keyframes dot-active-2 {
+      0%,32%  { width: 8px;  background: rgba(255,255,255,0.4); }
+      33%,61% { width: 28px; background: var(--white); }
+      66%,100%{ width: 8px;  background: rgba(255,255,255,0.4); }
+    }
+    @keyframes dot-active-3 {
+      0%,65%  { width: 8px;  background: rgba(255,255,255,0.4); }
+      66%,94% { width: 28px; background: var(--white); }
+      100%    { width: 8px;  background: rgba(255,255,255,0.4); }
+    }
+
+    /* ── FEATURES ── */
+    .features { background: var(--white); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+      max-width: var(--container);
+      margin: 0 auto;
+    }
+    .feature-card {
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+    .feature-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--ice-100), var(--ice-200));
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 1.3rem;
+      box-shadow: var(--shadow-sm);
+    }
+    .feature-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-900);
+      margin-bottom: 0.6rem;
+    }
+    .feature-desc { font-size: 0.92rem; color: var(--text-500); line-height: 1.7; }
+
+    /* ── SERVICES PREVIEW ── */
+    .services-preview { background: var(--ice-50); }
+    .services-header {
+      max-width: var(--container);
+      margin: 0 auto 3rem;
+    }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.75rem;
+      max-width: var(--container);
+      margin: 0 auto;
+    }
+    .service-card-big {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      position: relative;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 2.5rem;
+      cursor: pointer;
+    }
+    .service-card-big::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: inherit;
+    }
+    .service-card-ac {
+      background: linear-gradient(160deg, var(--blue-800), var(--blue-600));
+    }
+    .service-card-nev {
+      background: linear-gradient(160deg, var(--blue-900), var(--blue-700));
+    }
+    .service-card-bg-icon {
+      position: absolute;
+      top: 50%;
+      right: 10%;
+      transform: translateY(-60%);
+      font-size: 130px;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+    .service-card-content { position: relative; z-index: 1; }
+    .service-card-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      color: var(--ice-200);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 0.75rem;
+      backdrop-filter: blur(6px);
+    }
+    .service-card-title {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 0.6rem;
+      line-height: 1.2;
+    }
+    .service-card-desc {
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 1.4rem;
+      line-height: 1.65;
+    }
+    .service-card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-bottom: 2px solid rgba(255,255,255,0.4);
+      padding-bottom: 2px;
+      transition: border-color 0.2s, gap 0.2s;
+    }
+    .service-card-link:hover { border-color: var(--white); gap: 10px; }
+
+    /* Coming soon overlay */
+    .coming-soon-badge {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255,255,255,0.15);
+      color: var(--ice-200);
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── CTA BANNER ── */
+    .cta-banner {
+      background: linear-gradient(130deg, var(--blue-900), var(--blue-700));
+      padding: 80px 5%;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '❄';
+      position: absolute;
+      font-size: 400px;
+      opacity: 0.03;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .cta-banner-content { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; }
+    .cta-banner-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 1rem;
+    }
+    .cta-banner-desc {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 2.2rem;
+      line-height: 1.7;
+    }
+    .cta-banner-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ── TRUST STRIP ── */
+    .trust-strip {
+      background: var(--white);
+      border-top: 1px solid var(--ice-200);
+      border-bottom: 1px solid var(--ice-200);
+      padding: 20px 5%;
+    }
+    .trust-inner {
+      max-width: var(--container);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-700);
+    }
+    .trust-item span.icon { font-size: 1.1rem; }
+
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .services-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .slide-desc { display: none; }
+      .slide-actions .btn:not(.btn-primary) { display: none; }
+      .trust-item:nth-child(n+4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-bg"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <div class="brand-icon">❄</div>
+      <span class="brand-text">Fresh<span> Service Digital</span></span>
+    </a>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" class="active">Inicio</a></li>
+      <li><a href="catalogo.html">Servicios</a></li>
+      <li><a href="login.html">Mi Cuenta</a></li>
+      <li><a href="solicitud.html" class="nav-cta">Solicitar Servicio ›</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO CAROUSEL -->
+  <section class="hero">
+    <div class="carousel-track">
+
+      <!-- Slide 1: Reparación -->
+      <div class="slide slide-1">
+        <div class="slide-pattern"></div>
+        <div class="slide-decor">❄</div>
+        <div class="slide-content">
+          <div class="slide-tag">⚡ Servicio Express</div>
+          <h1 class="slide-title">Reparación<br><span>Profesional</span><br>a Domicilio</h1>
+          <p class="slide-desc">Diagnóstico rápido y reparación eficiente de aires acondicionados y neveras. Técnicos certificados, respuesta en el mismo día.</p>
+          <div class="slide-actions">
+            <a href="catalogo.html" class="btn btn-primary btn-lg">Ver Servicios</a>
+            <a href="registro.html" class="btn btn-outline-white btn-lg">Crear Cuenta</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 2: Mantenimiento -->
+      <div class="slide slide-2">
+        <div class="slide-pattern"></div>
+        <div class="slide-decor">❄</div>
+        <div class="slide-content">
+          <div class="slide-tag">🛡 Mantenimiento Preventivo</div>
+          <h1 class="slide-title">Prolonga la<br>Vida de tu<br><span>Equipo</span></h1>
+          <p class="slide-desc">Planes de mantenimiento preventivo para mantener tu aire acondicionado en condiciones óptimas durante todo el año.</p>
+          <div class="slide-actions">
+            <a href="catalogo.html" class="btn btn-primary btn-lg">Ver Planes</a>
+            <a href="registro.html" class="btn btn-outline-white btn-lg">Registrarse</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3: Repuestos -->
+      <div class="slide slide-3">
+        <div class="slide-pattern"></div>
+        <div class="slide-decor">❄</div>
+        <div class="slide-content">
+          <div class="slide-tag">🔧 Repuestos Originales</div>
+          <h1 class="slide-title">Cambio de<br><span>Repuestos</span><br>Garantizado</h1>
+          <p class="slide-desc">Trabajamos con repuestos originales y de calidad para todas las marcas. Garantía incluida en cada instalación y cambio de pieza.</p>
+          <div class="slide-actions">
+            <a href="catalogo.html" class="btn btn-primary btn-lg">Consultar</a>
+            <a href="registro.html" class="btn btn-outline-white btn-lg">Registrarse</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Dots -->
+    <div class="carousel-dots">
+      <div class="dot dot-1"></div>
+      <div class="dot dot-2"></div>
+      <div class="dot dot-3"></div>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <div class="trust-strip">
+    <div class="trust-inner">
+      <div class="trust-item"><span class="icon">✅</span> Técnicos Certificados</div>
+      <div class="trust-item"><span class="icon">⚡</span> Respuesta el Mismo Día</div>
+      <div class="trust-item"><span class="icon">🛡</span> Garantía en Servicios</div>
+      <div class="trust-item"><span class="icon">📍</span> San Juan de los Morros</div>
+      <div class="trust-item"><span class="icon">💬</span> Soporte por WhatsApp</div>
+    </div>
+  </div>
+
+  <!-- FEATURES SECTION -->
+  <section class="section features">
+    <div class="container">
+      <div class="section-header text-center">
+        <div class="section-eyebrow">¿Por qué elegirnos?</div>
+        <h2 class="section-title">Servicio de clase mundial,<br>directo a tu puerta</h2>
+        <div class="divider divider-center"></div>
+      </div>
+      <div class="features-grid">
+        <div class="card feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Respuesta Rápida</div>
+          <p class="feature-desc">Coordinamos tu cita en minutos vía nuestra plataforma digital. Sin llamadas, sin esperas. El técnico llega en el horario que elijas.</p>
+        </div>
+        <div class="card feature-card">
+          <div class="feature-icon">🏆</div>
+          <div class="feature-title">Técnicos Certificados</div>
+          <p class="feature-desc">Nuestro equipo cuenta con formación técnica especializada y años de experiencia en refrigeración y climatización.</p>
+        </div>
+        <div class="card feature-card">
+          <div class="feature-icon">🛡</div>
+          <div class="feature-title">Servicio Garantizado</div>
+          <p class="feature-desc">Todos nuestros trabajos incluyen garantía. Si algo falla después del servicio, regresamos sin costo adicional.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES PREVIEW -->
+  <section class="section services-preview">
+    <div class="container">
+      <div class="services-header">
+        <div class="section-eyebrow">Nuestros Servicios</div>
+        <h2 class="section-title">Todo lo que tu equipo necesita</h2>
+        <div class="divider"></div>
+        <p class="section-subtitle">Especialistas en mantenimiento, reparación e instalación de sistemas de refrigeración y climatización a domicilio.</p>
+      </div>
+      <div class="services-grid">
+        <!-- Aires -->
+        <a href="catalogo.html" class="service-card-big service-card-ac">
+          <div class="service-card-bg-icon">❄</div>
+          <div class="service-card-content">
+            <div class="service-card-tag">Disponible ahora</div>
+            <h3 class="service-card-title">Aires Acondicionados</h3>
+            <p class="service-card-desc">Ventana, Split y toneladas. Reparación, instalación, gas y mantenimiento preventivo para todas las marcas.</p>
+            <span class="service-card-link">Explorar servicios →</span>
+          </div>
+        </a>
+        <!-- Neveras (coming soon) -->
+        <div class="service-card-big service-card-nev">
+          <div class="coming-soon-badge">Próximamente</div>
+          <div class="service-card-bg-icon">🧊</div>
+          <div class="service-card-content">
+            <div class="service-card-tag">Fase 2</div>
+            <h3 class="service-card-title">Neveras & Refrigeradores</h3>
+            <p class="service-card-desc">Servicio técnico especializado para neveras domésticas y comerciales. Próximos a lanzar este módulo.</p>
+            <span class="service-card-link" style="opacity:0.5; cursor:not-allowed;">Próximamente →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-banner">
+    <div class="cta-banner-content">
+      <h2 class="cta-banner-title">¿Tu equipo necesita atención?</h2>
+      <p class="cta-banner-desc">Solicita tu servicio a domicilio en menos de 2 minutos. Operamos en San Juan de los Morros y sus alrededores.</p>
+      <div class="cta-banner-actions">
+        <a href="catalogo.html" class="btn btn-primary btn-lg">Ver Catálogo de Servicios</a>
+        <a href="registro.html" class="btn btn-outline-white btn-lg">Crear Cuenta Gratis</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">❄ Fresh Service Digital</div>
+        <p class="footer-desc">Servicios de refrigeración y climatización a domicilio en San Juan de los Morros. Calidad, rapidez y garantía en cada visita.</p>
+      </div>
+      <div>
+        <div class="footer-heading">Servicios</div>
+        <ul class="footer-links">
+          <li><a href="catalogo.html">Aires Acondicionados</a></li>
+          <li><a href="catalogo.html">Reparación</a></li>
+          <li><a href="catalogo.html">Mantenimiento</a></li>
+          <li><a href="catalogo.html">Repuestos</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Cuenta</div>
+        <ul class="footer-links">
+          <li><a href="login.html">Iniciar Sesión</a></li>
+          <li><a href="registro.html">Registrarse</a></li>
+          <li><a href="solicitud.html">Solicitar Servicio</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-heading">Contacto</div>
+        <ul class="footer-links">
+          <li><a href="#">WhatsApp: +58 412-xxx-xxxx</a></li>
+          <li><a href="#">San Juan de los Morros</a></li>
+          <li><a href="#">info@freshservice.ve</a></li>
+          <li><a href="dashboard.html">Panel Admin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      © 2025 Fresh Service Digital · San Juan de los Morros, Guárico · Todos los derechos reservados
+    </div>
+  </footer>
+
+  <script>
+    function toggleNav() {
+      document.getElementById('navLinks').classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

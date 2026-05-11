@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iniciar Sesión — Fresh Service Digital</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background: var(--blue-900); min-height: 100vh; }
+    .page-bg { display: none; }
+
+    .auth-wrapper {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ── LEFT PANEL ── */
+    .auth-left {
+      background: linear-gradient(145deg, var(--blue-950), var(--blue-800));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem 6%;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-left::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 70% at 80% 30%, rgba(56,189,248,0.12) 0%, transparent 60%);
+    }
+    .auth-left-deco {
+      position: absolute;
+      bottom: -40px;
+      right: -60px;
+      font-size: 340px;
+      opacity: 0.06;
+      pointer-events: none;
+      animation: flake-spin 20s linear infinite;
+    }
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 3.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .auth-brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-400));
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      animation: flake-spin 10s linear infinite;
+    }
+    .auth-brand-name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--white);
+    }
+    .auth-brand-name span { color: var(--blue-400); font-weight: 600; }
+
+    .auth-left-content { position: relative; z-index: 1; }
+    .auth-left-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      color: var(--ice-200);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 1.3rem;
+    }
+    .auth-left-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.15;
+      margin-bottom: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+    .auth-left-title span { color: var(--blue-300); }
+    .auth-left-desc {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      max-width: 380px;
+    }
+
+    .auth-benefits { display: flex; flex-direction: column; gap: 1rem; }
+    .auth-benefit {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .benefit-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--blue-400);
+      flex-shrink: 0;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .auth-right {
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 8%;
+      overflow-y: auto;
+    }
+    .auth-form-box { width: 100%; max-width: 420px; }
+
+    .auth-form-title {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-900);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .auth-form-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-500);
+      margin-bottom: 2.5rem;
+    }
+    .auth-form-subtitle a {
+      color: var(--blue-600);
+      font-weight: 600;
+    }
+    .auth-form-subtitle a:hover { text-decoration: underline; }
+
+    /* Password toggle */
+    .pass-wrapper { position: relative; }
+    .pass-wrapper .form-control { padding-right: 46px; }
+    .pass-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-500);
+      padding: 4px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .pass-toggle:hover { color: var(--blue-600); }
+
+    .form-row-space {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--text-700);
+      cursor: pointer;
+    }
+    .form-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--blue-600);
+      cursor: pointer;
+    }
+    .forgot-link {
+      font-size: 0.88rem;
+      color: var(--blue-600);
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+    .forgot-link:hover { opacity: 0.75; }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--ice-200);
+    }
+    .auth-divider-text {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-300);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+
+    .auth-footer-text {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-500);
+    }
+    .auth-footer-text a { color: var(--blue-600); font-weight: 600; }
+    .auth-footer-text a:hover { text-decoration: underline; }
+
+    .back-home {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.83rem;
+      color: var(--text-500);
+      margin-top: 2.5rem;
+      transition: color 0.2s;
+    }
+    .back-home:hover { color: var(--blue-600); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .auth-wrapper { grid-template-columns: 1fr; }
+      .auth-left { display: none; }
+      .auth-right {
+        padding: 3rem 6%;
+        min-height: 100vh;
+        background: var(--ice-50);
+      }
+      .auth-form-box { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <!-- LEFT DECORATIVE -->
+    <div class="auth-left">
+      <div class="auth-left-deco">❄</div>
+      <div class="auth-brand">
+        <div class="auth-brand-icon">❄</div>
+        <div class="auth-brand-name">Fresh<span> Service Digital</span></div>
+      </div>
+      <div class="auth-left-content">
+        <div class="auth-left-tag">🔒 Área de Clientes</div>
+        <h2 class="auth-left-title">Bienvenido<br>de <span>vuelta</span></h2>
+        <p class="auth-left-desc">Accede a tu cuenta para gestionar tus solicitudes de servicio y seguir el estado de tus reparaciones.</p>
+        <div class="auth-benefits">
+          <div class="auth-benefit"><div class="benefit-dot"></div>Solicita servicios a domicilio en minutos</div>
+          <div class="auth-benefit"><div class="benefit-dot"></div>Seguimiento en tiempo real de tu solicitud</div>
+          <div class="auth-benefit"><div class="benefit-dot"></div>Historial de servicios realizados</div>
+          <div class="auth-benefit"><div class="benefit-dot"></div>Soporte directo por WhatsApp</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT FORM -->
+    <div class="auth-right">
+      <div class="auth-form-box">
+        <h1 class="auth-form-title">Iniciar Sesión</h1>
+        <p class="auth-form-subtitle">¿No tienes cuenta? <a href="registro.html">Regístrate gratis</a></p>
+
+        <form action="solicitud.html">
+          <div class="form-group">
+            <label class="form-label" for="email">Correo Electrónico</label>
+            <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.com" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Contraseña</label>
+            <div class="pass-wrapper">
+              <input type="password" id="password" class="form-control" placeholder="••••••••" required />
+              <button type="button" class="pass-toggle" onclick="togglePass('password', this)" title="Mostrar/ocultar contraseña">👁</button>
+            </div>
+          </div>
+
+          <div class="form-row-space">
+            <label class="form-check">
+              <input type="checkbox" /> Recordarme
+            </label>
+            <a href="recuperar.html" class="forgot-link">¿Olvidé mi contraseña?</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full btn-lg">
+            Ingresar a mi cuenta →
+          </button>
+        </form>
+
+        <div class="auth-divider">
+          <span class="auth-divider-text">o continúa con</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.85rem;">
+          <button class="btn btn-secondary btn-sm" style="font-weight:600; gap:6px;">
+            <span>📧</span> Google
+          </button>
+          <button class="btn btn-secondary btn-sm" style="font-weight:600; gap:6px;">
+            <span>💬</span> WhatsApp
+          </button>
+        </div>
+
+        <div class="auth-footer-text">
+          ¿Eres nuevo? <a href="registro.html">Crea tu cuenta ahora →</a>
+        </div>
+
+        <a href="index.html" class="back-home">← Volver al inicio</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePass(id, btn) {
+      const field = document.getElementById(id);
+      if (field.type === 'password') {
+        field.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        field.type = 'password';
+        btn.textContent = '👁';
+      }
+    }
+  </script>
+</body>
+</html>
