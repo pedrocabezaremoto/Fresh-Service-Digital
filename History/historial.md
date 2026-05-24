@@ -128,8 +128,8 @@
 |---|---|
 | Problema | Navbar no se ve en móvil Android real |
 | Observado en | Chrome Android (dispositivo físico), DevTools simulación 390px |
-| Último fix intentado | `position: fixed` + `padding-top: var(--nav-height)` en body |
-| Estado | ❌ Pendiente confirmar si el último fix funcionó en producción |
+| Solución | Se aplicó `visibility: hidden;` al contenedor `.nav-links` móvil cuando está cerrado para evitar que su fondo blanco sólido se superponga sobre el navbar. Se activa a `visible` al abrir el menú. |
+| Estado | ✅ Solucionado |
 
 ### Bug Crítico #2 — Flickering / Parpadeo de texto y logo
 

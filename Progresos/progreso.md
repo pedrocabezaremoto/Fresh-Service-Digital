@@ -20,47 +20,24 @@
 | Fuente body mejorada | Nunito → Inter (más profesional) | ✅ |
 | Shadows más elegantes | Neutral rgba(15,23,42) vs cyan-tinted | ✅ |
 | Accesibilidad prefers-reduced-motion | Media query agregado | ✅ |
+| Navbar invisible/cortado en móvil | Añadido `visibility: hidden/visible` para evitar superposición | ✅ |
 
 ---
 
-## 🔴 BUG CRÍTICO #1 — Navbar invisible en Android
+## ✅ BUG CRÍTICO #1 — Navbar invisible en Android / Móvil (SOLUCIONADO)
 
-### Comportamiento observado
+### Causa del error
+En pantallas móviles y tabletas (`max-width: 768px`), el menú desplegable `.nav-links` tiene un fondo blanco sólido y se oculta desplazándose hacia arriba usando `transform: translateY(-110%);`. 
+Sin embargo, dado que `.nav-links` es un elemento hijo de `.navbar` y se encuentra después del logo y el botón hamburguesa en el orden del DOM, su contenedor seguía renderizándose y superponiéndose sobre el resto de los elementos del navbar. Esto causaba que:
+1. Tapara el texto del logo y el botón de menú hamburguesa (haciéndolos invisibles).
+2. Cortara el icono de copo de nieve `.brand-icon` por la mitad.
 
-**Desktop (parcialmente correcto):**
-- Navbar visible con fondo blanco sólido
-- Logo, texto, links y botón CTA visibles
-- ⚠️ Logo/texto parpadean (ver Bug #2)
+### Solución aplicada
+1. **Ocultamiento por visibilidad:** Se añadió `visibility: hidden;` a `.nav-links` por defecto en su estado móvil cerrado para evitar que se renderice sobre el navbar.
+2. **Activación al abrir:** Se configuró `visibility: visible;` en `.nav-links.open` para que se muestre cuando el usuario pulsa el menú hamburguesa.
+3. **Transición suave:** Se añadió `visibility 0.35s` a la directiva de transición en `.nav-links` para mantener la animación fluida y sin saltos visuales.
 
-**Móvil Android real (incorrecto ❌):**
-- Navbar no se ve o es apenas perceptible
-- El contenido de la página empieza desde el borde superior sin navbar visible
-- El hero carousel ocupa toda la pantalla sin separación del navbar
-
-**DevTools simulación 390px (incorrecto ❌):**
-- Navbar aparece cortado en la parte superior
-- Solo se ve una fracción del navbar (el CTA button asomando)
-
-### Historial de fixes intentados (TODOS fallaron)
-
-| Intento | Fix | Resultado |
-|---|---|---|
-| #1 | `backdrop-filter: none` + `background: var(--white)` en media query 768px | ❌ No funcionó |
-| #2 | `overflow-x: clip` en `html` (en vez de `hidden`) | ❌ No funcionó |
-| #3 | Background sólido en navbar global (no solo mobile) | ❌ No funcionó |
-| #4 | `position: fixed` + `padding-top: var(--nav-height)` en body | ⏳ Pendiente confirmar en producción |
-
-### Estado del último fix (#4)
-- `position: fixed; top: 0; left: 0; right: 0` aplicado al `.navbar`
-- `padding-top: var(--nav-height)` en `body` del `styles.css`
-- `padding-top: 0` override en body de: `login.html`, `registro.html`, `recuperar.html`, `dashboard.html`
-- **No confirmado si funciona** — el usuario no ha reportado resultado en producción
-
-### Próximos pasos si #4 también falla
-1. Investigar si el `@keyframes flake-spin` en `.brand-icon` crea un nuevo stacking context que afecta al navbar
-2. Probar con `will-change: transform` en el navbar para forzar compositing layer
-3. Eliminar completamente la animación del brand-icon y ver si el problema desaparece
-4. Inspeccionar el navbar en Chrome Android con USB debugging para ver el computed style real
+Esto restaura por completo la visibilidad del navbar (fondo blanco sólido, marca del sitio y menú hamburguesa en su posición original) en todos los dispositivos móviles y tabletas.
 
 ---
 
