@@ -43,13 +43,14 @@
 ```
 Fresh-Service-Digital/
 ├── index.html        # Landing Page — Hero carrusel, features, CTA
-├── catalogo.html     # Catálogo de Servicios AC (Ventana, Split, Toneladas)
-├── login.html        # Inicio de sesión
-├── recuperar.html    # Recuperación de contraseña
-├── registro.html     # Registro de usuario nuevo
-├── solicitud.html    # Formulario de solicitud a domicilio
-├── dashboard.html    # Panel admin (datos hardcoded simulados)
-└── styles.css        # Sistema de diseño global — NO modificar sin análisis
+├── styles.css        # Sistema de diseño global — NO modificar sin análisis
+└── views/            # Vistas/Páginas secundarias de la plataforma
+    ├── catalogo.html     # Catálogo de Servicios AC (Ventana, Split, Toneladas)
+    ├── login.html        # Inicio de sesión
+    ├── recuperar.html    # Recuperación de contraseña
+    ├── registro.html     # Registro de usuario nuevo
+    ├── solicitud.html    # Formulario de solicitud a domicilio
+    └── dashboard.html    # Panel admin (datos hardcoded simulados)
 ```
 
 ---
@@ -84,12 +85,12 @@ Fresh-Service-Digital/
 
 ```
 index.html (Landing)
-  ├── → catalogo.html     (Servicios)
-  ├── → login.html        (Autenticación)
-  │       └── → registro.html   (Registro)
-  │       └── → recuperar.html  (Recuperar clave)
-  ├── → solicitud.html    (Solicitar Servicio — requiere cuenta)
-  └── → dashboard.html   (Admin — acceso desde footer)
+  ├── → views/catalogo.html     (Servicios)
+  ├── → views/login.html        (Autenticación)
+  │       └── → views/registro.html   (Registro)
+  │       └── → views/recuperar.html  (Recuperar clave)
+  ├── → views/solicitud.html    (Solicitar Servicio — requiere cuenta)
+  └── → views/dashboard.html    (Admin — acceso desde footer)
 ```
 
 ---
