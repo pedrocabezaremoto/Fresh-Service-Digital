@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Panel — Fresh Service Digital</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <style>
+    body { background: #F8FAFC; }
+    .page-bg { display: none; }
+
+    /* ── CLIENT LAYOUT ── */
+    .client-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2.5rem 5% 5rem;
+    }
+
+    /* ── HERO BIENVENIDA ── */
+    .client-hero {
+      background: linear-gradient(135deg, var(--blue-950), var(--blue-800));
+      border-radius: var(--radius-xl);
+      padding: 3.5rem 3rem;
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 2.5rem;
+    }
+    .client-hero::after {
+      content: '❄';
+      position: absolute;
+      font-size: 260px;
+      right: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.04;
+      pointer-events: none;
+    }
+    .client-hero-content { position: relative; z-index: 1; }
+    .client-hero-tag {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--ice-200);
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    .client-hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+    .client-hero-title span { color: var(--blue-400); }
+    .client-hero-desc {
+      font-size: 0.96rem;
+      color: rgba(255,255,255,0.75);
+      max-width: 460px;
+      line-height: 1.6;
+    }
+
+    /* ── TARJETAS STATS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .stat-icon.total { background: rgba(2, 132, 199, 0.08); }
+    .stat-icon.active { background: rgba(245, 158, 11, 0.08); }
+    .stat-icon.completed { background: rgba(16, 185, 129, 0.08); }
+
+    .stat-info { flex: 1; }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-900);
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+
+    /* ── HISTORIAL Y SOLICITUD ── */
+    .dashboard-body {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2.5rem;
+      align-items: start;
+    }
+
+    .main-panel-card {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      padding: 2.25rem;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--ice-100);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-900);
+    }
+
+    /* ── TARJETAS DE CITA ── */
+    .citas-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .cita-card {
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-md);
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+    .cita-card:hover {
+      border-color: var(--blue-300);
+    }
+    .cita-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .cita-title {
+      font-weight: 800;
+      color: var(--text-900);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cita-id {
+      font-size: 0.78rem;
+      color: var(--text-300);
+      font-weight: 500;
+    }
+    .cita-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 0.84rem;
+      background: var(--ice-50);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(186, 230, 253, 0.3);
+    }
+    .detail-item strong {
+      color: var(--text-900);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .detail-item span {
+      color: var(--text-700);
+    }
+    .cita-failure {
+      font-size: 0.84rem;
+      color: var(--text-700);
+      line-height: 1.5;
+    }
+    .cita-failure strong {
+      color: var(--text-900);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 2rem;
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+    .empty-title { font-family: var(--font-display); font-weight: 700; color: var(--text-900); margin-bottom: 0.5rem; }
+    .empty-desc { font-size: 0.88rem; color: var(--text-500); max-width: 320px; margin: 0 auto 1.5rem; line-height: 1.5; }
+
+    /* ── LATERAL CTA ── */
+    .sidebar-panel { display: flex; flex-direction: column; gap: 1.5rem; }
+    .action-card {
+      background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
+      border-radius: var(--radius-lg);
+      padding: 1.8rem;
+      color: var(--white);
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+    .action-title { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; margin-bottom: 0.6rem; }
+    .action-desc { font-size: 0.85rem; color: rgba(255,255,255,0.78); line-height: 1.55; margin-bottom: 1.5rem; }
+    .action-card .btn {
+      width: 100%;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .dashboard-body { grid-template-columns: 1fr; }
+      .sidebar-panel { grid-template-columns: 1fr 1fr; display: grid; gap: 1.2rem; }
+      .action-card { grid-column: span 2; }
+    }
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .client-hero { padding: 2.25rem 1.75rem; }
+      .main-panel-card { padding: 1.5rem; }
+      .sidebar-panel { grid-template-columns: 1fr; }
+      .action-card { grid-column: auto; }
+      .cita-detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <div class="brand-icon">❄</div>
+      <span class="brand-text">Fresh<span> Service Digital</span></span>
+    </a>
+    <button class="hamburger" onclick="toggleNav()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="../index.html">Inicio</a></li>
+      <li><a href="catalogo.html">Servicios</a></li>
+      <li><a href="cliente-dashboard.html" class="active">Mi Panel</a></li>
+      <li><a href="#" onclick="logout()" style="color: #EF4444; font-weight: 700;">Cerrar Sesión</a></li>
+    </ul>
+  </nav>
+
+  <!-- WRAPPER -->
+  <div class="client-wrapper">
+    
+    <!-- HERO -->
+    <div class="client-hero">
+      <div class="client-hero-content">
+        <div class="client-hero-tag">Área de Clientes</div>
+        <h1 class="client-hero-title">¡Hola, <span id="heroClientName">Cargando...</span>! 👋</h1>
+        <p class="client-hero-desc">Desde aquí puedes realizar seguimiento del estado de tus solicitudes de refrigeración y agendar nuevos servicios a domicilio.</p>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon total">📋</div>
+        <div class="stat-info">
+          <div class="stat-value" id="valTotal">0</div>
+          <div class="stat-label">Total Solicitados</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active">⏳</div>
+        <div class="stat-info">
+          <div class="stat-value" id="valActive">0</div>
+          <div class="stat-label">Servicios Activos</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon completed">✅</div>
+        <div class="stat-info">
+          <div class="stat-value" id="valCompleted">0</div>
+          <div class="stat-label">Completados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="dashboard-body">
+      
+      <!-- HISTORIAL -->
+      <div class="main-panel-card">
+        <div class="panel-header">
+          <h2 class="panel-title">Historial de Solicitudes</h2>
+        </div>
+
+        <div class="citas-list" id="citasContainer">
+          <!-- Dinámico -->
+          <div style="text-align:center; padding: 2rem; color: var(--text-500);">
+            Cargando tus solicitudes de servicio...
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar-panel">
+        
+        <!-- CTA -->
+        <div class="action-card">
+          <h3 class="action-title">¿Necesitas ayuda?</h3>
+          <p class="action-desc">Agenda una visita para mantenimiento preventivo, reparaciones o instalación de aires acondicionados.</p>
+          <a href="solicitud.html" class="btn btn-primary">Solicitar Servicio Técnico →</a>
+        </div>
+
+        <!-- Help Info -->
+        <div class="sidebar-card" style="background: white; border: 1px solid var(--ice-200); border-radius: var(--radius-lg); padding: 1.5rem;">
+          <h3 class="sidebar-card-title" style="margin-bottom:0.8rem; font-size:0.88rem; font-weight:700;">💬 Canales de Soporte</h3>
+          <p style="font-size:0.83rem; color:var(--text-500); line-height:1.55; margin-bottom:0.8rem;">Coordinamos visitas de Lunes a Sábado de 8:00 AM a 7:00 PM. Cualquier duda, escríbenos directamente:</p>
+          <a href="https://wa.me/584128341256" target="_blank" style="color:var(--blue-600); font-weight:700; text-decoration:none; font-size:0.84rem; display:flex; align-items:center; gap:5px;">
+            <span>💬</span> Contactar por WhatsApp
+          </a>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/appointments';
+    let loggedUser = null;
+
+    // Control de Navegación Móvil
+    function toggleNav() { 
+      document.getElementById('navLinks').classList.toggle('open'); 
+    }
+
+    // Verificar Sesión
+    function checkSession() {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        window.location.href = 'login.html';
+        return;
+      }
+      loggedUser = JSON.parse(userStr);
+      document.getElementById('heroClientName').textContent = loggedUser.firstName;
+    }
+
+    // Cerrar Sesión
+    function logout() {
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
+    // Obtener y Renderizar Citas del Cliente
+    async function loadClientAppointments() {
+      if (!loggedUser) return;
+      const citasContainer = document.getElementById('citasContainer');
+
+      try {
+        const response = await fetch(`${API_URL}/client/${loggedUser.id}`);
+        if (!response.ok) throw new Error('No se pudo obtener el historial de solicitudes');
+
+        const appointments = await response.json();
+        
+        // Calcular estadísticas
+        const total = appointments.length;
+        const active = appointments.filter(a => a.status === 'PENDING' || a.status === 'ASSIGNED' || a.status === 'IN_PROGRESS').length;
+        const completed = appointments.filter(a => a.status === 'COMPLETED').length;
+
+        document.getElementById('valTotal').textContent = total;
+        document.getElementById('valActive').textContent = active;
+        document.getElementById('valCompleted').textContent = completed;
+
+        // Renderizar
+        if (total === 0) {
+          citasContainer.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">❄️</div>
+              <h3 class="empty-title">Aún no tienes solicitudes</h3>
+              <p class="empty-desc">Aquí aparecerán todos los servicios que solicites. Haz clic en el botón lateral para agendar tu primera visita técnica.</p>
+              <a href="solicitud.html" class="btn btn-secondary btn-sm">Agendar mi primer servicio</a>
+            </div>
+          `;
+          return;
+        }
+
+        citasContainer.innerHTML = '';
+        appointments.forEach(apt => {
+          const card = document.createElement('div');
+          card.className = 'cita-card';
+
+          const dateObj = new Date(apt.scheduledAt);
+          const dateStr = dateObj.toLocaleDateString('es-VE');
+          const timeStr = dateObj.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+
+          const equip = apt.equipment && apt.equipment[0] ? apt.equipment[0] : null;
+          const brand = equip ? equip.brand : 'Sin especificar';
+          const model = equip ? equip.model : 'Genérico';
+          const btu = equip && equip.btuCapacity ? `${equip.btuCapacity} BTU/h` : 'N/A';
+          const failure = equip ? equip.failureDescription : 'Revisión preventiva';
+
+          let statusBadge = '';
+          if (apt.status === 'PENDING') {
+            statusBadge = '<span class="badge badge-pending">Esperando Técnico</span>';
+          } else if (apt.status === 'ASSIGNED' || apt.status === 'IN_PROGRESS') {
+            statusBadge = '<span class="badge badge-progress">Técnico En Camino</span>';
+          } else if (apt.status === 'COMPLETED') {
+            statusBadge = '<span class="badge badge-done">Servicio Completado ✓</span>';
+          } else {
+            statusBadge = '<span class="badge" style="background:#EF4444; color:white;">Cancelado</span>';
+          }
+
+          card.innerHTML = `
+            <div class="cita-top">
+              <div class="cita-title">
+                <span>❄</span> ${brand} · ${model}
+                <span class="cita-id">(${apt.id.slice(0, 8)}...)</span>
+              </div>
+              <div>${statusBadge}</div>
+            </div>
+            
+            <div class="cita-detail-grid">
+              <div class="detail-item">
+                <strong>Fecha y Hora Agendada</strong>
+                <span>📅 ${dateStr} - ⏰ ${timeStr}</span>
+              </div>
+              <div class="detail-item">
+                <strong>Capacidad del Aire</strong>
+                <span>❄ ${btu}</span>
+              </div>
+            </div>
+
+            <div class="cita-failure">
+              <strong>Motivo de Solicitud:</strong> ${failure}
+            </div>
+          `;
+          citasContainer.appendChild(card);
+        });
+
+      } catch (error) {
+        citasContainer.innerHTML = `
+          <div style="text-align:center; padding: 2rem; color: #EF4444; font-weight:700;">
+            ⚠️ Error de conexión: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Inicializar
+    checkSession();
+    loadClientAppointments();
+  </script>
+</body>
+</html>

@@ -22,51 +22,34 @@ enum AppointmentStatus {
 }
 
 model User {
-  id                String             @id @default(uuid())
-  email             String             @unique
-  password          String
-  firstName         String
-  lastName          String
-  phone             String?
-  role              Role               @default(CLIENT)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  technicianProfile TechnicianProfile?
-  appointments      Appointment[]      @relation("ClientAppointments")
+  id               String        @id @default(uuid())
+  email            String        @unique
+  password         String
+  firstName        String
+  lastName         String
+  phone            String?
+  role             Role          @default(CLIENT)
+  isVerified       Boolean       @default(false)
+  verificationCode String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  appointments     Appointment[] @relation("ClientAppointments")
 
   @@map("users")
 }
 
-model TechnicianProfile {
-  id            String        @id @default(uuid())
-  userId        String        @unique
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialties   String[] // Ej: ["Chillers", "VRF", "Residencial"]
-  isActive      Boolean       @default(true)
-  licenseNumber String?       @unique
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  appointments  Appointment[] @relation("TechnicianAppointments")
-
-  @@map("technician_profiles")
-}
-
 model Appointment {
-  id           String            @id @default(uuid())
-  clientId     String
-  client       User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
-  technicianId String?
-  technician   TechnicianProfile? @relation("TechnicianAppointments", fields: [technicianId], references: [id], onDelete: SetNull)
-  status       AppointmentStatus @default(PENDING)
-  scheduledAt  DateTime
-  notes        String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  equipment    Equipment[]
-  assignments  PartAssignment[]
+  id          String            @id @default(uuid())
+  clientId    String
+  client      User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+  status      AppointmentStatus @default(PENDING)
+  scheduledAt DateTime
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  equipment   Equipment[]
 
   @@index([clientId])
-  @@index([technicianId])
   @@map("appointments")
 }
 
@@ -81,32 +64,4 @@ model Equipment {
   failureDescription String // Motivo del mantenimiento o reporte de falla
 
   @@map("equipments")
-}
-
-model SparePart {
-  id          String           @id @default(uuid())
-  sku         String           @unique // Código único de inventario
-  name        String // Ej: "Capacitor de marcha 45 Mfd x 440V"
-  description String?
-  price       Decimal          @db.Decimal(10, 2)
-  stock       Int              @default(0)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  assignments PartAssignment[]
-
-  @@map("spare_parts")
-}
-
-model PartAssignment {
-  id            String      @id @default(uuid())
-  partId        String
-  sparePart     SparePart   @relation(fields: [partId], references: [id], onDelete: Cascade)
-  appointmentId String
-  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  quantity      Int // Cantidad de unidades utilizadas en esa cita
-  assignedAt    DateTime    @default(now())
-
-  @@index([appointmentId])
-  @@index([partId])
-  @@map("part_assignments")
 }

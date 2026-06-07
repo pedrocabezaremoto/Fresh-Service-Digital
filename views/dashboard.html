@@ -306,15 +306,10 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 0.72rem; font-weight: 800; color: white; flex-shrink: 0;
     }
-    .av-1 { background: linear-gradient(135deg, #6366F1, #8B5CF6); }
-    .av-2 { background: linear-gradient(135deg, #EC4899, #F43F5E); }
-    .av-3 { background: linear-gradient(135deg, #10B981, #059669); }
-    .av-4 { background: linear-gradient(135deg, #F59E0B, #EF4444); }
-    .av-5 { background: linear-gradient(135deg, #0EA5E9, #6366F1); }
-    .av-6 { background: linear-gradient(135deg, #14B8A6, #0EA5E9); }
+    .av-default { background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); }
 
     .client-name { font-weight: 700; color: var(--text-900); font-size: 0.87rem; }
-    .client-cedula { font-size: 0.75rem; color: var(--text-500); margin-top: 1px; }
+    .client-email { font-size: 0.75rem; color: var(--text-500); margin-top: 1px; }
 
     .service-tag {
       display: inline-flex; align-items: center; gap: 5px;
@@ -325,9 +320,9 @@
       white-space: nowrap;
     }
 
-    .addr-cell { max-width: 180px; }
-    .addr-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.83rem; }
-    .addr-short { font-size: 0.76rem; color: var(--text-300); margin-top: 2px; }
+    .equipment-cell { max-width: 220px; }
+    .equipment-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.83rem; font-weight: 600; }
+    .equipment-desc { font-size: 0.76rem; color: var(--text-500); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
     .date-cell { font-size: 0.83rem; color: var(--text-700); }
     .date-time { font-size: 0.75rem; color: var(--text-300); margin-top: 2px; }
@@ -344,6 +339,7 @@
       font-size: 0.85rem; cursor: pointer; transition: all .2s;
     }
     .action-btn:hover { background: var(--ice-100); border-color: var(--blue-300); }
+    .action-btn.complete:hover { background: #D1FAE5; border-color: #10B981; color: #065F46; }
 
     .table-footer {
       padding: 1rem 1.75rem;
@@ -375,6 +371,43 @@
       align-items: center; justify-content: center;
       font-size: 1.2rem; color: white; z-index: 300;
       box-shadow: 0 4px 16px rgba(2,132,199,.4);
+    }
+
+    /* ── TOAST NOTIFICATIONS ── */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toast {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: 16px 20px;
+      min-width: 300px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--text-900);
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast-success {
+      border-left: 4px solid var(--blue-600);
+    }
+    .toast-error {
+      border-left: 4px solid #EF4444;
     }
 
     @media (max-width: 1200px) {
@@ -413,7 +446,7 @@
         </a>
         <a class="sidebar-link">
           <span class="s-icon">📋</span> Solicitudes
-          <span class="sidebar-badge red">3</span>
+          <span class="sidebar-badge red" id="pendingBadge">0</span>
         </a>
         <a class="sidebar-link">
           <span class="s-icon">👥</span> Clientes
@@ -428,7 +461,6 @@
         </a>
         <a class="sidebar-link">
           <span class="s-icon">📍</span> En Campo
-          <span class="sidebar-badge">2</span>
         </a>
 
         <div class="sidebar-section-label" style="margin-top:1rem;">Sistema</div>
@@ -448,9 +480,9 @@
 
       <div class="sidebar-footer">
         <div class="sidebar-user">
-          <div class="sidebar-avatar">A</div>
+          <div class="sidebar-avatar" id="adminAvatar">A</div>
           <div class="sidebar-user-info">
-            <div class="sidebar-user-name">Administrador</div>
+            <div class="sidebar-user-name" id="adminName">Administrador</div>
             <div class="sidebar-user-role">Taller · San Juan de los Morros</div>
           </div>
         </div>
@@ -467,7 +499,7 @@
           <div class="topbar-subtitle">Fresh Service Digital – Taller de Refrigeración</div>
         </div>
         <div class="topbar-actions">
-          <div class="topbar-date">📅 Hoy: Lunes 14 de julio, 2025</div>
+          <div class="topbar-date" id="topbarDate">📅 Hoy: Lunes 14 de julio, 2025</div>
           <div class="notification-btn">🔔<div class="notif-dot"></div></div>
         </div>
       </div>
@@ -480,34 +512,30 @@
           <div class="stat-card total">
             <div class="stat-top">
               <div class="stat-icon total-i">📋</div>
-              <div class="stat-trend up">↑ +12%</div>
             </div>
-            <div class="stat-value">24</div>
-            <div class="stat-label">Solicitudes este mes</div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Solicitudes registradas</div>
           </div>
           <div class="stat-card pending">
             <div class="stat-top">
               <div class="stat-icon pend-i">⏳</div>
-              <div class="stat-trend warn">3 nuevas</div>
             </div>
-            <div class="stat-value">6</div>
+            <div class="stat-value" id="statPending">0</div>
             <div class="stat-label">Pendientes de atender</div>
           </div>
           <div class="stat-card progress">
             <div class="stat-top">
               <div class="stat-icon prog-i">🔧</div>
-              <div class="stat-trend up">En curso</div>
             </div>
-            <div class="stat-value">4</div>
-            <div class="stat-label">En proceso hoy</div>
+            <div class="stat-value" id="statProgress">0</div>
+            <div class="stat-label">En proceso (Asignadas)</div>
           </div>
           <div class="stat-card done">
             <div class="stat-top">
               <div class="stat-icon done-i">✅</div>
-              <div class="stat-trend up">↑ +8%</div>
             </div>
-            <div class="stat-value">14</div>
-            <div class="stat-label">Completados este mes</div>
+            <div class="stat-value" id="statCompleted">0</div>
+            <div class="stat-label">Completadas con éxito</div>
           </div>
         </div>
 
@@ -515,26 +543,20 @@
         <div class="table-card">
           <div class="table-header">
             <div class="table-header-left">
-              <h3>Solicitudes de Servicio</h3>
-              <p>Mostrando 6 de 24 solicitudes · Julio 2025</p>
+              <h3>Solicitudes de Servicio en Vivo</h3>
+              <p id="tableInfoSummary">Cargando solicitudes de la base de datos...</p>
             </div>
             <div class="table-controls">
               <div class="search-box">
                 <span>🔍</span>
-                <input type="text" placeholder="Buscar cliente o cédula…" />
+                <input type="text" id="searchInput" placeholder="Buscar cliente o correo…" oninput="filterTable()" />
               </div>
-              <select class="filter-select">
-                <option>Todos los estados</option>
-                <option>Pendiente</option>
-                <option>En Proceso</option>
-                <option>Completado</option>
-              </select>
-              <select class="filter-select">
-                <option>Todos los servicios</option>
-                <option>Aire Split</option>
-                <option>Aire Ventana</option>
-                <option>1 Tonelada</option>
-                <option>2 Toneladas</option>
+              <select class="filter-select" id="statusFilter" onchange="filterTable()">
+                <option value="ALL">Todos los estados</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="ASSIGNED">Asignada / En proceso</option>
+                <option value="COMPLETED">Completada</option>
+                <option value="CANCELLED">Cancelada</option>
               </select>
             </div>
           </div>
@@ -545,223 +567,26 @@
                 <tr>
                   <th>#</th>
                   <th>Cliente</th>
-                  <th>Cédula</th>
-                  <th>Servicio Solicitado</th>
-                  <th>Fecha / Hora</th>
-                  <th>Dirección</th>
-                  <th>WhatsApp</th>
+                  <th>Servicio / Falla</th>
+                  <th>Fecha / Hora Agendada</th>
+                  <th>Teléfono / WhatsApp</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody>
-
+              <tbody id="appointmentsTableBody">
+                <!-- Se inyecta dinámicamente -->
                 <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#001</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-1">JM</div>
-                      <div>
-                        <div class="client-name">Juan Medina Torres</div>
-                        <div class="client-cedula">V-18.234.561</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>V-18.234.561</td>
-                  <td><span class="service-tag">❄ Split · Reparación</span></td>
-                  <td>
-                    <div class="date-cell">14/07/2025</div>
-                    <div class="date-time">09:15 AM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Urb. Los Samanes, Calle 3, Casa #15, frente al parque">Urb. Los Samanes, C/ 3, Casa #15</div>
-                    <div class="addr-short">San Juan de los Morros</div>
-                  </td>
-                  <td class="phone-cell">+58 412-8341256</td>
-                  <td><span class="badge badge-new">Nueva</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Asignar técnico">🔧</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
+                  <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-500);">
+                    Cargando información...
                   </td>
                 </tr>
-
-                <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#002</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-2">MR</div>
-                      <div>
-                        <div class="client-name">María Rodríguez</div>
-                        <div class="client-cedula">V-22.109.887</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>V-22.109.887</td>
-                  <td><span class="service-tag">❄ 2 Ton · Mantenimiento</span></td>
-                  <td>
-                    <div class="date-cell">14/07/2025</div>
-                    <div class="date-time">10:30 AM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Sector El Calvario, Calle Bolívar, Edif. Res. Guárico, Piso 3, Apto 3-B">Sector El Calvario, Res. Guárico 3-B</div>
-                    <div class="addr-short">San Juan de los Morros</div>
-                  </td>
-                  <td class="phone-cell">+58 414-5678901</td>
-                  <td><span class="badge badge-progress">En Proceso</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Actualizar estado">🔄</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#003</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-3">CR</div>
-                      <div>
-                        <div class="client-name">Carlos Rondón Pérez</div>
-                        <div class="client-cedula">V-14.556.223</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>V-14.556.223</td>
-                  <td><span class="service-tag">🪟 Ventana · Reparación</span></td>
-                  <td>
-                    <div class="date-cell">13/07/2025</div>
-                    <div class="date-time">02:00 PM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Barrio Andrés Bello, Calle 12, Casa s/n, al lado de la bodega El Buen Precio">B. Andrés Bello, C/ 12, bodega ref.</div>
-                    <div class="addr-short">San Juan de los Morros</div>
-                  </td>
-                  <td class="phone-cell">+58 416-7234512</td>
-                  <td><span class="badge badge-done">Completado</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Ver factura">🧾</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#004</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-4">LA</div>
-                      <div>
-                        <div class="client-name">Luisa Alfonzo Vega</div>
-                        <div class="client-cedula">E-82.345.001</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>E-82.345.001</td>
-                  <td><span class="service-tag">❄ 1 Ton · Gas Refrigerante</span></td>
-                  <td>
-                    <div class="date-cell">14/07/2025</div>
-                    <div class="date-time">11:00 AM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Urb. Vistas del Llano, Qta. Las Palmas, Calle Principal, detrás del supermercado">Urb. Vistas del Llano, Qta. Las Palmas</div>
-                    <div class="addr-short">San Juan de los Morros</div>
-                  </td>
-                  <td class="phone-cell">+58 424-1234567</td>
-                  <td><span class="badge badge-new">Nueva</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Asignar técnico">🔧</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#005</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-5">PG</div>
-                      <div>
-                        <div class="client-name">Pedro García López</div>
-                        <div class="client-cedula">V-9.876.542</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>V-9.876.542</td>
-                  <td><span class="service-tag">❄ 3 Ton · Instalación</span></td>
-                  <td>
-                    <div class="date-cell">13/07/2025</div>
-                    <div class="date-time">08:30 AM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Local Comercial Ferretería El Martillo, Av. Monagas con Calle 5, PB Local 2">Ferretería El Martillo, Av. Monagas</div>
-                    <div class="addr-short">San Juan de los Morros · Local</div>
-                  </td>
-                  <td class="phone-cell">+58 426-9988001</td>
-                  <td><span class="badge badge-progress">En Proceso</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Actualizar estado">🔄</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#006</td>
-                  <td>
-                    <div class="client-cell">
-                      <div class="client-avatar av-6">YF</div>
-                      <div>
-                        <div class="client-name">Yolanda Fuentes M.</div>
-                        <div class="client-cedula">V-17.002.318</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>V-17.002.318</td>
-                  <td><span class="service-tag">❄ Split · Mantenimiento</span></td>
-                  <td>
-                    <div class="date-cell">12/07/2025</div>
-                    <div class="date-time">03:45 PM</div>
-                  </td>
-                  <td class="addr-cell">
-                    <div class="addr-text" title="Sector La Candelaria, Calle 8, Casa #7, cerca de la escuela Simón Bolívar">Sector La Candelaria, C/8 Casa #7</div>
-                    <div class="addr-short">San Juan de los Morros</div>
-                  </td>
-                  <td class="phone-cell">+58 412-3340098</td>
-                  <td><span class="badge badge-pending">Pendiente</span></td>
-                  <td>
-                    <div class="actions-cell">
-                      <button class="action-btn" title="Ver detalle">👁</button>
-                      <button class="action-btn" title="Asignar técnico">🔧</button>
-                      <button class="action-btn" title="WhatsApp">💬</button>
-                    </div>
-                  </td>
-                </tr>
-
               </tbody>
             </table>
           </div>
 
           <div class="table-footer">
-            <div class="table-footer-info">Mostrando 1–6 de 24 solicitudes</div>
-            <div class="pagination">
-              <button class="page-btn">‹</button>
-              <button class="page-btn active">1</button>
-              <button class="page-btn">2</button>
-              <button class="page-btn">3</button>
-              <button class="page-btn">4</button>
-              <button class="page-btn">›</button>
-            </div>
+            <div class="table-footer-info" id="tableFooterInfo">Mostrando 0 de 0 solicitudes</div>
           </div>
         </div>
 
@@ -771,7 +596,35 @@
 
   <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
 
+  <!-- Container de Notificaciones -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    const API_URL = 'http://localhost:3000/appointments';
+    let allAppointments = [];
+
+    // Formatear fecha del Topbar
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('topbarDate').textContent = `📅 Hoy: ${new Date().toLocaleDateString('es-VE', dateOptions)}`;
+
+    // Mostrar notificaciones Toast
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '🚀' : '⚠️'}</span>
+        <div>${message}</div>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    // Toggle para sidebar móvil
     function toggleSidebar() {
       document.getElementById('adminSidebar').classList.toggle('open');
     }
@@ -782,6 +635,196 @@
         sidebar.classList.remove('open');
       }
     });
+
+    // Cargar datos del Backend
+    async function loadAppointments() {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('No se pudieron obtener las solicitudes del servidor');
+        allAppointments = await response.json();
+        
+        updateStats();
+        renderTable(allAppointments);
+      } catch (error) {
+        showToast(error.message, 'error');
+        document.getElementById('appointmentsTableBody').innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2rem; color: #EF4444; font-weight: 600;">
+              ⚠️ Error de conexión con el servidor backend
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Calcular estadísticas de la base de datos real
+    function updateStats() {
+      const total = allAppointments.length;
+      const pending = allAppointments.filter(a => a.status === 'PENDING').length;
+      const progress = allAppointments.filter(a => a.status === 'ASSIGNED' || a.status === 'IN_PROGRESS').length;
+      const completed = allAppointments.filter(a => a.status === 'COMPLETED').length;
+
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statPending').textContent = pending;
+      document.getElementById('statProgress').textContent = progress;
+      document.getElementById('statCompleted').textContent = completed;
+
+      // Badge en el menú lateral
+      const pendingBadge = document.getElementById('pendingBadge');
+      if (pending > 0) {
+        pendingBadge.textContent = pending;
+        pendingBadge.style.display = 'inline-block';
+      } else {
+        pendingBadge.style.display = 'none';
+      }
+    }
+
+    // Renderizar filas de la tabla
+    function renderTable(appointments) {
+      const tbody = document.getElementById('appointmentsTableBody');
+      tbody.innerHTML = '';
+
+      if (appointments.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-500); font-weight: 600;">
+              📭 No hay solicitudes de servicio registradas
+            </td>
+          </tr>
+        `;
+        document.getElementById('tableInfoSummary').textContent = 'Mostrando 0 solicitudes';
+        document.getElementById('tableFooterInfo').textContent = 'Mostrando 0 de 0 solicitudes';
+        return;
+      }
+
+      appointments.forEach((apt, index) => {
+        const tr = document.createElement('tr');
+        
+        // Formatear Fecha y Hora
+        const dateObj = new Date(apt.scheduledAt);
+        const dateStr = dateObj.toLocaleDateString('es-VE');
+        const timeStr = dateObj.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+
+        // Detalles del primer equipo registrado
+        const equip = apt.equipment && apt.equipment[0] ? apt.equipment[0] : null;
+        const equipBrand = equip ? equip.brand : 'Sin especificar';
+        const equipModel = equip ? equip.model : 'Genérico';
+        const failureDesc = equip ? equip.failureDescription : 'Revisión general';
+
+        // Iniciales del avatar del cliente
+        const initials = ((apt.client.firstName[0] || '') + (apt.client.lastName[0] || '')).toUpperCase();
+
+        // Mapear Badge de Estado
+        let statusBadge = '';
+        if (apt.status === 'PENDING') {
+          statusBadge = '<span class="badge badge-pending">Pendiente</span>';
+        } else if (apt.status === 'ASSIGNED' || apt.status === 'IN_PROGRESS') {
+          statusBadge = '<span class="badge badge-progress">En proceso</span>';
+        } else if (apt.status === 'COMPLETED') {
+          statusBadge = '<span class="badge badge-done">Completada</span>';
+        } else if (apt.status === 'CANCELLED') {
+          statusBadge = '<span class="badge" style="background:#EF4444; color:white;">Cancelada</span>';
+        }
+
+        // Acciones interactivas
+        let actionButtons = '';
+        if (apt.status !== 'COMPLETED' && apt.status !== 'CANCELLED') {
+          actionButtons = `
+            <button class="action-btn complete" onclick="completeAppointment('${apt.id}')" title="Marcar como Completada">✓</button>
+          `;
+        }
+        // Botón de WhatsApp
+        const waPhone = apt.client.phone ? apt.client.phone.replace('+', '') : '';
+        const waLink = waPhone ? `<a href="https://wa.me/${waPhone}" target="_blank" class="action-btn" title="WhatsApp" style="text-decoration:none;">💬</a>` : '';
+
+        tr.innerHTML = `
+          <td style="font-weight:700; color:var(--text-500); font-size:.8rem;">#00${index + 1}</td>
+          <td>
+            <div class="client-cell">
+              <div class="client-avatar av-default">${initials}</div>
+              <div>
+                <div class="client-name">${apt.client.firstName} ${apt.client.lastName}</div>
+                <div class="client-email">${apt.client.email}</div>
+              </div>
+            </div>
+          </td>
+          <td class="equipment-cell">
+            <div class="equipment-text">${equipBrand} · ${equipModel}</div>
+            <div class="equipment-desc" title="${failureDesc}">${failureDesc}</div>
+          </td>
+          <td>
+            <div class="date-cell">${dateStr}</div>
+            <div class="date-time">${timeStr}</div>
+          </td>
+          <td class="phone-cell">${apt.client.phone || 'N/A'}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div class="actions-cell">
+              ${actionButtons}
+              ${waLink}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('tableInfoSummary').textContent = `Mostrando ${appointments.length} solicitudes de la base de datos`;
+      document.getElementById('tableFooterInfo').textContent = `Mostrando ${appointments.length} de ${allAppointments.length} solicitudes`;
+    }
+
+    // Filtrar solicitudes localmente por búsqueda y estado
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      const filtered = allAppointments.filter(apt => {
+        const clientName = `${apt.client.firstName} ${apt.client.lastName}`.toLowerCase();
+        const clientEmail = apt.client.email.toLowerCase();
+        
+        const matchesQuery = clientName.includes(query) || clientEmail.includes(query);
+        
+        let matchesStatus = true;
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'ASSIGNED') {
+            matchesStatus = apt.status === 'ASSIGNED' || apt.status === 'IN_PROGRESS';
+          } else {
+            matchesStatus = apt.status === statusFilter;
+          }
+        }
+
+        return matchesQuery && matchesStatus;
+      });
+
+      renderTable(filtered);
+    }
+
+    // Completar Cita e invocar API del Backend
+    async function completeAppointment(id) {
+      if (!confirm('¿Seguro que deseas marcar esta solicitud como completada?')) return;
+
+      try {
+        const response = await fetch(`${API_URL}/${id}/complete`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ parts: [] }) // Sin repuestos en este flujo simplificado
+        });
+
+        if (!response.ok) throw new Error('Error al actualizar el estado de la cita');
+        
+        showToast('Cita completada exitosamente', 'success');
+        
+        // Recargar datos para refrescar la tabla y estadísticas
+        await loadAppointments();
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    // Carga inicial al abrir la página
+    document.addEventListener('DOMContentLoaded', loadAppointments);
   </script>
 </body>
 </html>

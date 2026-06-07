@@ -567,6 +567,19 @@
     function toggleNav() {
       document.getElementById('navLinks').classList.toggle('open');
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const links = document.querySelectorAll('.nav-links a');
+        links.forEach(a => {
+          if (a.getAttribute('href') && a.getAttribute('href').includes('login.html')) {
+            a.textContent = 'Mi Panel';
+            a.href = 'views/cliente-dashboard.html';
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

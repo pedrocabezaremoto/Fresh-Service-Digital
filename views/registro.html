@@ -20,7 +20,7 @@
     }
     .auth-left::before {
       content: '';
-      position: absolute inset: 0;
+      position: absolute; inset: 0;
       background: radial-gradient(ellipse 60% 70% at 80% 20%, rgba(56,189,248,0.12) 0%, transparent 60%);
     }
     .auth-left-deco {
@@ -142,6 +142,109 @@
     }
     .back-link:hover { color: var(--blue-600); }
 
+    /* ── TOAST NOTIFICATIONS ── */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toast {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: 16px 20px;
+      min-width: 300px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--text-900);
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast-success {
+      border-left: 4px solid var(--blue-600);
+    }
+    .toast-error {
+      border-left: 4px solid #EF4444;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 47, 73, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-container {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 90%;
+      max-width: 440px;
+      padding: 2.5rem;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+    }
+    .modal-overlay.show .modal-container {
+      transform: scale(1);
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--blue-800);
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .modal-desc {
+      font-size: 0.88rem;
+      color: var(--text-500);
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+    }
+    .otp-input {
+      width: 45px;
+      height: 50px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      border: 1.5px solid var(--ice-200);
+      border-radius: var(--radius-sm);
+      background: var(--ice-50);
+      outline: none;
+      color: var(--blue-800);
+      transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+    }
+    .otp-input:focus {
+      border-color: var(--blue-600) !important;
+      background: var(--white) !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
     @media (max-width: 768px) {
       .auth-wrapper { grid-template-columns: 1fr; }
       .auth-left { display: none; }
@@ -154,11 +257,14 @@
   <div class="auth-wrapper">
     <!-- LEFT -->
     <div class="auth-left">
+      <a href="../index.html" class="btn btn-outline-white btn-sm" style="position: absolute; top: 2rem; left: 6%; display: inline-flex; align-items: center; gap: 6px; z-index: 10; font-weight: 700; border-color: rgba(255,255,255,0.35);">
+        ← Volver al inicio
+      </a>
       <div class="auth-left-deco">❄</div>
-      <div class="auth-brand">
+      <a href="../index.html" class="auth-brand" style="text-decoration: none;">
         <div class="auth-brand-icon">❄</div>
         <div class="auth-brand-name">Fresh<span> Service Digital</span></div>
-      </div>
+      </a>
       <div class="auth-left-content">
         <div class="auth-left-tag">🎉 Es gratis</div>
         <h2 class="auth-left-title">Crea tu cuenta<br>y <span>solicita</span><br>tu servicio</h2>
@@ -187,7 +293,7 @@
         <p class="auth-form-subtitle">¿Ya tienes cuenta? <a href="login.html">Inicia sesión aquí</a></p>
 
         <div class="form-card">
-          <form action="solicitud.html">
+          <form id="registerForm">
             <div class="form-row-2">
               <div class="form-group">
                 <label class="form-label" for="nombre">Nombres</label>
@@ -208,14 +314,14 @@
               <label class="form-label" for="telefono">Número de WhatsApp</label>
               <div class="input-group">
                 <span class="input-prefix">🇻🇪 +58</span>
-                <input type="tel" id="telefono" class="form-control" placeholder="412-0000000" maxlength="12" required />
+                <input type="tel" id="telefono" class="form-control" placeholder="4120000000" maxlength="10" required />
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="password">Contraseña</label>
               <div class="pass-wrapper">
-                <input type="password" id="password" class="form-control" placeholder="Mínimo 8 caracteres" oninput="checkStrength(this.value)" required />
+                <input type="password" id="password" class="form-control" placeholder="Mínimo 6 caracteres" oninput="checkStrength(this.value)" required />
                 <button type="button" class="pass-toggle" onclick="togglePass('password', this)">👁</button>
               </div>
               <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
@@ -241,28 +347,66 @@
           </form>
         </div>
 
-        <a href="login.html" class="back-link">← Ya tengo cuenta, iniciar sesión</a>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem;">
+          <a href="login.html" class="back-link" style="margin-top: 0;">← Ya tengo cuenta, iniciar sesión</a>
+          <a href="../index.html" class="back-link" style="margin-top: 0;">← Volver al inicio</a>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- ── MODAL DE VERIFICACIÓN (OTP INPUTS) ── -->
+  <div class="modal-overlay" id="verificationModal">
+    <div class="modal-container">
+      <h3 class="modal-title">📨 Verifica tu cuenta</h3>
+      <p class="modal-desc">Hemos enviado un código de verificación de 6 dígitos a tu correo. Por favor, ingrésalo a continuación para activar tu cuenta.</p>
+      
+      <form id="verifyForm">
+        <div class="otp-inputs-wrapper" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 1.8rem;">
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          Activar mi cuenta ✓
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── NOTIFICACIONES TOAST ── -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    // Redirigir si ya tiene sesión activa
+    if (localStorage.getItem('user')) {
+      window.location.href = 'cliente-dashboard.html';
+    }
+
+    const API_URL = 'http://localhost:3000/users';
+
+    // Función para alternar visibilidad de contraseña
     function togglePass(id, btn) {
       const f = document.getElementById(id);
       f.type = f.type === 'password' ? 'text' : 'password';
       btn.textContent = f.type === 'password' ? '👁' : '🙈';
     }
+
+    // Validación visual de fortaleza de contraseña
     function checkStrength(val) {
       const fill = document.getElementById('strengthFill');
       const text = document.getElementById('strengthText');
       let score = 0;
-      if (val.length >= 8) score++;
+      if (val.length >= 6) score++;
       if (/[A-Z]/.test(val)) score++;
       if (/[0-9]/.test(val)) score++;
       if (/[^A-Za-z0-9]/.test(val)) score++;
       const map = [
         { w: '0%',   c: '#ccc',          t: 'Ingresa una contraseña', tc: 'var(--text-300)' },
-        { w: '25%',  c: 'var(--danger-text)',  t: 'Muy débil', tc: 'var(--danger-text)' },
+        { w: '25%',  c: 'var(--danger-text)',  t: 'Muy débil (mínimo 6 caracteres)', tc: 'var(--danger-text)' },
         { w: '50%',  c: '#F59E0B',        t: 'Débil',    tc: '#92400E' },
         { w: '75%',  c: '#3B82F6',        t: 'Aceptable',tc: 'var(--blue-700)' },
         { w: '100%', c: 'var(--success-text)',  t: 'Segura ✓',  tc: 'var(--success-text)' },
@@ -273,6 +417,167 @@
       text.textContent = m.t;
       text.style.color = m.tc;
     }
+
+    // Mostrar notificaciones Toast personalizadas
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '🚀' : '⚠️'}</span>
+        <div>${message}</div>
+      `;
+      container.appendChild(toast);
+      
+      // Activar animación
+      setTimeout(() => toast.classList.add('show'), 10);
+      
+      // Remover después de 3.5 segundos
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    // Lógica para auto-foco interactivo de inputs OTP
+    const otpInputs = document.querySelectorAll('.otp-input');
+    otpInputs.forEach((input, index) => {
+      // Al escribir
+      input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/\D/.test(value)) {
+          e.target.value = '';
+          return;
+        }
+        if (value && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+
+      // Al borrar con Backspace o navegar con flechas
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!e.target.value && index > 0) {
+            otpInputs[index - 1].value = '';
+            otpInputs[index - 1].focus();
+          } else {
+            e.target.value = '';
+          }
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+          otpInputs[index - 1].focus();
+        } else if (e.key === 'ArrowRight' && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+
+      // Soporte para pegar el código completo
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const data = e.clipboardData.getData('text').trim();
+        if (/^\d{6}$/.test(data)) {
+          otpInputs.forEach((inp, idx) => {
+            inp.value = data[idx];
+          });
+          otpInputs[5].focus();
+        }
+      });
+    });
+
+    // Interceptar envío del formulario de registro
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nombre = document.getElementById('nombre').value.trim();
+      const apellido = document.getElementById('apellido').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const rawPhone = document.getElementById('telefono').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPass = document.getElementById('confirmPass').value;
+
+      // Validar contraseñas
+      if (password.length < 6) {
+        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
+        return;
+      }
+      if (password !== confirmPass) {
+        showToast('Las contraseñas no coinciden', 'error');
+        return;
+      }
+
+      // Estructurar teléfono en formato internacional venezolano +58XXXXXXXXXX
+      const cleanPhone = rawPhone.replace(/\D/g, '');
+      const phone = `+58${cleanPhone}`;
+
+      try {
+        const response = await fetch(`${API_URL}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            firstName: nombre,
+            lastName: apellido,
+            phone
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al registrar el usuario');
+        }
+
+        showToast(data.message);
+        document.getElementById('verificationModal').classList.add('show');
+        
+        // Enfocar el primer input OTP
+        setTimeout(() => otpInputs[0].focus(), 150);
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+
+    // Interceptar verificación en el modal (concatenando casillas)
+    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const code = Array.from(otpInputs).map(inp => inp.value.trim()).join('');
+
+      if (code.length !== 6) {
+        showToast('Por favor, ingresa los 6 dígitos del código', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, code }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error de verificación');
+        }
+
+        showToast(data.message, 'success');
+        
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 2000);
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,58 +1,91 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentStatus } from '@prisma/client';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
 
 @Injectable()
 export class AppointmentsService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Completa una cita y descuenta el stock de repuestos utilizados.
-   * Si cualquiera de los dos pasos falla, la base de datos hace rollback automático.
+   * Crea una nueva cita de servicio y asocia el equipo de refrigeración de forma transaccional.
    */
-  async completeAppointment(appointmentId: string, usedParts: { partId: string; quantity: number }[]) {
+  async create(dto: CreateAppointmentDto) {
+    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription } = dto;
+
     return this.prisma.$transaction(async (tx) => {
-      
-      // 1. Cambiar el estado de la cita a COMPLETED
-      const appointment = await tx.appointment.update({
-        where: { id: appointmentId },
-        data: { status: AppointmentStatus.COMPLETED },
+      // 1. Crear la cita
+      const appointment = await tx.appointment.create({
+        data: {
+          clientId,
+          scheduledAt: new Date(scheduledAt),
+          notes,
+          status: AppointmentStatus.PENDING,
+        },
       });
 
-      // 2. Registrar el uso de repuestos y actualizar stock
-      for (const part of usedParts) {
-        // Consultar el stock actual
-        const sparePart = await tx.sparePart.findUnique({
-          where: { id: part.partId },
-        });
-
-        if (!sparePart) {
-          throw new BadRequestException(`El repuesto solicitado no existe: ID ${part.partId}`);
-        }
-
-        if (sparePart.stock < part.quantity) {
-          throw new BadRequestException(
-            `Stock insuficiente para el repuesto: ${sparePart.name}. Disponible: ${sparePart.stock}`
-          );
-        }
-
-        // Restar stock en la tabla spare_parts
-        await tx.sparePart.update({
-          where: { id: part.partId },
-          data: { stock: { decrement: part.quantity } },
-        });
-
-        // Registrar la asignación en la tabla part_assignments
-        await tx.partAssignment.create({
-          data: {
-            appointmentId: appointmentId,
-            partId: part.partId,
-            quantity: part.quantity,
-          },
-        });
-      }
+      // 2. Crear el equipo asociado a la cita
+      await tx.equipment.create({
+        data: {
+          appointmentId: appointment.id,
+          brand,
+          model,
+          btuCapacity: btuCapacity ? Number(btuCapacity) : null,
+          failureDescription,
+        },
+      });
 
       return appointment;
+    });
+  }
+
+  /**
+   * Obtiene todas las citas de la base de datos, incluyendo la relación
+   * con el cliente (User) y sus equipos asociados (Equipment).
+   */
+  async findAll() {
+    return this.prisma.appointment.findMany({
+      include: {
+        client: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            role: true,
+          },
+        },
+        equipment: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Obtiene el historial de citas de un cliente específico, incluyendo sus equipos.
+   */
+  async findByClient(clientId: string) {
+    return this.prisma.appointment.findMany({
+      where: { clientId },
+      include: {
+        equipment: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  /**
+   * Completa una cita cambiando su estado a COMPLETED.
+   */
+  async completeAppointment(appointmentId: string) {
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: AppointmentStatus.COMPLETED },
     });
   }
 }
