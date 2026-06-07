@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catálogo de Servicios – Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  
   <style>
     /* —— PAGE HERO —— */
     .page-hero {
@@ -622,6 +623,19 @@
 
   <script>
     function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const links = document.querySelectorAll('.nav-links a');
+        links.forEach(a => {
+          if (a.getAttribute('href') && a.getAttribute('href').includes('login.html')) {
+            a.textContent = 'Mi Panel';
+            a.href = 'cliente-dashboard.html';
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

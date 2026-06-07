@@ -384,14 +384,20 @@
             style="min-height:90px;"></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="horario">Horario Preferido de Atención</label>
-          <select id="horario" class="form-control">
-            <option value="">— Sin preferencia específica —</option>
-            <option value="manana">Mañana (8:00 AM – 12:00 PM)</option>
-            <option value="tarde">Tarde (1:00 PM – 5:00 PM)</option>
-            <option value="noche">Tarde-Noche (5:00 PM – 7:00 PM)</option>
-          </select>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="fechaCita">Fecha Preferida</label>
+            <input type="date" id="fechaCita" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="horario">Horario Preferido</label>
+            <select id="horario" class="form-control">
+              <option value="">— Sin preferencia específica —</option>
+              <option value="manana">Mañana (8:00 AM – 12:00 PM)</option>
+              <option value="tarde">Tarde (1:00 PM – 5:00 PM)</option>
+              <option value="noche">Tarde-Noche (5:00 PM – 7:00 PM)</option>
+            </select>
+          </div>
         </div>
 
         <!-- Submit -->
@@ -507,6 +513,70 @@
   </footer>
 
   <script>
+    const API_URL = 'http://localhost:3000/appointments';
+    let currentUser = null;
+
+    // Verificar sesión al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        alert('Debes iniciar sesión para solicitar un servicio.');
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = JSON.parse(userStr);
+
+      // Cambiar "Mi Cuenta" por "Mi Panel" si está logueado
+      const links = document.querySelectorAll('.nav-links a');
+      links.forEach(a => {
+        if (a.getAttribute('href') && a.getAttribute('href').includes('login.html')) {
+          a.textContent = 'Mi Panel';
+          a.href = 'cliente-dashboard.html';
+        }
+      });
+
+      // Rellenar automáticamente y deshabilitar los campos personales
+      document.getElementById('nombres').value = currentUser.firstName || '';
+      document.getElementById('nombres').disabled = true;
+      
+      document.getElementById('apellidos').value = currentUser.lastName || '';
+      document.getElementById('apellidos').disabled = true;
+      
+      document.getElementById('email').value = currentUser.email || '';
+      document.getElementById('email').disabled = true;
+
+      // Autocompletar el teléfono si existe en el usuario
+      if (currentUser.phone) {
+        const cleaned = currentUser.phone.replace('+58', '').replace(/[\s-]/g, '');
+        if (cleaned.length >= 10) {
+          const prefix = cleaned.substring(0, 3);
+          const num = cleaned.substring(3);
+          
+          const prefixSelect = document.getElementById('phonePrefix');
+          if (prefixSelect) {
+            prefixSelect.value = prefix;
+          }
+          const numInput = document.getElementById('phoneNum');
+          if (numInput) {
+            numInput.value = num;
+          }
+        } else if (cleaned.length === 7) {
+          const numInput = document.getElementById('phoneNum');
+          if (numInput) {
+            numInput.value = cleaned;
+          }
+        }
+      }
+
+      // Configurar fecha mínima y valor inicial del date picker (hoy)
+      const datePicker = document.getElementById('fechaCita');
+      if (datePicker) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        datePicker.min = todayStr;
+        datePicker.value = todayStr;
+      }
+    });
+
     function toggleNav() { document.getElementById('navLinks').classList.toggle('open'); }
 
     function formatCedula(input) {
@@ -514,27 +584,98 @@
       input.value = val;
     }
 
-    function submitForm() {
-      const fields = ['nombres','apellidos','cedNum','email','phoneNum','direccion','tipoEquipo','tipoServicio'];
+    async function submitForm() {
+      if (!currentUser) {
+        alert('Sesión no válida. Por favor inicia sesión de nuevo.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const fields = ['cedNum', 'phoneNum', 'direccion', 'tipoEquipo', 'tipoServicio', 'fechaCita'];
       let valid = true;
       fields.forEach(id => {
         const el = document.getElementById(id);
-        if (!el.value.trim()) {
-          el.style.borderColor = 'var(--danger-text)';
+        if (!el || !el.value.trim()) {
+          if (el) el.style.borderColor = 'var(--danger-text)';
           valid = false;
         } else {
-          el.style.borderColor = '';
+          if (el) el.style.borderColor = '';
         }
       });
+
       if (!valid) {
         alert('Por favor completa todos los campos obligatorios.');
         return;
       }
-      const ref = Math.floor(10000 + Math.random() * 90000);
-      document.getElementById('refNum').textContent = ref;
-      document.getElementById('mainForm').style.display = 'none';
-      document.getElementById('successOverlay').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Recopilar datos
+      const cedTipo = document.getElementById('cedTipo').value;
+      const cedNum = document.getElementById('cedNum').value;
+      const phonePrefix = document.getElementById('phonePrefix').value;
+      const phoneNum = document.getElementById('phoneNum').value;
+      const direccion = document.getElementById('direccion').value.trim();
+      const tipoEquipo = document.getElementById('tipoEquipo').value;
+      const tipoServicio = document.getElementById('tipoServicio').value;
+      const descripcion = document.getElementById('descripcion').value.trim();
+      const horario = document.getElementById('horario').value;
+      const fechaCita = document.getElementById('fechaCita').value; // YYYY-MM-DD
+
+      // Formatear scheduledAt en ISO 8601
+      let timeStr = '10:00:00';
+      if (horario === 'manana') timeStr = '09:00:00';
+      else if (horario === 'tarde') timeStr = '14:00:00';
+      else if (horario === 'noche') timeStr = '18:00:00';
+      const scheduledAt = `${fechaCita}T${timeStr}.000Z`;
+
+      // Brand y Model para el Equipment
+      const brand = tipoEquipo;
+      const model = tipoServicio;
+
+      // Calcular capacidad en BTU
+      let btuCapacity = null;
+      if (tipoEquipo === 'ton1') btuCapacity = 12000;
+      else if (tipoEquipo === 'ton2') btuCapacity = 24000;
+      else if (tipoEquipo === 'ton3') btuCapacity = 36000;
+
+      // Notas estructuradas del servicio
+      const notes = `Cédula: ${cedTipo}-${cedNum}\nWhatsApp: +58 ${phonePrefix}-${phoneNum}\nDirección: ${direccion}\nHorario Preferido: ${horario || 'Sin preferencia'}`;
+
+      // Armar el payload para el backend
+      const payload = {
+        clientId: currentUser.id,
+        scheduledAt: scheduledAt,
+        brand: brand,
+        model: model,
+        btuCapacity: btuCapacity,
+        failureDescription: descripcion || 'Sin descripción adicional',
+        notes: notes
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error al enviar la solicitud al servidor');
+        }
+
+        // Mostrar estado de éxito y la referencia (primera parte del UUID)
+        const ref = data.id.substring(0, 8).toUpperCase();
+        document.getElementById('refNum').textContent = ref;
+        document.getElementById('mainForm').style.display = 'none';
+        document.getElementById('successOverlay').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (error) {
+        alert('Hubo un problema al procesar tu solicitud: ' + error.message);
+      }
     }
   </script>
 </body>

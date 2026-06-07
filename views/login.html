@@ -237,6 +237,109 @@
     }
     .back-home:hover { color: var(--blue-600); }
 
+    /* ── TOAST NOTIFICATIONS ── */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toast {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: 16px 20px;
+      min-width: 300px;
+      max-width: 420px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--text-900);
+    }
+    .toast.show {
+      transform: translateX(0);
+    }
+    .toast-success {
+      border-left: 4px solid var(--blue-600);
+    }
+    .toast-error {
+      border-left: 4px solid #EF4444;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 47, 73, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-container {
+      background: var(--white);
+      border: 1px solid var(--ice-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 90%;
+      max-width: 440px;
+      padding: 2.5rem;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+    }
+    .modal-overlay.show .modal-container {
+      transform: scale(1);
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--blue-800);
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .modal-desc {
+      font-size: 0.88rem;
+      color: var(--text-500);
+      line-height: 1.55;
+      margin-bottom: 1.5rem;
+    }
+    .otp-input {
+      width: 45px;
+      height: 50px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      border: 1.5px solid var(--ice-200);
+      border-radius: var(--radius-sm);
+      background: var(--ice-50);
+      outline: none;
+      color: var(--blue-800);
+      transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+    }
+    .otp-input:focus {
+      border-color: var(--blue-600) !important;
+      background: var(--white) !important;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 768px) {
       .auth-wrapper { grid-template-columns: 1fr; }
@@ -255,11 +358,14 @@
   <div class="auth-wrapper">
     <!-- LEFT DECORATIVE -->
     <div class="auth-left">
+      <a href="../index.html" class="btn btn-outline-white btn-sm" style="position: absolute; top: 2rem; left: 6%; display: inline-flex; align-items: center; gap: 6px; z-index: 10; font-weight: 700; border-color: rgba(255,255,255,0.35);">
+        ← Volver al inicio
+      </a>
       <div class="auth-left-deco">❄</div>
-      <div class="auth-brand">
+      <a href="../index.html" class="auth-brand" style="text-decoration: none;">
         <div class="auth-brand-icon">❄</div>
         <div class="auth-brand-name">Fresh<span> Service Digital</span></div>
-      </div>
+      </a>
       <div class="auth-left-content">
         <div class="auth-left-tag">🔒 Área de Clientes</div>
         <h2 class="auth-left-title">Bienvenido<br>de <span>vuelta</span></h2>
@@ -279,7 +385,7 @@
         <h1 class="auth-form-title">Iniciar Sesión</h1>
         <p class="auth-form-subtitle">¿No tienes cuenta? <a href="registro.html">Regístrate gratis</a></p>
 
-        <form action="solicitud.html">
+        <form id="loginForm">
           <div class="form-group">
             <label class="form-label" for="email">Correo Electrónico</label>
             <input type="email" id="email" class="form-control" placeholder="tucorreo@ejemplo.com" required />
@@ -327,7 +433,40 @@
     </div>
   </div>
 
+  <!-- ── MODAL DE ACTIVACIÓN (OTP INPUTS) ── -->
+  <div class="modal-overlay" id="verificationModal">
+    <div class="modal-container">
+      <h3 class="modal-title">🔐 Activa tu cuenta</h3>
+      <p class="modal-desc">Tu cuenta aún no está activada. Introduce el código de 6 dígitos que se te envió para activarla de inmediato.</p>
+      
+      <form id="verifyForm">
+        <div class="otp-inputs-wrapper" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 1.8rem;">
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          Activar e iniciar sesión ✓
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── NOTIFICACIONES TOAST ── -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    // Redirigir si ya tiene sesión activa
+    if (localStorage.getItem('user')) {
+      window.location.href = 'cliente-dashboard.html';
+    }
+
+    const API_URL = 'http://localhost:3000/users';
+
+    // Alternar visibilidad de contraseña
     function togglePass(id, btn) {
       const field = document.getElementById(id);
       if (field.type === 'password') {
@@ -338,6 +477,151 @@
         btn.textContent = '👁';
       }
     }
+
+    // Mostrar notificaciones Toast personalizadas
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '🚀' : '⚠️'}</span>
+        <div>${message}</div>
+      `;
+      container.appendChild(toast);
+      
+      setTimeout(() => toast.classList.add('show'), 10);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+
+    // Lógica para auto-foco interactivo de inputs OTP
+    const otpInputs = document.querySelectorAll('.otp-input');
+    otpInputs.forEach((input, index) => {
+      // Al escribir
+      input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (/\D/.test(value)) {
+          e.target.value = '';
+          return;
+        }
+        if (value && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+
+      // Al borrar con Backspace o navegar con flechas
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace') {
+          if (!e.target.value && index > 0) {
+            otpInputs[index - 1].value = '';
+            otpInputs[index - 1].focus();
+          } else {
+            e.target.value = '';
+          }
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft' && index > 0) {
+          otpInputs[index - 1].focus();
+        } else if (e.key === 'ArrowRight' && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+
+      // Soporte para pegar el código completo
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const data = e.clipboardData.getData('text').trim();
+        if (/^\d{6}$/.test(data)) {
+          otpInputs.forEach((inp, idx) => {
+            inp.value = data[idx];
+          });
+          otpInputs[5].focus();
+        }
+      });
+    });
+
+    // Interceptar envío del formulario de login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_URL}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 401 && data.message.includes('verificar')) {
+            showToast('Debes activar tu cuenta antes de ingresar', 'error');
+            document.getElementById('verificationModal').classList.add('show');
+            setTimeout(() => otpInputs[0].focus(), 150);
+            return;
+          }
+          throw new Error(data.message || 'Error al iniciar sesión');
+        }
+
+        // Guardar sesión en localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+        showToast(data.message, 'success');
+
+        setTimeout(() => {
+          window.location.href = 'cliente-dashboard.html';
+        }, 1200);
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+
+    // Interceptar el envío del modal de verificación (concatenando casillas)
+    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const code = Array.from(otpInputs).map(inp => inp.value.trim()).join('');
+
+      if (code.length !== 6) {
+        showToast('Por favor, ingresa los 6 dígitos del código', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, code }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Error de verificación');
+        }
+
+        showToast(data.message, 'success');
+        
+        // Cerrar modal
+        document.getElementById('verificationModal').classList.remove('show');
+        otpInputs.forEach(inp => inp.value = '');
+        
+        showToast('Cuenta activada. Ya puedes presionar "Ingresar" para entrar.', 'success');
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
   </script>
 </body>
 </html>
