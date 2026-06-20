@@ -130,11 +130,7 @@ input, select, textarea { font-family: var(--font-body); }
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  animation: flake-spin 30s linear infinite;
   box-shadow: 0 4px 12px rgba(2,132,199,0.3);
-  will-change: transform;
-  transform: translateZ(0);
-  isolation: isolate;
 }
 @keyframes flake-spin {
   from { transform: rotate(0deg); }
