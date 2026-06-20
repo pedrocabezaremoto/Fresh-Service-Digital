@@ -31,25 +31,19 @@
 
 ## 🟡 PENDIENTE DE VERIFICACIÓN — Fixes aplicados 2026-06-20
 
-### Fix #1: Navbar Android (composite layer)
+### Fix #1: Navbar Android (composite layer) — RESUELTO ✅
 - Agregado `will-change: transform; transform: translateZ(0); -webkit-transform: translateZ(0)` al `.navbar`
-- Esto fuerza al navegador a crear una capa GPU dedicada para el navbar
-- **Estado:** Pendiente confirmar en dispositivo Android real
+- **Verificado en Android real:** Navbar visible y funcional
 
-### Fix #2: Flickering/Parpadeo
-- **Causa confirmada:** Dark Reader (extensión) + animaciones simultáneas sin aislamiento GPU
-- **Solución aplicada:**
-  - `will-change: transform` + `translateZ(0)` en `.carousel-track` y `.slide-decor`
-  - `isolation: isolate` en `.brand-icon`
-  - Velocidad de logo reducida: 10s → 30s (giro imperceptible)
-  - Decoraciones slide: 20s → 40s
-- **Diagnóstico:** Si flickering persiste CON Dark Reader pero desaparece SIN Dark Reader → no es bug del código
+### Fix #2: Flickering/Parpadeo — CERRADO ✅
+- **Causa confirmada:** Dark Reader (extensión del navegador) interfiere con animaciones CSS
+- **En Android:** No hay flickering (confirmado con screenshots)
+- **En Desktop con Dark Reader:** Persiste pero es culpa de la extensión
+- **Solución final:** Animación del logo eliminada completamente. Decoraciones de fondo a 60s (imperceptibles)
+- **Decisión:** No se persigue más. Es problema de la extensión, no del código
 
-### Fix #3: solicitud.html alert
-- María agregó verificación de `localStorage.getItem('user')` que redirige a login
-- El backend (`localhost:3000`) no está en producción → siempre fallaba
-- **Solución:** Modo demo — si no hay sesión, crea usuario demo local sin redirigir
-- Cuando el backend esté en producción, se reactiva la verificación real
+### Fix #3: solicitud.html alert — RESUELTO ✅
+- Modo demo activado: si no hay sesión en localStorage, usa usuario demo sin redirigir
 
 ---
 
@@ -80,9 +74,10 @@ Fresh-Service-Digital/
 
 ## 🔴 Bugs conocidos pendientes
 
-1. **Navbar Android** — fix aplicado, pendiente verificar en device real
-2. **Flickering en desktop** — verificar con Dark Reader desactivado
+1. ~~Navbar Android~~ — ✅ RESUELTO
+2. ~~Flickering en desktop~~ — ✅ CERRADO (es Dark Reader, no el código)
 3. **Backend no desplegado** — `localhost:3000` no funciona en GitHub Pages
+4. **Inconsistencia de tema** — login/solicitud tienen fondo oscuro, index/catálogo fondo claro
 
 ---
 
@@ -90,10 +85,11 @@ Fresh-Service-Digital/
 
 | Prioridad | Tarea | Estado |
 |---|---|---|
-| 1 | Verificar fixes visuales en Android | ⏳ |
-| 2 | Responsividad completa (375px-414px) | 🔜 |
+| 1 | Verificar fixes visuales en Android | ✅ Hecho |
+| 2 | Responsividad completa (375px-414px) | 🔜 Próximo |
 | 3 | Polish (favicon, meta tags, datos contacto) | 🔜 |
-| 4 | Backend Supabase (o evaluar NestJS de María) | 🔜 |
+| 4 | Decisión backend: Supabase vs continuar NestJS de María | 🔜 |
+| 5 | Deploy del backend (si se decide continuar) | 🔜 |
 
 ---
 

@@ -168,19 +168,82 @@
 
 | Fix | Archivo | Cambio |
 |-----|---------|--------|
-| Logo gira demasiado rápido | `styles.css` | `flake-spin` de 10s → 30s |
-| Logo gira rápido en login | `views/login.html` | `flake-spin` de 10s → 30s |
-| Decoración slide rápida | `index.html` | `flake-spin` de 20s → 40s |
+| Logo giraba como loco | `styles.css` | Animación `flake-spin` ELIMINADA del .brand-icon |
+| Logo en auth pages | `views/login,registro,recuperar.html` | Animación ELIMINADA de brand-icons |
+| Decoraciones de fondo | Todas las vistas | 20-22s → 60s (imperceptible) |
 | Navbar invisible Android | `styles.css` | `will-change: transform` + `translateZ(0)` en `.navbar` |
-| Flickering carousel | `index.html` | `will-change: transform` + `translateZ(0)` en `.carousel-track` y `.slide-decor` |
-| Brand-icon stacking | `styles.css` | `isolation: isolate` + `translateZ(0)` en `.brand-icon` |
+| Flickering carousel | `index.html` | `will-change: transform` + `translateZ(0)` en `.carousel-track` |
 | Overflow horizontal | `styles.css` | `overflow-x: clip` en `html` |
-| Alert bloquea solicitud | `views/solicitud.html` | Modo demo: si no hay sesión, crea usuario demo local |
+| Alert bloquea solicitud | `views/solicitud.html` | Modo demo sin sesión obligatoria |
+
+### Nota sobre flickering en desktop:
+- **CONFIRMADO:** El parpadeo del logo persiste SOLO en desktop con Dark Reader activo
+- **EN ANDROID:** No hay flickering. Todo funciona correctamente
+- **Decisión:** El problema es de la extensión Dark Reader, no del código. Se eliminó la animación del logo para evitar conflictos. No se persigue más este bug.
 
 ### Problemas detectados del código de María:
 1. Backend en `localhost:3000` — no funciona en GitHub Pages (deploy estático)
 2. Alert "Debes iniciar sesión" impedía ver solicitud.html sin backend
-3. Tema oscuro inconsistente entre vistas (login/solicitud oscuro, catálogo claro)
+3. Tema oscuro inconsistente entre vistas (login/solicitud oscuro, catálogo/index claro)
+4. No hay JWT/tokens — la sesión se guarda en localStorage sin expiración ni seguridad
+5. Password hasheado con SHA-256 (inseguro para producción, debería ser bcrypt)
+
+---
+
+## 🔍 Análisis del Backend de María (NestJS + Prisma + PostgreSQL)
+
+### Stack:
+- **Runtime:** NestJS 10 (Node.js)
+- **ORM:** Prisma 6.19
+- **DB:** PostgreSQL (requiere `DATABASE_URL` en .env)
+- **Validación:** class-validator + class-transformer
+- **Puerto:** 3000
+
+### Endpoints disponibles:
+
+| Método | Ruta | Función |
+|--------|------|---------|
+| POST | `/users/register` | Registro (email, password, firstName, lastName, phone?) |
+| POST | `/users/verify` | Verificar email con código 6 dígitos |
+| POST | `/users/login` | Login (retorna datos del usuario) |
+| POST | `/appointments` | Crear cita (clientId, scheduledAt, brand, model, failureDescription) |
+| GET | `/appointments` | Listar todas las citas (admin) |
+| GET | `/appointments/client/:clientId` | Citas de un cliente |
+| PATCH | `/appointments/:id/complete` | Marcar cita como completada |
+
+### Modelos de datos:
+
+**User:** id, email, password(sha256), firstName, lastName, phone, role(CLIENT/TECHNICIAN/ADMIN), isVerified, verificationCode
+
+**Appointment:** id, clientId→User, status(PENDING/ASSIGNED/IN_PROGRESS/COMPLETED/CANCELLED), scheduledAt, notes
+
+**Equipment:** id, appointmentId→Appointment, brand, model, serialNumber, btuCapacity, failureDescription
+
+### Evaluación honesta:
+
+**Lo bueno:**
+- Estructura NestJS limpia y modular
+- Prisma bien configurado con migraciones
+- Validación de DTOs con mensajes en español
+- Transacciones para crear cita + equipo atómicamente
+- CORS habilitado
+
+**Lo que falta / problemas:**
+1. ❌ **Sin JWT** — No hay tokens de autenticación. El frontend guarda el user en localStorage pero no hay middleware de auth en el backend
+2. ❌ **SHA-256 para passwords** — Inseguro. Debería ser bcrypt con salt
+3. ❌ **Sin .env** — No hay archivo de configuración (DATABASE_URL necesario)
+4. ❌ **Sin deploy** — Solo funciona en localhost:3000
+5. ❌ **Sin guards/middleware** — Cualquiera puede crear citas o ver todas las citas
+6. ❌ **Verificación por consola** — El código de verificación se imprime en terminal (no se envía por email/SMS)
+7. ❌ **Sin relación con el catálogo** — No hay tabla de servicios/precios
+
+### Decisión pendiente para Fase 2:
+
+| Opción | Pros | Contras |
+|--------|------|---------|
+| **Continuar con NestJS de María** | Ya existe código, María lo conoce | Necesita deploy propio (Railway/Render), requiere mucho trabajo de seguridad |
+| **Migrar a Supabase** | Auth integrado (JWT), free tier, DB PostgreSQL, deploy incluido, Row Level Security | Hay que reescribir, María perdería su trabajo |
+| **Híbrido** | Usar Supabase para auth + DB, mantener estructura de datos de María | Mejor balance, menor riesgo |
 
 ---
 
@@ -198,4 +261,4 @@
 | `cee1f079` | María: .gitignore node_modules | ✅ |
 | `71d0a62f` | María: Backend login + appointments | ✅ |
 | `a55be36a` | María: Merge PR #2 | ✅ |
-| pendiente | Pepito: fixes visuales 2026-06-20 | ⏳ Push pendiente |
+| pendiente | Pepito: fixes visuales + eliminación animación logo | ⏳ Push pendiente |
