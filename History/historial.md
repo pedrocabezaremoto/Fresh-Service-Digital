@@ -144,6 +144,46 @@
 
 ---
 
+## 🔀 Fase 4 — Merge de Backend (María) + Fixes visuales
+
+**Fecha:** 2026-06-20
+
+### Commits de María integrados (6 commits):
+- `39e2c2b0` — [FIX] CSS: corregir responsividad de menú en móvil y tablet
+- `84149a1f` — [ADD] Backend NestJS + Prisma (modelos DB)
+- `cee1f079` — chore: .gitignore para node_modules y build outputs
+- `cdf2f7fc` — Merge PR #1 (database)
+- `71d0a62f` — [ADD] Backend: Login + Agenda de citas para clientes
+- `a55be36a` — Merge PR #2 (login)
+
+### Cambios estructurales de María:
+- **Carpeta `views/`** creada — todos los HTML (excepto index) movidos allí
+- **Carpeta `backend/`** — NestJS + Prisma con endpoints de autenticación y citas
+- **`views/cliente-dashboard.html`** — nueva vista de panel del cliente
+- **`views/solicitud.html`** — conectado a `localhost:3000/appointments` con verificación de sesión
+- **`views/login.html`** — conectado a backend para auth real
+- **Tema oscuro** aplicado a varias vistas (backgrounds oscuros)
+
+### Fixes aplicados por Pepito (2026-06-20):
+
+| Fix | Archivo | Cambio |
+|-----|---------|--------|
+| Logo gira demasiado rápido | `styles.css` | `flake-spin` de 10s → 30s |
+| Logo gira rápido en login | `views/login.html` | `flake-spin` de 10s → 30s |
+| Decoración slide rápida | `index.html` | `flake-spin` de 20s → 40s |
+| Navbar invisible Android | `styles.css` | `will-change: transform` + `translateZ(0)` en `.navbar` |
+| Flickering carousel | `index.html` | `will-change: transform` + `translateZ(0)` en `.carousel-track` y `.slide-decor` |
+| Brand-icon stacking | `styles.css` | `isolation: isolate` + `translateZ(0)` en `.brand-icon` |
+| Overflow horizontal | `styles.css` | `overflow-x: clip` en `html` |
+| Alert bloquea solicitud | `views/solicitud.html` | Modo demo: si no hay sesión, crea usuario demo local |
+
+### Problemas detectados del código de María:
+1. Backend en `localhost:3000` — no funciona en GitHub Pages (deploy estático)
+2. Alert "Debes iniciar sesión" impedía ver solicitud.html sin backend
+3. Tema oscuro inconsistente entre vistas (login/solicitud oscuro, catálogo claro)
+
+---
+
 ## 📊 Estado de Commits en GitHub
 
 | Commit | Descripción | Estado |
@@ -153,6 +193,9 @@
 | `d9459c1` | Fix grid catálogo mobile | ✅ |
 | `0bfe479` | Fix overflow-x html | ✅ |
 | `fc0b003` | Fix navbar + hero height móvil | ✅ |
-| posterior | Fix navbar: solid bg + overflow-x clip | ✅ |
-| posterior | Fix Inter font + premium redesign | ✅ |
-| posterior | Fix navbar fixed + backdrop-filter removal | ✅ pendiente verificar |
+| `39e2c2b0` | María: CSS navbar responsivo | ✅ |
+| `84149a1f` | María: Backend NestJS + Prisma | ✅ |
+| `cee1f079` | María: .gitignore node_modules | ✅ |
+| `71d0a62f` | María: Backend login + appointments | ✅ |
+| `a55be36a` | María: Merge PR #2 | ✅ |
+| pendiente | Pepito: fixes visuales 2026-06-20 | ⏳ Push pendiente |

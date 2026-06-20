@@ -520,8 +520,8 @@
     document.addEventListener('DOMContentLoaded', () => {
       const userStr = localStorage.getItem('user');
       if (!userStr) {
-        alert('Debes iniciar sesión para solicitar un servicio.');
-        window.location.href = 'login.html';
+        // Backend no disponible en demo — permitir uso sin sesión
+        currentUser = { id: 'demo', firstName: '', lastName: '', email: '', phone: '' };
         return;
       }
       currentUser = JSON.parse(userStr);
