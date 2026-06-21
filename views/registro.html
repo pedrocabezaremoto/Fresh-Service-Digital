@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Crear Cuenta — Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   <style>
     body { background: var(--blue-900); min-height: 100vh; padding-top: 0; }
     .page-bg { display: none; }
@@ -254,6 +260,8 @@
   </style>
 </head>
 <body>
+  <button class="theme-toggle" aria-label="Cambiar tema" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000; background: var(--white); border: 1px solid var(--ice-200); font-size: 1.15rem; cursor: pointer; padding: 12px; border-radius: 50%; color: var(--text-700); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: background 0.2s, transform 0.1s;">🌙</button>
+
   <div class="auth-wrapper">
     <!-- LEFT -->
     <div class="auth-left">
@@ -355,25 +363,16 @@
     </div>
   </div>
 
-  <!-- ── MODAL DE VERIFICACIÓN (OTP INPUTS) ── -->
+  <!-- ── MODAL DE VERIFICACIÓN (INFORMATIVO) ── -->
   <div class="modal-overlay" id="verificationModal">
-    <div class="modal-container">
-      <h3 class="modal-title">📨 Verifica tu cuenta</h3>
-      <p class="modal-desc">Hemos enviado un código de verificación de 6 dígitos a tu correo. Por favor, ingrésalo a continuación para activar tu cuenta.</p>
+    <div class="modal-container" style="text-align: center;">
+      <div style="font-size: 3.5rem; margin-bottom: 1.25rem;">📬</div>
+      <h3 class="modal-title">¡Verifica tu cuenta!</h3>
+      <p class="modal-desc" style="margin-bottom: 2rem;">Hemos enviado un enlace de activación único a tu correo electrónico. Por favor, haz clic en el enlace para activar tu cuenta e ingresar al sistema.</p>
       
-      <form id="verifyForm">
-        <div class="otp-inputs-wrapper" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 1.8rem;">
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-          <input type="text" class="otp-input" maxlength="1" pattern="\d" required />
-        </div>
-        <button type="submit" class="btn btn-primary btn-full btn-lg">
-          Activar mi cuenta ✓
-        </button>
-      </form>
+      <a href="login.html" class="btn btn-primary btn-full btn-lg" style="text-decoration: none; display: block; text-align: center; box-sizing: border-box;">
+        Entendido, ir al Login ✓
+      </a>
     </div>
   </div>
 
@@ -439,51 +438,6 @@
       }, 3500);
     }
 
-    // Lógica para auto-foco interactivo de inputs OTP
-    const otpInputs = document.querySelectorAll('.otp-input');
-    otpInputs.forEach((input, index) => {
-      // Al escribir
-      input.addEventListener('input', (e) => {
-        const value = e.target.value;
-        if (/\D/.test(value)) {
-          e.target.value = '';
-          return;
-        }
-        if (value && index < otpInputs.length - 1) {
-          otpInputs[index + 1].focus();
-        }
-      });
-
-      // Al borrar con Backspace o navegar con flechas
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace') {
-          if (!e.target.value && index > 0) {
-            otpInputs[index - 1].value = '';
-            otpInputs[index - 1].focus();
-          } else {
-            e.target.value = '';
-          }
-          e.preventDefault();
-        } else if (e.key === 'ArrowLeft' && index > 0) {
-          otpInputs[index - 1].focus();
-        } else if (e.key === 'ArrowRight' && index < otpInputs.length - 1) {
-          otpInputs[index + 1].focus();
-        }
-      });
-
-      // Soporte para pegar el código completo
-      input.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const data = e.clipboardData.getData('text').trim();
-        if (/^\d{6}$/.test(data)) {
-          otpInputs.forEach((inp, idx) => {
-            inp.value = data[idx];
-          });
-          otpInputs[5].focus();
-        }
-      });
-    });
-
     // Interceptar envío del formulario de registro
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -532,47 +486,6 @@
 
         showToast(data.message);
         document.getElementById('verificationModal').classList.add('show');
-        
-        // Enfocar el primer input OTP
-        setTimeout(() => otpInputs[0].focus(), 150);
-
-      } catch (error) {
-        showToast(error.message, 'error');
-      }
-    });
-
-    // Interceptar verificación en el modal (concatenando casillas)
-    document.getElementById('verifyForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const email = document.getElementById('email').value.trim();
-      const code = Array.from(otpInputs).map(inp => inp.value.trim()).join('');
-
-      if (code.length !== 6) {
-        showToast('Por favor, ingresa los 6 dígitos del código', 'error');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_URL}/verify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email, code }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Error de verificación');
-        }
-
-        showToast(data.message, 'success');
-        
-        setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 2000);
 
       } catch (error) {
         showToast(error.message, 'error');

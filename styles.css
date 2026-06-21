@@ -171,7 +171,7 @@ input, select, textarea { font-family: var(--font-body); }
   align-items: center;
   gap: 7px;
   background: var(--blue-600);
-  color: var(--white) !important;
+  color: #FFFFFF !important;
   padding: 9px 22px;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
@@ -221,7 +221,7 @@ input, select, textarea { font-family: var(--font-body); }
 }
 .btn-primary {
   background: var(--blue-600);
-  color: var(--white);
+  color: #FFFFFF;
   border-color: var(--blue-600);
   box-shadow: 0 4px 16px rgba(2,132,199,0.35);
 }
@@ -242,7 +242,7 @@ input, select, textarea { font-family: var(--font-body); }
 }
 .btn-outline-white {
   background: transparent;
-  color: var(--white);
+  color: #FFFFFF;
   border-color: rgba(255,255,255,0.7);
   backdrop-filter: blur(6px);
 }
@@ -404,7 +404,7 @@ select.form-control {
 /* === FOOTER === */
 .footer {
   background: var(--blue-950);
-  color: var(--ice-200);
+  color: #BAE6FD; /* Static ice-200 color to prevent turning dark blue in dark mode */
   padding: 60px 5% 28px;
 }
 .footer-grid {
@@ -418,13 +418,13 @@ select.form-control {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.1rem;
-  color: var(--white);
+  color: #FFFFFF; /* Always white */
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 8px;
 }
-.footer-desc { font-size: 0.87rem; color: var(--ice-300); line-height: 1.75; }
+.footer-desc { font-size: 0.87rem; color: #7DD3FC; line-height: 1.75; } /* Static ice-300 color */
 .footer-heading {
   font-family: var(--font-display);
   font-size: 0.78rem;
@@ -435,14 +435,14 @@ select.form-control {
   margin-bottom: 1rem;
 }
 .footer-links { display: flex; flex-direction: column; gap: 0.55rem; }
-.footer-links a { font-size: 0.88rem; color: var(--ice-300); transition: color 0.2s; }
-.footer-links a:hover { color: var(--white); }
+.footer-links a { font-size: 0.88rem; color: #7DD3FC; transition: color 0.2s; } /* Static ice-300 color */
+.footer-links a:hover { color: #FFFFFF; } /* Always white on hover */
 .footer-bottom {
   border-top: 1px solid rgba(186,230,253,0.12);
   padding-top: 1.5rem;
   text-align: center;
   font-size: 0.82rem;
-  color: var(--ice-300);
+  color: #7DD3FC; /* Static ice-300 color */
   max-width: var(--container);
   margin: 0 auto;
 }
@@ -503,4 +503,169 @@ select.form-control {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* =====================================================
+   MODO OSCURO (Ice-Blue Dark Theme)
+   ===================================================== */
+html.dark-mode {
+  --white:        #082F49;       /* Cambia fondos blancos al azul más oscuro (anterior --blue-950) */
+  --ice-50:       #061F30;       /* Fondo global de la app */
+  --ice-100:      #0C4A6E;       /* Fondos secundarios oscuros (anterior --blue-900) */
+  --ice-200:      #075985;       /* Bordes (anterior --blue-800) */
+  --ice-300:      #0284C7;       /* Acentos */
+  --text-900:     #F0F9FF;       /* Texto principal claro (anterior --ice-50) */
+  --text-700:     #E0F2FE;       /* Texto secundario (anterior --ice-100) */
+  --text-500:     #BAE6FD;       /* Texto terciario (anterior --ice-200) */
+  --text-300:     #4A7A9B;       /* Texto muted (anterior --text-500) */
+
+  --success-bg:   #064E3B;
+  --success-text: #34D399;
+  --warning-bg:   #78350F;
+  --warning-text: #FBBF24;
+  --info-bg:      #1E3A8A;
+  --info-text:    #60A5FA;
+  --danger-bg:    #7F1D1D;
+  --danger-text:  #F87171;
+  
+  --shadow-xs:    0 1px 3px rgba(0,0,0,0.3);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md:    0 4px 20px rgba(0,0,0,0.45);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow-xl:    0 16px 56px rgba(0,0,0,0.6);
+}
+
+html.dark-mode body {
+  background: var(--ice-50);
+  color: var(--text-900);
+}
+
+/* Ajustes específicos de componentes en modo oscuro */
+html.dark-mode .navbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--ice-200);
+}
+html.dark-mode .navbar-brand .brand-text {
+  color: var(--text-900);
+}
+html.dark-mode .nav-links a {
+  color: var(--text-700);
+}
+html.dark-mode .nav-links a:hover {
+  color: var(--blue-400);
+}
+html.dark-mode .nav-links a::after {
+  background: var(--blue-400);
+}
+html.dark-mode .navbar .hamburger span {
+  background: var(--text-700);
+}
+html.dark-mode .page-bg {
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 10%, rgba(12,74,110,0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 90%, rgba(8,47,73,0.5) 0%, transparent 60%),
+    var(--ice-50);
+}
+html.dark-mode .btn-secondary {
+  background: var(--ice-100);
+  color: var(--text-900);
+  border-color: var(--ice-200);
+}
+html.dark-mode .btn-secondary:hover {
+  background: var(--ice-200);
+}
+html.dark-mode .service-card-header {
+  background: linear-gradient(135deg, var(--ice-100), var(--white));
+  border-bottom-color: var(--ice-200);
+}
+html.dark-mode .service-card-footer {
+  background: var(--ice-50);
+  border-top-color: var(--ice-100);
+}
+html.dark-mode .service-price strong {
+  color: var(--blue-400);
+}
+html.dark-mode .tons-badge {
+  background: var(--ice-100);
+  color: var(--text-900);
+  border-color: var(--ice-200);
+}
+html.dark-mode .section-sep {
+  border-top-color: var(--ice-200);
+}
+html.dark-mode .filter-tabs {
+  background: var(--white);
+  border-bottom-color: var(--ice-200);
+}
+html.dark-mode .filter-tab {
+  color: var(--text-500);
+}
+html.dark-mode .filter-tab:hover {
+  color: var(--blue-400);
+}
+html.dark-mode .filter-tab.active {
+  color: var(--blue-400);
+  border-bottom-color: var(--blue-400);
+}
+html.dark-mode .trust-strip {
+  background: var(--white);
+  border-top-color: var(--ice-200);
+  border-bottom-color: var(--ice-200);
+}
+html.dark-mode .trust-item {
+  color: var(--text-700);
+}
+html.dark-mode .form-card {
+  background: var(--white);
+  border-color: var(--ice-200);
+}
+html.dark-mode .otp-input {
+  background: var(--ice-100) !important;
+  border-color: var(--ice-200) !important;
+  color: var(--text-900) !important;
+}
+html.dark-mode .otp-input:focus {
+  border-color: var(--blue-400) !important;
+}
+html.dark-mode .modal-container {
+  background: var(--white);
+  border-color: var(--ice-200);
+}
+html.dark-mode .modal-title {
+  color: var(--text-900);
+}
+html.dark-mode .modal-desc {
+  color: var(--text-500);
+}
+html.dark-mode .toast {
+  background: var(--white);
+  border-color: var(--ice-200);
+  color: var(--text-900);
+}
+html.dark-mode .form-label {
+  color: var(--text-700);
+}
+html.dark-mode .form-control {
+  background: var(--ice-50);
+  border-color: var(--ice-200);
+  color: var(--text-900);
+}
+html.dark-mode .form-control:focus {
+  border-color: var(--blue-400);
+}
+html.dark-mode .input-group .input-prefix {
+  background: var(--ice-100);
+  border-color: var(--ice-200);
+  color: var(--text-900);
+}
+html.dark-mode .input-group-prefix select {
+  background-color: var(--ice-100);
+}
+
+/* Modificaciones específicas para responsivo de nav-links en móvil */
+@media (max-width: 768px) {
+  html.dark-mode .nav-links {
+    background: var(--white);
+    border-bottom-color: var(--ice-200);
+  }
 }

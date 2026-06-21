@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel Administrador – Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   <style>
     /* —— ADMIN LAYOUT —— */
-    body { background: #F1F5F9; padding-top: 0; }
+    body { background: var(--ice-50); padding-top: 0; }
     .page-bg { display: none; }
+    
+    /* Dark mode overrides for table */
+    html.dark-mode tbody tr:hover { background: var(--ice-100) !important; }
+    html.dark-mode thead { background: var(--ice-100) !important; border-bottom-color: var(--ice-200) !important; }
+    html.dark-mode th { color: var(--text-700) !important; }
 
     .admin-wrapper {
       display: flex;
@@ -47,7 +58,7 @@
     }
     .sidebar-logo-text {
       font-family: var(--font-display); font-weight: 800;
-      font-size: 0.95rem; color: var(--white); line-height: 1.25;
+      font-size: 0.95rem; color: #FFFFFF; line-height: 1.25;
     }
     .sidebar-logo-sub {
       font-size: 0.72rem; font-weight: 500;
@@ -71,12 +82,12 @@
       cursor: pointer;
     }
     .sidebar-link:hover {
-      color: var(--white);
+      color: #FFFFFF;
       background: rgba(255,255,255,0.06);
       border-left-color: rgba(56,189,248,0.4);
     }
     .sidebar-link.active {
-      color: var(--white);
+      color: #FFFFFF;
       background: rgba(56,189,248,0.12);
       border-left-color: var(--blue-400);
     }
@@ -84,7 +95,7 @@
     .sidebar-badge {
       margin-left: auto;
       background: var(--blue-500);
-      color: var(--white);
+      color: #FFFFFF;
       font-size: 0.7rem; font-weight: 800;
       padding: 2px 8px;
       border-radius: var(--radius-full);
@@ -106,7 +117,7 @@
       font-size: 0.9rem; font-weight: 800; color: white; flex-shrink: 0;
     }
     .sidebar-user-info { flex: 1; min-width: 0; }
-    .sidebar-user-name { font-size: 0.86rem; font-weight: 700; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-user-name { font-size: 0.86rem; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sidebar-user-role { font-size: 0.73rem; color: var(--blue-400); }
 
     /* —— MAIN CONTENT —— */
@@ -501,6 +512,7 @@
         <div class="topbar-actions">
           <div class="topbar-date" id="topbarDate">📅 Hoy: Lunes 14 de julio, 2025</div>
           <div class="notification-btn">🔔<div class="notif-dot"></div></div>
+          <button class="theme-toggle" aria-label="Cambiar tema" style="width: 36px; height: 36px; background: var(--ice-50); border: 1px solid var(--ice-200); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: background .2s; color: var(--text-700);">🌙</button>
         </div>
       </div>
 

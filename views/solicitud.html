@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solicitar Servicio — Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   <style>
     /* ── PAGE HERO ── */
     .page-hero {
@@ -29,10 +35,10 @@
       font-size: 0.82rem; color: rgba(255,255,255,0.6); margin-bottom: 1.2rem;
     }
     .breadcrumb a { color: rgba(255,255,255,0.7); transition: color .2s; }
-    .breadcrumb a:hover { color: var(--white); }
+    .breadcrumb a:hover { color: #FFFFFF; }
     .page-hero-title {
       font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 800; color: var(--white); margin-bottom: 0.6rem; line-height: 1.15;
+      font-weight: 800; color: #FFFFFF; margin-bottom: 0.6rem; line-height: 1.15;
     }
     .page-hero-sub { font-size: 1rem; color: rgba(255,255,255,0.72); max-width: 500px; }
 
@@ -183,7 +189,7 @@
       background: linear-gradient(135deg, var(--blue-900), var(--blue-700));
       border-radius: var(--radius-lg);
       padding: 1.6rem;
-      color: var(--white);
+      color: #FFFFFF;
     }
     .help-box-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; }
     .help-box-desc { font-size: 0.86rem; color: rgba(255,255,255,0.75); line-height: 1.6; margin-bottom: 1.2rem; }
@@ -231,6 +237,9 @@
       <li><a href="catalogo.html">Servicios</a></li>
       <li><a href="login.html">Mi Cuenta</a></li>
       <li><a href="solicitud.html" class="nav-cta active">Solicitar Servicio ›</a></li>
+      <li>
+        <button class="theme-toggle" aria-label="Cambiar tema" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 6px 12px; border-radius: 50%; color: var(--text-700); transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">🌙</button>
+      </li>
     </ul>
   </nav>
 
