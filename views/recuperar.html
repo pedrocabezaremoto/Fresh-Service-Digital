@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Recuperar Contraseña — Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   <style>
     body { background: var(--blue-900); min-height: 100vh; padding-top: 0; }
     .page-bg { display: none; }
@@ -129,6 +135,8 @@
   </style>
 </head>
 <body>
+  <button class="theme-toggle" aria-label="Cambiar tema" style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000; background: var(--white); border: 1px solid var(--ice-200); font-size: 1.15rem; cursor: pointer; padding: 12px; border-radius: 50%; color: var(--text-700); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: background 0.2s, transform 0.1s;">🌙</button>
+
   <div class="auth-wrapper">
     <!-- LEFT -->
     <div class="auth-left">
