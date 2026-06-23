@@ -2,9 +2,28 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-06-20  
-**Fase del proyecto:** Fase 1 UI + Backend parcial (María)  
-**Deploy activo:** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
+**Última actualización:** 2026-06-23  
+**Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
+**Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
+
+---
+
+## 🚀 NOVEDAD 2026-06-23 — Backend + DB en vivo + Dashboard del Taller
+
+| Logro | Estado |
+|---|---|
+| PostgreSQL real en el VPS (DB `freshservice`) | ✅ |
+| Backend NestJS corriendo con **pm2** en puerto **4000** | ✅ vivo |
+| Dependencias con **pnpm** (no npm, por seguridad) | ✅ |
+| Migraciones Prisma aplicadas (users/appointments/equipments) | ✅ |
+| Flujo E2E (registro→verify→login→cita) probado contra DB real | ✅ |
+| Endpoint `GET /users` (lista clientes con # citas) | ✅ nuevo |
+| Endpoint `PATCH /appointments/:id/status` (cambiar estado) | ✅ nuevo |
+| Datos demo reales: 11 clientes, 26 citas | ✅ |
+| Dashboard taller: KPIs + gráficos canvas + clientes + gestión citas | ✅ |
+
+**Cómo levantar el backend:** está en pm2 (`pm2 restart fresh-service`). Config en `backend/.env`.
+**Re-sembrar demo:** `node prisma/seed.js` dentro de `backend/`.
 
 ---
 
@@ -72,24 +91,29 @@ Fresh-Service-Digital/
 
 ---
 
-## 🔴 Bugs conocidos pendientes
+## 🔴 Bugs / pendientes
 
 1. ~~Navbar Android~~ — ✅ RESUELTO
 2. ~~Flickering en desktop~~ — ✅ CERRADO (es Dark Reader, no el código)
-3. **Backend no desplegado** — `localhost:3000` no funciona en GitHub Pages
-4. **Inconsistencia de tema** — login/solicitud tienen fondo oscuro, index/catálogo fondo claro
+3. ~~Backend no desplegado localmente~~ — ✅ corre en pm2 (`fresh-service`, puerto 4000) contra DB real
+4. **Backend sin subdominio público** — el dashboard en GitHub Pages todavía no puede llamar al backend en vivo. Falta exponer `api.pedroservicios.xyz` con HTTPS (Fase C). Mientras tanto funciona en local.
+5. **Frontend apunta a `localhost:3000` en otras vistas** — `login.html` y `solicitud.html` aún usan `localhost:3000`; hay que pasarlas al mismo esquema de `API_BASE` (4000 local / subdominio prod) que ya tiene `dashboard.html`.
+6. **Inconsistencia de tema** — login/solicitud tienen fondo oscuro, index/catálogo fondo claro
+7. **Seguridad backend (heredado de María):** sin JWT, passwords SHA-256 (debería bcrypt), sin guards de auth. Pendiente para endurecer antes de producción real.
 
 ---
 
-## 📋 Roadmap inmediato (deadline: Lunes 8 AM)
+## 📋 Roadmap inmediato
 
 | Prioridad | Tarea | Estado |
 |---|---|---|
-| 1 | Verificar fixes visuales en Android | ✅ Hecho |
-| 2 | Responsividad completa (375px-414px) | 🔜 Próximo |
-| 3 | Polish (favicon, meta tags, datos contacto) | 🔜 |
-| 4 | Decisión backend: Supabase vs continuar NestJS de María | 🔜 |
-| 5 | Deploy del backend (si se decide continuar) | 🔜 |
+| 1 | Decisión backend: continuar NestJS de María | ✅ DECIDIDO (NestJS + Postgres en VPS) |
+| 2 | Conectar backend + DB real | ✅ Hecho (pm2, puerto 4000) |
+| 3 | Dashboard del taller (clientes, citas, gráficos) | ✅ Hecho |
+| 4 | Fase C: exponer backend en `api.pedroservicios.xyz` (HTTPS) | ✅ Hecho (Traefik + ufw + Let's Encrypt) |
+| 5 | **`git push` del dashboard.html para que GitHub Pages use la versión nueva** | 🔜 Lo hace Pedro |
+| 6 | Migrar `login.html` y `solicitud.html` al esquema `API_BASE` | 🔜 |
+| 7 | Endurecer seguridad (JWT, bcrypt, guards) | 🔜 |
 
 ---
 

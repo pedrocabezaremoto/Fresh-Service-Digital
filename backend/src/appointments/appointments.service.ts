@@ -88,4 +88,15 @@ export class AppointmentsService {
       data: { status: AppointmentStatus.COMPLETED },
     });
   }
+
+  /**
+   * Cambia el estado de una cita a cualquier estado válido.
+   * Usado por el panel del taller para gestionar el flujo de trabajo.
+   */
+  async updateStatus(appointmentId: string, status: AppointmentStatus) {
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status },
+    });
+  }
 }

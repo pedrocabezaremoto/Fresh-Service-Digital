@@ -14,7 +14,8 @@ async function bootstrap() {
   // Habilitar CORS para poder comunicarnos con el Front-end
   app.enableCors();
 
-  await app.listen(3000);
-  console.log(`Application is running on: http://localhost:3000`);
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();

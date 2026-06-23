@@ -10,6 +10,28 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Lista todos los clientes registrados con el conteo de sus citas.
+   * Pensado para el panel administrativo del taller.
+   */
+  async findAllClients() {
+    return this.prisma.user.findMany({
+      where: { role: 'CLIENT' },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+        _count: { select: { appointments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * Hashea una contraseña usando el algoritmo nativo SHA-256.
    */
   private hashPassword(password: string): string {

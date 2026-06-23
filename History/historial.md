@@ -247,6 +247,63 @@
 
 ---
 
+## 🔌 Fase 5 — Conexión Backend + Base de Datos + Dashboard del Taller
+
+**Fecha:** 2026-06-23
+**Responsable:** Pepito (agente)
+**Objetivo:** Dejar el backend de María corriendo contra una base de datos PostgreSQL real en el VPS y construir el dashboard administrativo del taller (clientes, gestión de citas, gráficos).
+
+### A) Conexión Backend + DB (Fase A) ✅
+
+| Acción | Detalle |
+|--------|---------|
+| Base de datos | Creada DB `freshservice` + rol dedicado `freshservice` en el PostgreSQL del VPS (`:5432`) |
+| Variables de entorno | `backend/.env` con `DATABASE_URL` y `PORT` (no se sube a Git, está en `.gitignore`) |
+| Gestor de paquetes | **pnpm** (decisión de Pedro por seguridad; npm tuvo incidente de paquetes comprometidos) |
+| Dependencias | `pnpm install` + Prisma generado con `node node_modules/prisma/build/index.js generate` |
+| Migraciones | `prisma migrate deploy` → tablas `users`, `appointments`, `equipments` creadas |
+| Puerto | **4000** (el 3000 lo usa easypanel/n8n y el 3001 lo usa InmoYa). `main.ts` ahora lee `PORT` del env |
+| Proceso | Backend corriendo bajo **pm2** con nombre `fresh-service` (junto a InmoYa). Sobrevive reinicios |
+| Prueba E2E | Registro → verificación → login → crear cita → listar: **todo verificado contra la DB real** ✅ |
+
+> Nota técnica: `pm2 start` requiere correr con el sandbox deshabilitado (el sandbox mata el fork del daemon, exit 144).
+
+### B) Endpoints nuevos del backend (Fase B) ✅
+
+| Método | Ruta | Función |
+|--------|------|---------|
+| GET | `/users` | Lista todos los clientes con conteo de citas (`_count.appointments`) |
+| PATCH | `/appointments/:id/status` | Cambia la cita a cualquier estado válido (con validación `IsEnum`, rechaza inválidos con 400) |
+
+Archivos: `users.service.ts` (`findAllClients`), `users.controller.ts` (`@Get`), `appointments.service.ts` (`updateStatus`), `appointments.controller.ts` (`@Patch :id/status`), nuevo `dto/update-status.dto.ts`.
+
+### C) Datos de demostración reales ✅
+
+- Script `prisma/seed.js` — clientes venezolanos realistas (nombres, operadoras +58, marcas reales de AC: LG, Samsung, Carrier, Frigilux, Premium, Midea, Mabe, Daewoo, York, Whirlpool).
+- Sembrados: **11 clientes**, **26 citas** repartidas en los 5 estados y entre Feb–Jun 2026 (para que estadísticas y gráficos tengan sentido).
+
+### D) Dashboard del Taller (`views/dashboard.html`) ✅
+
+Reescrito conservando el diseño existente (paleta hielo, sidebar, tokens). Tres vistas conmutables:
+1. **Dashboard** — 4 tarjetas KPI + 3 gráficos en **canvas puro** (sin librerías): dona de citas por estado, barras de citas por mes, ranking horizontal de marcas.
+2. **Solicitudes** — tabla en vivo con **gestión de estado completa** (selector por fila que llama a `PATCH /:id/status`), búsqueda y filtro, botón WhatsApp.
+3. **Clientes** — directorio con conteo de citas, estado de verificación y fecha de registro.
+
+- API auto-detecta entorno: `localhost:4000` en local, `https://api.pedroservicios.xyz` en producción.
+- JS validado con `node --check` (sin errores de sintaxis).
+
+### E) Deploy público del backend (Fase C) ✅
+
+Backend expuesto en **`https://api.pedroservicios.xyz`** con SSL Let's Encrypt automático. Verificado: 26 citas y 11 clientes por HTTPS, CORS abierto para GitHub Pages. Método (replicado de la guía de InmoYa en `/root/proyecto-beta/progreso.md`):
+
+1. **Traefik**: creado archivo independiente `/etc/easypanel/traefik/config/freshservice.yaml` (NO se toca `main.yaml`, que easypanel regenera). Routers http→https + `letsencrypt`, servicio apuntando a `http://172.18.0.1:4000/` (IP del puente docker para alcanzar el host, no `localhost`).
+2. **Firewall (era el bug)**: ufw bloqueaba el puerto 4000 a las redes docker. Solución: `ufw allow from 172.16.0.0/12 to any port 4000 proto tcp` y `10.0.0.0/8`. Sin esto, Traefik daba timeout al backend (mientras desde el host sí respondía).
+3. DNS: `pedroservicios.xyz` con wildcard `*` → VPS `109.199.117.161`, ya resolvía `api.pedroservicios.xyz`.
+
+> **Pendiente para que se vea en vivo:** hacer `git push` del `dashboard.html` actualizado para que GitHub Pages sirva la nueva versión (que ya apunta a `api.pedroservicios.xyz`).
+
+---
+
 ## 📊 Estado de Commits en GitHub
 
 | Commit | Descripción | Estado |

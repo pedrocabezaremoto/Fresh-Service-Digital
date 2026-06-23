@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 @Controller('appointments')
 export class AppointmentsController {
@@ -24,5 +25,13 @@ export class AppointmentsController {
   @Patch(':id/complete')
   async complete(@Param('id') id: string) {
     return this.appointmentsService.completeAppointment(id);
+  }
+
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateStatusDto,
+  ) {
+    return this.appointmentsService.updateStatus(id, updateStatusDto.status);
   }
 }
