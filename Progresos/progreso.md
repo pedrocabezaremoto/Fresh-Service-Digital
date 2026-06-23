@@ -97,7 +97,7 @@ Fresh-Service-Digital/
 2. ~~Flickering en desktop~~ — ✅ CERRADO (es Dark Reader, no el código)
 3. ~~Backend no desplegado localmente~~ — ✅ corre en pm2 (`fresh-service`, puerto 4000) contra DB real
 4. **Backend sin subdominio público** — el dashboard en GitHub Pages todavía no puede llamar al backend en vivo. Falta exponer `api.pedroservicios.xyz` con HTTPS (Fase C). Mientras tanto funciona en local.
-5. **Frontend apunta a `localhost:3000` en otras vistas** — `login.html` y `solicitud.html` aún usan `localhost:3000`; hay que pasarlas al mismo esquema de `API_BASE` (4000 local / subdominio prod) que ya tiene `dashboard.html`.
+5. ~~Frontend apunta a `localhost:3000`~~ — ✅ `login.html` y `solicitud.html` ya usan `API_BASE` (4000 local / `api.pedroservicios.xyz` prod). Login y crear-cita probados en vivo. Falta `registro.html`.
 6. **Inconsistencia de tema** — login/solicitud tienen fondo oscuro, index/catálogo fondo claro
 7. **Seguridad backend (heredado de María):** sin JWT, passwords SHA-256 (debería bcrypt), sin guards de auth. Pendiente para endurecer antes de producción real.
 
@@ -111,9 +111,10 @@ Fresh-Service-Digital/
 | 2 | Conectar backend + DB real | ✅ Hecho (pm2, puerto 4000) |
 | 3 | Dashboard del taller (clientes, citas, gráficos) | ✅ Hecho |
 | 4 | Fase C: exponer backend en `api.pedroservicios.xyz` (HTTPS) | ✅ Hecho (Traefik + ufw + Let's Encrypt) |
-| 5 | **`git push` del dashboard.html para que GitHub Pages use la versión nueva** | 🔜 Lo hace Pedro |
-| 6 | Migrar `login.html` y `solicitud.html` al esquema `API_BASE` | 🔜 |
-| 7 | Endurecer seguridad (JWT, bcrypt, guards) | 🔜 |
+| 5 | `git push` del dashboard.html (GitHub Pages) | ✅ Hecho (commit 036e0f29, mezclado con dark mode de María) |
+| 6 | Migrar `login.html` y `solicitud.html` al esquema `API_BASE` | ✅ Hecho (commit 1ad68808); solicitud requiere sesión real |
+| 7 | Endurecer seguridad (JWT, bcrypt, guards) | 🔜 Próximo |
+| 8 | Revisar `registro.html` (María cambió verificación a enlace mágico/token) | 🔜 |
 
 ---
 

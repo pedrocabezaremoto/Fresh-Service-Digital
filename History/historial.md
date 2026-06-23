@@ -319,3 +319,15 @@ Backend expuesto en **`https://api.pedroservicios.xyz`** con SSL Let's Encrypt a
 | `71d0a62f` | María: Backend login + appointments | ✅ |
 | `a55be36a` | María: Merge PR #2 | ✅ |
 | pendiente | Pepito: fixes visuales + eliminación animación logo | ⏳ Push pendiente |
+
+---
+
+## 🔗 Fase 6 — Conexión de login y solicitud al backend en vivo
+
+**Fecha:** 2026-06-23
+
+- `views/login.html` y `views/solicitud.html` migrados del viejo `localhost:3000` al esquema `API_BASE` auto-detectable (igual que `dashboard.html`): `localhost:4000` en local, `https://api.pedroservicios.xyz` en producción.
+- `solicitud.html`: agregado guard de sesión — si no hay cuenta real (modo demo), redirige a login en vez de mandar una cita con `clientId: 'demo'` que rompería contra la DB real.
+- Probado en vivo por HTTPS: login de cliente sembrado (200) y creación de cita (201). Cita de prueba eliminada para dejar la demo limpia (26 citas).
+- Commits: `036e0f29` (merge dashboard + dark mode de María), `1ad68808` (login + solicitud).
+- **Nota:** María cambió el flujo de verificación de código de 6 dígitos a enlace mágico (token). `registro.html` queda pendiente de revisar para que case con `GET /users/verify-link?token=`.
