@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fresh Service Digital — Refrigeración a Domicilio</title>
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="theme.js" defer></script>
   <style>
     /* ── HERO CAROUSEL ── */
     .hero {
@@ -79,7 +85,7 @@
       gap: 7px;
       white-space: nowrap;
       background: rgba(255,255,255,0.15);
-      color: var(--ice-200);
+      color: #BAE6FD; /* Static ice-200 color */
       border: 1px solid rgba(255,255,255,0.25);
       padding: 6px 16px;
       border-radius: var(--radius-full);
@@ -93,7 +99,7 @@
       font-family: var(--font-display);
       font-size: clamp(2.2rem, 5.5vw, 3.8rem);
       font-weight: 800;
-      color: var(--white);
+      color: #FFFFFF;
       line-height: 1.1;
       letter-spacing: -0.03em;
       margin-bottom: 1.2rem;
@@ -125,7 +131,7 @@
       background: rgba(255,255,255,0.4);
       transition: all 0.3s;
     }
-    .dot.active { background: var(--white); width: 28px; }
+    .dot.active { background: #FFFFFF; width: 28px; }
     /* Animate dots in sync with carousel */
     .dot-1 { animation: dot-active-1 15s infinite; }
     .dot-2 { animation: dot-active-2 15s infinite; }
@@ -236,7 +242,7 @@
     .service-card-tag {
       display: inline-block;
       background: rgba(255,255,255,0.18);
-      color: var(--ice-200);
+      color: #BAE6FD; /* Static ice-200 color */
       padding: 4px 12px;
       border-radius: var(--radius-full);
       font-size: 0.76rem;
@@ -249,7 +255,7 @@
       font-family: var(--font-display);
       font-size: 1.7rem;
       font-weight: 800;
-      color: var(--white);
+      color: #FFFFFF; /* Always white */
       margin-bottom: 0.6rem;
       line-height: 1.2;
     }
@@ -263,14 +269,14 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--white);
+      color: #FFFFFF; /* Always white */
       font-weight: 700;
       font-size: 0.9rem;
       border-bottom: 2px solid rgba(255,255,255,0.4);
       padding-bottom: 2px;
       transition: border-color 0.2s, gap 0.2s;
     }
-    .service-card-link:hover { border-color: var(--white); gap: 10px; }
+    .service-card-link:hover { border-color: #FFFFFF; gap: 10px; }
 
     /* Coming soon overlay */
     .coming-soon-badge {
@@ -278,7 +284,7 @@
       top: 1.5rem;
       right: 1.5rem;
       background: rgba(255,255,255,0.15);
-      color: var(--ice-200);
+      color: #BAE6FD; /* Static ice-200 color */
       border: 1px solid rgba(255,255,255,0.3);
       padding: 5px 14px;
       border-radius: var(--radius-full);
@@ -311,7 +317,7 @@
       font-family: var(--font-display);
       font-size: clamp(1.8rem, 4vw, 2.8rem);
       font-weight: 800;
-      color: var(--white);
+      color: #FFFFFF; /* Always white */
       margin-bottom: 1rem;
     }
     .cta-banner-desc {
@@ -381,6 +387,9 @@
       <li><a href="views/catalogo.html">Servicios</a></li>
       <li><a href="views/login.html">Mi Cuenta</a></li>
       <li><a href="views/solicitud.html" class="nav-cta">Solicitar Servicio ›</a></li>
+      <li>
+        <button class="theme-toggle" aria-label="Cambiar tema" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 6px 12px; border-radius: 50%; color: var(--text-700); transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">🌙</button>
+      </li>
     </ul>
   </nav>
 

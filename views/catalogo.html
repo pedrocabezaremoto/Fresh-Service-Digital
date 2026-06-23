@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Catálogo de Servicios – Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   
   <style>
     /* —— PAGE HERO —— */
@@ -34,13 +40,13 @@
       margin-bottom: 1.2rem;
     }
     .breadcrumb a { color: rgba(255,255,255,0.7); transition: color 0.2s; }
-    .breadcrumb a:hover { color: var(--white); }
+    .breadcrumb a:hover { color: #FFFFFF; }
     .breadcrumb-sep { opacity: 0.5; }
     .page-hero-title {
       font-family: var(--font-display);
       font-size: clamp(2rem, 5vw, 3.2rem);
       font-weight: 800;
-      color: var(--white);
+      color: #FFFFFF; /* Always white */
       margin-bottom: 0.75rem;
       line-height: 1.15;
     }
@@ -341,6 +347,9 @@
       <li><a href="catalogo.html" class="active">Servicios</a></li>
       <li><a href="login.html">Mi Cuenta</a></li>
       <li><a href="solicitud.html" class="nav-cta">Solicitar Servicio ›</a></li>
+      <li>
+        <button class="theme-toggle" aria-label="Cambiar tema" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 6px 12px; border-radius: 50%; color: var(--text-700); transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">🌙</button>
+      </li>
     </ul>
   </nav>
 

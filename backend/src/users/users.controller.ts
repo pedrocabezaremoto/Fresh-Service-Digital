@@ -1,8 +1,7 @@
-import { Controller, Get, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Query, Body, HttpCode, HttpStatus, Header } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { VerifyUserDto } from './dto/verify-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -18,9 +17,10 @@ export class UsersController {
     return this.usersService.register(registerDto);
   }
 
-  @Post('verify')
-  async verify(@Body() verifyDto: VerifyUserDto) {
-    return this.usersService.verifyEmail(verifyDto);
+  @Get('verify-link')
+  @Header('Content-Type', 'text/html')
+  async verifyLink(@Query('token') token: string) {
+    return this.usersService.verifyEmailLink(token);
   }
 
   @Post('login')

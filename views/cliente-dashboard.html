@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mi Panel — Fresh Service Digital</title>
   <link rel="stylesheet" href="../styles.css" />
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+  <script src="../theme.js" defer></script>
   <style>
-    body { background: #F8FAFC; }
+    body { background: var(--ice-50); }
     .page-bg { display: none; }
 
     /* ── CLIENT LAYOUT ── */
@@ -21,7 +27,7 @@
       background: linear-gradient(135deg, var(--blue-950), var(--blue-800));
       border-radius: var(--radius-xl);
       padding: 3.5rem 3rem;
-      color: var(--white);
+      color: #FFFFFF;
       position: relative;
       overflow: hidden;
       box-shadow: var(--shadow-lg);
@@ -41,7 +47,7 @@
     .client-hero-tag {
       display: inline-flex;
       background: rgba(255, 255, 255, 0.12);
-      color: var(--ice-200);
+      color: #BAE6FD; /* Static ice-200 color */
       padding: 5px 14px;
       border-radius: var(--radius-full);
       font-size: 0.76rem;
@@ -272,6 +278,9 @@
       <li><a href="catalogo.html">Servicios</a></li>
       <li><a href="cliente-dashboard.html" class="active">Mi Panel</a></li>
       <li><a href="#" onclick="logout()" style="color: #EF4444; font-weight: 700;">Cerrar Sesión</a></li>
+      <li>
+        <button class="theme-toggle" aria-label="Cambiar tema" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 6px 12px; border-radius: 50%; color: var(--text-700); transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">🌙</button>
+      </li>
     </ul>
   </nav>
 
