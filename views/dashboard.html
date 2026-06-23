@@ -338,10 +338,13 @@
           <span class="s-icon">📈</span> Reportes
         </a>
 
-        <div style="margin-top: 1.5rem; padding: 0 1rem;">
+        <div style="margin-top: 1.5rem; padding: 0 1rem; display: flex; flex-direction: column; gap: 8px;">
           <a href="../index.html" class="btn btn-secondary btn-sm btn-full" style="font-size:.82rem;">
             ← Ver sitio web
           </a>
+          <button onclick="logout()" class="btn btn-sm btn-full" style="font-size:.82rem; background:rgba(239,68,68,0.15); color:#FCA5A5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
+            ⎋ Cerrar sesión
+          </button>
         </div>
       </nav>
 
@@ -537,6 +540,22 @@
     const isLocal = ['localhost', '127.0.0.1', ''].includes(location.hostname) || location.protocol === 'file:';
     const API_BASE = isLocal ? 'http://localhost:4000' : 'https://api.pedroservicios.xyz';
 
+    /* ───────── PORTERO: solo ADMIN logueado entra ───────── */
+    const TOKEN = localStorage.getItem('token');
+    const SESSION = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!TOKEN || !SESSION || SESSION.role !== 'ADMIN') {
+      alert('Acceso restringido. Inicia sesión como administrador del taller.');
+      window.location.href = 'login.html';
+    }
+    // Cabeceras con el token JWT para todas las peticiones protegidas
+    const authHeaders = (extra = {}) => ({ 'Authorization': `Bearer ${TOKEN}`, ...extra });
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
     let allAppointments = [];
     let allClients = [];
 
@@ -588,9 +607,19 @@
       await Promise.all([loadAppointments(), loadClients()]);
     }
 
+    function handleAuthError(res) {
+      if (res.status === 401 || res.status === 403) {
+        alert('Tu sesión expiró o no tienes permisos. Inicia sesión de nuevo.');
+        logout();
+        return true;
+      }
+      return false;
+    }
+
     async function loadAppointments() {
       try {
-        const res = await fetch(`${API_BASE}/appointments`);
+        const res = await fetch(`${API_BASE}/appointments`, { headers: authHeaders() });
+        if (handleAuthError(res)) return;
         if (!res.ok) throw new Error('No se pudieron obtener las solicitudes');
         allAppointments = await res.json();
         updateStats();
@@ -605,7 +634,8 @@
 
     async function loadClients() {
       try {
-        const res = await fetch(`${API_BASE}/users`);
+        const res = await fetch(`${API_BASE}/users`, { headers: authHeaders() });
+        if (handleAuthError(res)) return;
         if (!res.ok) throw new Error('No se pudieron obtener los clientes');
         allClients = await res.json();
         renderClients(allClients);
@@ -702,7 +732,7 @@
       try {
         const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ status }),
         });
         if (!res.ok) throw new Error('No se pudo actualizar el estado');
@@ -923,10 +953,9 @@
     /* ───────── ADMIN INFO ───────── */
     (function loadAdminInfo() {
       try {
-        const sess = JSON.parse(localStorage.getItem('fsd_user') || 'null');
-        if (sess && sess.firstName) {
-          document.getElementById('adminName').textContent = `${sess.firstName} ${sess.lastName || ''}`.trim();
-          document.getElementById('adminAvatar').textContent = (sess.firstName[0] || 'A').toUpperCase();
+        if (SESSION && SESSION.firstName) {
+          document.getElementById('adminName').textContent = `${SESSION.firstName} ${SESSION.lastName || ''}`.trim();
+          document.getElementById('adminAvatar').textContent = (SESSION.firstName[0] || 'A').toUpperCase();
         }
       } catch (e) {}
     })();

@@ -8,11 +8,9 @@
  * Las contraseñas usan SHA-256 (igual que el servicio de usuarios). Clave demo: Demo1234
  */
 const { PrismaClient } = require('@prisma/client');
-const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
-const hash = (p) => crypto.createHash('sha256').update(p).digest('hex');
-const PASS = hash('Demo1234');
 
 // Operadoras venezolanas
 const ops = ['412', '414', '424', '416', '426'];
@@ -73,6 +71,28 @@ function fechaEnMes(monthOffsetFromJun) {
 
 async function main() {
   console.log('🌱 Sembrando datos de demo...');
+
+  // Hash bcrypt de la clave demo (igual para todos los usuarios sembrados)
+  const PASS = await bcrypt.hash('Demo1234', 10);
+  const ADMIN_PASS = await bcrypt.hash('Admin1234', 10);
+
+  // Limpiar datos previos (citas/equipos caen en cascada al borrar usuarios)
+  await prisma.user.deleteMany({});
+  console.log('   🧹 Datos previos eliminados');
+
+  // Usuario ADMIN del taller (para entrar al dashboard administrativo)
+  await prisma.user.create({
+    data: {
+      email: 'admin@freshservice.com',
+      password: ADMIN_PASS,
+      firstName: 'Admin',
+      lastName: 'Taller',
+      phone: '+584140000000',
+      role: 'ADMIN',
+      isVerified: true,
+    },
+  });
+  console.log('   👑 Admin creado: admin@freshservice.com / Admin1234');
 
   for (const c of clientes) {
     const existing = await prisma.user.findUnique({ where: { email: c.email } });

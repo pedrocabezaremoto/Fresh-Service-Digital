@@ -1,12 +1,17 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   /**
    * Lista todos los clientes registrados con el conteo de sus citas.
@@ -31,10 +36,17 @@ export class UsersService {
   }
 
   /**
-   * Hashea una contraseña usando el algoritmo nativo SHA-256.
+   * Hashea una contraseña con bcrypt (lento a propósito, resistente a fuerza bruta).
    */
-  private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(password).digest('hex');
+  private async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, 10);
+  }
+
+  /**
+   * Compara una contraseña en texto plano contra el hash bcrypt almacenado.
+   */
+  private async comparePassword(plain: string, hash: string): Promise<boolean> {
+    return bcrypt.compare(plain, hash);
   }
 
   /**
@@ -56,8 +68,8 @@ export class UsersService {
     // 2. Generar token de verificación único (Magic Link) de 32 bytes
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // 3. Hashear la contraseña de forma nativa
-    const hashedPassword = this.hashPassword(password);
+    // 3. Hashear la contraseña con bcrypt
+    const hashedPassword = await this.hashPassword(password);
 
     // 4. Crear el usuario en la base de datos
     const user = await this.prisma.user.create({
@@ -71,17 +83,23 @@ export class UsersService {
       },
     });
 
-    // 5. Imprimir el enlace de verificación por consola para desarrollo
+    // 5. Construir el enlace de activación con la URL pública del backend
+    const baseUrl = process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 4000}`;
+    const activationUrl = `${baseUrl}/users/verify-link?token=${verificationToken}`;
+
     console.log(`\n======================================================`);
     console.log(`📬 [SIMULACIÓN DE CORREO] Enlace de Verificación`);
     console.log(`Para: ${email}`);
-    console.log(`Enlace: http://localhost:3000/users/verify-link?token=${verificationToken}`);
+    console.log(`Enlace: ${activationUrl}`);
     console.log(`======================================================\n`);
 
+    // NOTA: mientras no haya servicio de correo real, devolvemos el enlace
+    // para que la demo pueda activar la cuenta. Quitar cuando se integre el email.
     return {
       message: 'Usuario registrado exitosamente. Por favor, haz clic en el enlace de activación enviado a tu correo.',
       userId: user.id,
       email: user.email,
+      activationUrl,
     };
   }
 
@@ -281,8 +299,11 @@ export class UsersService {
       where: { email },
     });
 
-    // 2. Validar usuario y contraseña
-    if (!user || user.password !== this.hashPassword(password)) {
+    // 2. Validar usuario y contraseña (bcrypt)
+    const passwordOk = user
+      ? await this.comparePassword(password, user.password)
+      : false;
+    if (!user || !passwordOk) {
       throw new UnauthorizedException('El correo o la contraseña son incorrectos');
     }
 
@@ -291,9 +312,17 @@ export class UsersService {
       throw new UnauthorizedException('Debes verificar tu correo electrónico antes de iniciar sesión');
     }
 
-    // 4. Retornar datos seguros del usuario (sin contraseña)
+    // 4. Emitir token JWT con la identidad y el rol del usuario
+    const accessToken = await this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // 5. Retornar datos seguros del usuario (sin contraseña) + token
     return {
       message: 'Inicio de sesión exitoso',
+      accessToken,
       user: {
         id: user.id,
         email: user.email,

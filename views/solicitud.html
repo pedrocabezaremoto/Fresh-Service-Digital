@@ -671,13 +671,23 @@
       };
 
       try {
+        const token = localStorage.getItem('token');
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
           },
           body: JSON.stringify(payload)
         });
+
+        if (response.status === 401 || response.status === 403) {
+          alert('Tu sesión expiró. Inicia sesión de nuevo para solicitar el servicio.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = 'login.html';
+          return;
+        }
 
         const data = await response.json();
 

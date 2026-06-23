@@ -368,10 +368,15 @@
     <div class="modal-container" style="text-align: center;">
       <div style="font-size: 3.5rem; margin-bottom: 1.25rem;">📬</div>
       <h3 class="modal-title">¡Verifica tu cuenta!</h3>
-      <p class="modal-desc" style="margin-bottom: 2rem;">Hemos enviado un enlace de activación único a tu correo electrónico. Por favor, haz clic en el enlace para activar tu cuenta e ingresar al sistema.</p>
-      
-      <a href="login.html" class="btn btn-primary btn-full btn-lg" style="text-decoration: none; display: block; text-align: center; box-sizing: border-box;">
-        Entendido, ir al Login ✓
+      <p class="modal-desc" style="margin-bottom: 1.5rem;">Hemos enviado un enlace de activación a tu correo electrónico. Haz clic en el enlace para activar tu cuenta e ingresar al sistema.</p>
+
+      <!-- Activación directa (mientras no haya servicio de correo real) -->
+      <a id="activationLink" href="#" target="_blank" class="btn btn-primary btn-full btn-lg" style="text-decoration: none; display: none; text-align: center; box-sizing: border-box; margin-bottom: 0.75rem;">
+        Activar mi cuenta ahora ✓
+      </a>
+
+      <a href="login.html" class="btn btn-secondary btn-full btn-lg" style="text-decoration: none; display: block; text-align: center; box-sizing: border-box;">
+        Ir al Login
       </a>
     </div>
   </div>
@@ -385,7 +390,10 @@
       window.location.href = 'cliente-dashboard.html';
     }
 
-    const API_URL = 'http://localhost:3000/users';
+    // Detecta entorno: local usa puerto 4000, producción usa el subdominio del VPS
+    const isLocal = ['localhost', '127.0.0.1', ''].includes(location.hostname) || location.protocol === 'file:';
+    const API_BASE = isLocal ? 'http://localhost:4000' : 'https://api.pedroservicios.xyz';
+    const API_URL = `${API_BASE}/users`;
 
     // Función para alternar visibilidad de contraseña
     function togglePass(id, btn) {
@@ -485,6 +493,12 @@
         }
 
         showToast(data.message);
+        // Si el backend devolvió el enlace de activación (sin correo real aún), mostrar el botón directo
+        if (data.activationUrl) {
+          const link = document.getElementById('activationLink');
+          link.href = data.activationUrl;
+          link.style.display = 'block';
+        }
         document.getElementById('verificationModal').classList.add('show');
 
       } catch (error) {

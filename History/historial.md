@@ -331,3 +331,34 @@ Backend expuesto en **`https://api.pedroservicios.xyz`** con SSL Let's Encrypt a
 - Probado en vivo por HTTPS: login de cliente sembrado (200) y creación de cita (201). Cita de prueba eliminada para dejar la demo limpia (26 citas).
 - Commits: `036e0f29` (merge dashboard + dark mode de María), `1ad68808` (login + solicitud).
 - **Nota:** María cambió el flujo de verificación de código de 6 dígitos a enlace mágico (token). `registro.html` queda pendiente de revisar para que case con `GET /users/verify-link?token=`.
+
+---
+
+## 🔐 Fase 7 — Endurecimiento de Seguridad (JWT + bcrypt + Guards) y registro.html
+
+**Fecha:** 2026-06-24
+
+### Backend
+- **bcrypt** (`bcryptjs`) reemplaza el hash SHA-256 en `users.service.ts` (hash + compare async).
+- **JWT** (`@nestjs/jwt`): `login` emite `accessToken` con payload `{sub, email, role}`. Módulo JWT global en `app.module.ts`. `dotenv` cargado en `main.ts` para leer `JWT_SECRET`/`JWT_EXPIRES`/`PUBLIC_API_URL` del `.env`.
+- **Guards** nuevos en `src/auth/`: `JwtAuthGuard` (valida Bearer token), `RolesGuard` + decorador `@Roles()`.
+  - `GET /users`, `GET /appointments`, `PATCH /:id/status`, `PATCH /:id/complete` → **solo ADMIN**.
+  - `POST /appointments`, `GET /appointments/client/:id` → requieren estar autenticado.
+  - `register`, `login`, `verify-link` → públicos.
+- `register` ahora devuelve `activationUrl` (con `PUBLIC_API_URL`) mientras no haya servicio de correo real.
+- `seed.js`: bcrypt, limpia datos previos, crea usuario **ADMIN** (`admin@freshservice.com` / `Admin1234`).
+- Verificado por HTTPS: sin token → 401, admin → 200, cliente a ruta admin → 403, registro→activación→login → OK.
+
+### Frontend
+- `login.html`: guarda `accessToken`; redirige según rol (ADMIN → dashboard, cliente → cliente-dashboard).
+- `dashboard.html`: portero de admin (sin token/rol → login), manda `Authorization` en todas las peticiones, botón **Cerrar sesión**, maneja 401/403.
+- `solicitud.html` y `cliente-dashboard.html`: mandan el token; manejan sesión expirada.
+- `registro.html`: usa `API_BASE`; muestra botón "Activar mi cuenta ahora" con el `activationUrl` (demo sin correo).
+
+### Credenciales demo
+| Rol | Usuario | Clave |
+|-----|---------|-------|
+| Admin (taller) | `admin@freshservice.com` | `Admin1234` |
+| Clientes | su email (ej. `maria.rodriguez@gmail.com`) | `Demo1234` |
+
+> Pendiente real: servicio de correo (para no devolver `activationUrl` en la respuesta), refresh tokens, y rate-limiting.

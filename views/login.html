@@ -524,12 +524,15 @@
           throw new Error(data.message || 'Error al iniciar sesión');
         }
 
-        // Guardar sesión en localStorage
+        // Guardar sesión + token JWT en localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.accessToken) localStorage.setItem('token', data.accessToken);
         showToast(data.message, 'success');
 
+        // Redirigir según el rol: ADMIN va al panel del taller, cliente a su panel
+        const destino = data.user.role === 'ADMIN' ? 'dashboard.html' : 'cliente-dashboard.html';
         setTimeout(() => {
-          window.location.href = 'cliente-dashboard.html';
+          window.location.href = destino;
         }, 1200);
 
       } catch (error) {

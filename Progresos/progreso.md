@@ -113,8 +113,16 @@ Fresh-Service-Digital/
 | 4 | Fase C: exponer backend en `api.pedroservicios.xyz` (HTTPS) | ✅ Hecho (Traefik + ufw + Let's Encrypt) |
 | 5 | `git push` del dashboard.html (GitHub Pages) | ✅ Hecho (commit 036e0f29, mezclado con dark mode de María) |
 | 6 | Migrar `login.html` y `solicitud.html` al esquema `API_BASE` | ✅ Hecho (commit 1ad68808); solicitud requiere sesión real |
-| 7 | Endurecer seguridad (JWT, bcrypt, guards) | 🔜 Próximo |
-| 8 | Revisar `registro.html` (María cambió verificación a enlace mágico/token) | 🔜 |
+| 7 | Endurecer seguridad (JWT, bcrypt, guards) | ✅ Hecho y verificado |
+| 8 | Revisar `registro.html` (enlace mágico) | ✅ Hecho (botón de activación directa) |
+
+### 🔐 Seguridad implementada (2026-06-24)
+- **bcrypt** reemplaza SHA-256 en las contraseñas.
+- **JWT**: el login devuelve `accessToken`; el frontend lo guarda y lo manda en `Authorization: Bearer`.
+- **Guards (portero)**: `GET /users`, `GET /appointments` y los `PATCH` de estado son **solo ADMIN**; crear cita requiere estar logueado. Verificado: sin token → 401, cliente a ruta admin → 403.
+- **Dashboard del taller** ahora exige login de admin (si no, redirige a login).
+- **Credenciales demo:** Admin → `admin@freshservice.com` / `Admin1234` · Clientes → su email / `Demo1234`.
+- Datos: 1 admin, 10 clientes, 22 citas (re-sembrados con bcrypt).
 
 ---
 
