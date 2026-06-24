@@ -6,9 +6,17 @@
 
 ## 🧠 ¿Qué es este proyecto?
 
-**Fresh Service Digital** — Prototipo UI de plataforma de servicios de refrigeración a domicilio.  
-**Zona piloto:** San Juan de los Morros, Venezuela.  
-**Fase actual:** 1 (Prototipo visual estático, completo y desplegado).
+**Fresh Service Digital** — Plataforma de servicios de refrigeración a domicilio.  
+**Zona piloto:** San Juan de los Morros, Venezuela.
+
+> [!IMPORTANT]
+> **ACTUALIZADO 2026-06-24 — Fase 2 (producción real).** Las reglas de "solo HTML/CSS, prohibido React/Vite/Tailwind" de abajo eran de la **Fase 1 (mockup)** y **ya NO aplican**. El proyecto migró:
+> - **Frontend nuevo:** React 19 + Vite 6 + Tailwind v4 en `frontend-react/` → EN VIVO en **https://fresh.pedroservicios.xyz**. Es el frontend oficial. El HTML/CSS viejo (`index.html`, `views/`) queda como referencia histórica.
+> - **Backend:** NestJS + Prisma + PostgreSQL con JWT/bcrypt → **https://api.pedroservicios.xyz** (pm2 `fresh-service`, puerto 4000).
+> - **Deploy:** VPS Contabo, Traefik (configs en `/etc/easypanel/traefik/config/`), pm2, ufw para abrir puertos a Docker. NO correr nginx (ocupa el puerto 80 de Traefik).
+> - Stack y comandos: ver `History/historial.md` (Fase 8) y la memoria del proyecto.
+
+**Fase histórica:** 1 (Prototipo visual estático en HTML/CSS — superada).
 
 ---
 

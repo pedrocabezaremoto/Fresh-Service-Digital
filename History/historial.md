@@ -362,3 +362,24 @@ Backend expuesto en **`https://api.pedroservicios.xyz`** con SSL Let's Encrypt a
 | Clientes | su email (ej. `maria.rodriguez@gmail.com`) | `Demo1234` |
 
 > Pendiente real: servicio de correo (para no devolver `activationUrl` en la respuesta), refresh tokens, y rate-limiting.
+
+---
+
+## ⚛️ Fase 8 — Migración del Frontend a React + Vite + Tailwind
+
+**Fecha:** 2026-06-24
+
+Pedro pidió migrar porque el frontend HTML/CSS se veía "de juguete". Decisión: React + Vite + Tailwind (mismo stack que InmoYa) + fotos de stock. **Backend NestJS sin cambios.**
+
+- **Nuevo:** carpeta `frontend-react/` — React 19, Vite 6, Tailwind v4 (`@tailwindcss/vite`), lucide-react, react-router-dom 7.
+- **Diseño:** identidad "frost" (azul cian con glow + glass), fuente Sora + Inter, fotos reales de Unsplash (verificadas viéndolas) en `src/lib/images.js`.
+- **Páginas:** Home (hero con foto, servicios, por qué, pasos, testimonios, CTA), Catálogo, Login, Registro (con activación), Solicitud (protegida), Panel Cliente, Panel Admin (sidebar, KPIs, donut SVG, barras, tabla con gestión de estado, clientes).
+- **Auth:** `AuthContext` + JWT en `fsd_token`/`fsd_user`, rutas protegidas por rol. API en `src/lib/api.js` (auto local 4000 / prod `api.pedroservicios.xyz`).
+- **Deploy:** `serve.mjs` (servidor estático SPA sin deps) bajo pm2 `fresh-frontend` puerto 4100; Traefik `fresh-frontend.yaml` → `https://fresh.pedroservicios.xyz`; ufw abre 4100.
+- **EN VIVO:** https://fresh.pedroservicios.xyz · Commit `53d5b210`.
+
+### ⚠️ Incidente de producción (resuelto el mismo día)
+Durante el despliegue, un reschedule del Docker Swarm dejó **Traefik en 0/1**: no podía arrancar porque un **nginx del sistema (default, systemd) ocupaba el puerto 80**. Eso tumbó api e inmoya.
+- **Fix Traefik:** `systemctl stop nginx && systemctl disable nginx` → Traefik recuperó el 80 (1/1).
+- **Fix InmoYa:** sus reglas de firewall del puerto 3001 eran `iptables` directas (no ufw) y se perdieron al recargar ufw; se re-agregaron con `ufw allow ... port 3001`.
+- **Lección:** abrir puertos a Docker SIEMPRE con ufw (persistente); nginx no debe correr (Traefik es el proxy de 80/443).

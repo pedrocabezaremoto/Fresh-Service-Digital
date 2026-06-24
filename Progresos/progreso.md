@@ -142,3 +142,13 @@ Fresh-Service-Digital/
 - **Ubicación:** San Juan de los Morros, estado Guárico, Venezuela
 - **Propósito actual:** Mostrar prototipo visual funcional a clientes potenciales
 - **Deadline:** Lunes 2026-06-22, 8:00 AM
+
+---
+
+## ⚛️ 2026-06-24 — Frontend migrado a React (EN VIVO)
+
+- **Nuevo frontend React + Vite + Tailwind** en `frontend-react/` → **https://fresh.pedroservicios.xyz**
+- Diseño premium (glow/glass, fotos reales), todas las páginas funcionando contra el backend.
+- Backend NestJS intacto. El HTML viejo queda como referencia.
+- **Levantar frontend:** `cd frontend-react && pnpm install && node node_modules/vite/bin/vite.js build`, luego `PORT=4100 pm2 start serve.mjs --name fresh-frontend`.
+- Incidente nginx/Traefik resuelto (ver historial Fase 8).
