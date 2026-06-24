@@ -10,6 +10,7 @@
       document.documentElement.classList.add('dark-mode');
     }
   </script>
+  <script src="icons.js" defer></script>
   <script src="theme.js" defer></script>
   <style>
     /* ── HERO CAROUSEL ── */
@@ -175,15 +176,26 @@
     .feature-icon {
       width: 64px;
       height: 64px;
-      background: linear-gradient(135deg, var(--ice-100), var(--ice-200));
+      background: var(--grad-primary);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.8rem;
+      color: #FFFFFF;
       margin: 0 auto 1.3rem;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--glow-sm), inset 0 1px 1px rgba(255,255,255,0.4);
+      position: relative;
+      overflow: hidden;
     }
+    .feature-icon::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--grad-sheen);
+      pointer-events: none;
+    }
+    .feature-icon svg { width: 30px; height: 30px; position: relative; z-index: 1; }
     .feature-title {
       font-family: var(--font-display);
       font-size: 1.15rem;
@@ -376,7 +388,7 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <div class="brand-icon">❄</div>
+      <div class="brand-icon"><span data-icon="snowflake"></span></div>
       <span class="brand-text">Fresh<span> Service Digital</span></span>
     </a>
     <button class="hamburger" onclick="toggleNav()" aria-label="Menú">
@@ -455,11 +467,11 @@
   <!-- TRUST STRIP -->
   <div class="trust-strip">
     <div class="trust-inner">
-      <div class="trust-item"><span class="icon">✅</span> Técnicos Certificados</div>
-      <div class="trust-item"><span class="icon">⚡</span> Respuesta el Mismo Día</div>
-      <div class="trust-item"><span class="icon">🛡</span> Garantía en Servicios</div>
-      <div class="trust-item"><span class="icon">📍</span> San Juan de los Morros</div>
-      <div class="trust-item"><span class="icon">💬</span> Soporte por WhatsApp</div>
+      <div class="trust-item"><span class="icon" data-icon="check-circle"></span> Técnicos Certificados</div>
+      <div class="trust-item"><span class="icon" data-icon="bolt"></span> Respuesta el Mismo Día</div>
+      <div class="trust-item"><span class="icon" data-icon="shield"></span> Garantía en Servicios</div>
+      <div class="trust-item"><span class="icon" data-icon="pin"></span> San Juan de los Morros</div>
+      <div class="trust-item"><span class="icon" data-icon="whatsapp"></span> Soporte por WhatsApp</div>
     </div>
   </div>
 
@@ -473,17 +485,17 @@
       </div>
       <div class="features-grid">
         <div class="card feature-card">
-          <div class="feature-icon">⚡</div>
+          <div class="feature-icon"><span data-icon="bolt"></span></div>
           <div class="feature-title">Respuesta Rápida</div>
           <p class="feature-desc">Coordinamos tu cita en minutos vía nuestra plataforma digital. Sin llamadas, sin esperas. El técnico llega en el horario que elijas.</p>
         </div>
         <div class="card feature-card">
-          <div class="feature-icon">🏆</div>
+          <div class="feature-icon"><span data-icon="star"></span></div>
           <div class="feature-title">Técnicos Certificados</div>
           <p class="feature-desc">Nuestro equipo cuenta con formación técnica especializada y años de experiencia en refrigeración y climatización.</p>
         </div>
         <div class="card feature-card">
-          <div class="feature-icon">🛡</div>
+          <div class="feature-icon"><span data-icon="shield"></span></div>
           <div class="feature-title">Servicio Garantizado</div>
           <p class="feature-desc">Todos nuestros trabajos incluyen garantía. Si algo falla después del servicio, regresamos sin costo adicional.</p>
         </div>
@@ -542,7 +554,7 @@
   <footer class="footer">
     <div class="footer-grid">
       <div>
-        <div class="footer-brand-name">❄ Fresh Service Digital</div>
+        <div class="footer-brand-name"><span data-icon="snowflake" style="color:var(--blue-400)"></span> Fresh Service Digital</div>
         <p class="footer-desc">Servicios de refrigeración y climatización a domicilio en San Juan de los Morros. Calidad, rapidez y garantía en cada visita.</p>
       </div>
       <div>

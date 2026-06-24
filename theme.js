@@ -2,10 +2,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const toggles = document.querySelectorAll('.theme-toggle');
 
-  // Función para actualizar los iconos/emojis de los botones
+  // Función para actualizar los iconos de los botones (SVG si icons.js está cargado)
   const updateToggleIcons = (isDark) => {
+    const icon = window.FSIcons
+      ? window.FSIcons.svg(isDark ? 'sun' : 'moon')
+      : (isDark ? '☀️' : '🌙');
     toggles.forEach(btn => {
-      btn.innerHTML = isDark ? '☀️' : '🌙';
+      btn.innerHTML = icon;
     });
   };
 

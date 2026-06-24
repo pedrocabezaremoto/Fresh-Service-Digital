@@ -53,6 +53,23 @@
 
   --nav-height:   70px;
   --container:    1200px;
+
+  /* === PREMIUM: gradientes, brillo (glow) y vidrio === */
+  --grad-primary:   linear-gradient(135deg, #0284C7 0%, #0EA5E9 45%, #38BDF8 100%);
+  --grad-bright:    linear-gradient(135deg, #0EA5E9 0%, #38BDF8 55%, #22D3EE 100%);
+  --grad-brand:     linear-gradient(135deg, #0EA5E9 0%, #38BDF8 50%, #67E8F9 100%);
+  --grad-sheen:     linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
+
+  --glow-blue-rgb:  56, 189, 248;
+  --glow-sm:        0 4px 16px rgba(14,165,233,0.30);
+  --glow-md:        0 8px 28px rgba(14,165,233,0.38);
+  --glow-lg:        0 0 0 1px rgba(56,189,248,0.30), 0 10px 38px rgba(14,165,233,0.45);
+  --glow-ring:      0 0 0 4px rgba(56,189,248,0.18);
+
+  --glass-bg:       rgba(255,255,255,0.72);
+  --glass-bg-strong:rgba(255,255,255,0.85);
+  --glass-border:   rgba(255,255,255,0.7);
+  --glass-blur:     blur(16px) saturate(160%);
 }
 
 /* === RESET === */
@@ -122,15 +139,47 @@ input, select, textarea { font-family: var(--font-body); }
   letter-spacing: -0.01em;
 }
 .brand-icon {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+  width: 40px;
+  height: 40px;
+  background: var(--grad-brand);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  box-shadow: 0 4px 12px rgba(2,132,199,0.3);
+  color: #FFFFFF;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--glow-sm), inset 0 1px 1px rgba(255,255,255,0.5);
+}
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grad-sheen);
+  pointer-events: none;
+}
+.brand-icon svg { width: 22px; height: 22px; position: relative; z-index: 1; }
+
+/* === ICONOS SVG (inyectados por icons.js) === */
+.icon, [data-icon] svg, .nav-icon svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+[data-icon] { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+[data-icon] svg { width: 1.15em; height: 1.15em; }
+
+/* Logo en páginas de autenticación (login/registro/recuperar) */
+.auth-brand-icon { color: #FFFFFF; position: relative; overflow: hidden; }
+.auth-brand-icon svg { width: 24px; height: 24px; position: relative; z-index: 1; }
+
+/* === GLASS (vidrio esmerilado) === */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
 }
 @keyframes flake-spin {
   from { transform: rotate(0deg); }
@@ -173,20 +222,20 @@ input, select, textarea { font-family: var(--font-body); }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--blue-600);
+  background: var(--grad-primary);
   color: #FFFFFF !important;
   padding: 9px 22px;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(2,132,199,0.35);
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--glow-sm);
+  transition: filter 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 .nav-cta::after { display: none !important; }
 .nav-cta:hover {
-  background: var(--blue-700) !important;
+  filter: brightness(1.08) saturate(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(2,132,199,0.45);
+  box-shadow: var(--glow-md);
 }
 
 .hamburger {
@@ -223,16 +272,26 @@ input, select, textarea { font-family: var(--font-body); }
   cursor: pointer;
 }
 .btn-primary {
-  background: var(--blue-600);
+  background: var(--grad-primary);
   color: #FFFFFF;
-  border-color: var(--blue-600);
-  box-shadow: 0 4px 16px rgba(2,132,199,0.35);
+  border-color: transparent;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--glow-md);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--grad-sheen);
+  opacity: 0.8;
+  pointer-events: none;
 }
 .btn-primary:hover {
-  background: var(--blue-700);
-  border-color: var(--blue-700);
+  background: var(--grad-bright);
+  border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: 0 7px 24px rgba(2,132,199,0.45);
+  box-shadow: var(--glow-lg);
 }
 .btn-secondary {
   background: var(--white);
@@ -267,7 +326,11 @@ input, select, textarea { font-family: var(--font-body); }
   overflow: hidden;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg), var(--glow-sm);
+  border-color: rgba(56,189,248,0.5);
+}
 .card-body { padding: 1.75rem; }
 
 /* === FORMS === */
@@ -294,8 +357,8 @@ input, select, textarea { font-family: var(--font-body); }
   outline: none;
 }
 .form-control:focus {
-  border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(2,132,199,0.12);
+  border-color: var(--blue-400);
+  box-shadow: var(--glow-ring);
 }
 .form-control::placeholder { color: var(--text-300); }
 textarea.form-control { resize: vertical; min-height: 110px; }
@@ -536,10 +599,32 @@ html.dark-mode {
   --shadow-md:    0 4px 20px rgba(0,0,0,0.45);
   --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
   --shadow-xl:    0 16px 56px rgba(0,0,0,0.6);
+
+  /* Vidrio y brillo en modo oscuro: azul translúcido que brilla, no opaco */
+  --glass-bg:        rgba(13, 60, 92, 0.55);
+  --glass-bg-strong: rgba(13, 60, 92, 0.72);
+  --glass-border:    rgba(56, 189, 248, 0.22);
+  --glow-md:         0 8px 28px rgba(2,132,199,0.45);
+  --glow-lg:         0 0 0 1px rgba(56,189,248,0.35), 0 12px 40px rgba(14,165,233,0.5);
+}
+
+/* Tarjetas que brillan en modo oscuro */
+html.dark-mode .card,
+html.dark-mode .glass {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+}
+html.dark-mode .card:hover {
+  border-color: rgba(56,189,248,0.6);
+  box-shadow: var(--shadow-lg), var(--glow-md);
 }
 
 html.dark-mode body {
-  background: var(--ice-50);
+  background:
+    radial-gradient(ellipse 60% 45% at 15% 0%, rgba(14,165,233,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 50% at 100% 100%, rgba(56,189,248,0.12) 0%, transparent 55%),
+    var(--ice-50);
+  background-attachment: fixed;
   color: var(--text-900);
 }
 

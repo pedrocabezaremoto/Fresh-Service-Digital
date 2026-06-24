@@ -10,6 +10,7 @@
       document.documentElement.classList.add('dark-mode');
     }
   </script>
+  <script src="../icons.js" defer></script>
   <script src="../theme.js" defer></script>
   <style>
     /* —— ADMIN LAYOUT —— */
@@ -158,12 +159,18 @@
     .stat-card.clients::before { background: #8B5CF6; }
 
     .stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.9rem; }
-    .stat-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-    .stat-icon.total-i  { background: rgba(2,132,199,0.1); }
-    .stat-icon.pend-i   { background: rgba(245,158,11,0.1); }
-    .stat-icon.prog-i   { background: rgba(59,130,246,0.1); }
-    .stat-icon.done-i   { background: rgba(16,185,129,0.1); }
-    .stat-icon.cli-i    { background: rgba(139,92,246,0.1); }
+    .stat-icon { width: 42px; height: 42px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .stat-icon svg { width: 22px; height: 22px; }
+    .stat-icon.total-i  { background: rgba(2,132,199,0.12);  color: #0EA5E9; }
+    .stat-icon.pend-i   { background: rgba(245,158,11,0.12); color: #F59E0B; }
+    .stat-icon.prog-i   { background: rgba(139,92,246,0.12); color: #8B5CF6; }
+    .stat-icon.done-i   { background: rgba(16,185,129,0.12); color: #10B981; }
+    .stat-icon.cli-i    { background: rgba(139,92,246,0.12); color: #8B5CF6; }
+    /* Iconos del sidebar y logo */
+    .s-icon svg { width: 18px; height: 18px; }
+    .sidebar-logo-icon svg { width: 22px; height: 22px; }
+    .sidebar-logo-icon { color: #FFFFFF; }
+    .sidebar-link .s-icon { color: inherit; }
     .stat-value { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: var(--text-900); line-height: 1; margin-bottom: 5px; }
     .stat-label { font-size: 0.82rem; font-weight: 600; color: var(--text-500); }
 
@@ -312,7 +319,7 @@
     <!-- SIDEBAR -->
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">❄</div>
+        <div class="sidebar-logo-icon"><span data-icon="snowflake"></span></div>
         <div>
           <div class="sidebar-logo-text">Fresh Service</div>
           <div class="sidebar-logo-sub">Panel Administrativo</div>
@@ -322,28 +329,28 @@
       <nav class="sidebar-nav">
         <div class="sidebar-section-label">Principal</div>
         <a class="sidebar-link active" data-view="dashboard" onclick="switchView('dashboard', this)">
-          <span class="s-icon">📊</span> Dashboard
+          <span class="s-icon" data-icon="dashboard"></span> Dashboard
         </a>
         <a class="sidebar-link" data-view="solicitudes" onclick="switchView('solicitudes', this)">
-          <span class="s-icon">📋</span> Solicitudes
+          <span class="s-icon" data-icon="clipboard"></span> Solicitudes
           <span class="sidebar-badge red" id="pendingBadge">0</span>
         </a>
         <a class="sidebar-link" data-view="clientes" onclick="switchView('clientes', this)">
-          <span class="s-icon">👥</span> Clientes
+          <span class="s-icon" data-icon="users"></span> Clientes
           <span class="sidebar-badge" id="clientsBadge">0</span>
         </a>
 
         <div class="sidebar-section-label" style="margin-top:1rem;">Sistema</div>
         <a class="sidebar-link" data-view="dashboard" onclick="switchView('dashboard', this)">
-          <span class="s-icon">📈</span> Reportes
+          <span class="s-icon" data-icon="chart"></span> Reportes
         </a>
 
         <div style="margin-top: 1.5rem; padding: 0 1rem; display: flex; flex-direction: column; gap: 8px;">
-          <a href="../index.html" class="btn btn-secondary btn-sm btn-full" style="font-size:.82rem;">
-            ← Ver sitio web
+          <a href="../index.html" class="btn btn-secondary btn-sm btn-full" style="font-size:.82rem; gap:7px;">
+            <span data-icon="globe"></span> Ver sitio web
           </a>
-          <button onclick="logout()" class="btn btn-sm btn-full" style="font-size:.82rem; background:rgba(239,68,68,0.15); color:#FCA5A5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
-            ⎋ Cerrar sesión
+          <button onclick="logout()" class="btn btn-sm btn-full" style="font-size:.82rem; gap:7px; background:rgba(239,68,68,0.15); color:#FCA5A5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
+            <span data-icon="logout"></span> Cerrar sesión
           </button>
         </div>
       </nav>
@@ -369,8 +376,8 @@
           <div class="topbar-subtitle">Fresh Service Digital – Taller de Refrigeración</div>
         </div>
         <div class="topbar-actions">
-          <div class="topbar-date" id="topbarDate">📅 Hoy</div>
-          <button class="btn-refresh" onclick="loadAll()">↻ Actualizar</button>
+          <div class="topbar-date" id="topbarDate" style="display:inline-flex; align-items:center;">Hoy</div>
+          <button class="btn-refresh" onclick="loadAll()" style="display:inline-flex; align-items:center; gap:6px;"><span data-icon="refresh"></span> Actualizar</button>
           <button class="theme-toggle" aria-label="Cambiar tema" style="width: 36px; height: 36px; background: var(--ice-50); border: 1px solid var(--ice-200); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; cursor: pointer; transition: background .2s; color: var(--text-700);">🌙</button>
         </div>
       </div>
@@ -387,22 +394,22 @@
 
           <div class="stats-grid">
             <div class="stat-card total">
-              <div class="stat-top"><div class="stat-icon total-i">📋</div></div>
+              <div class="stat-top"><div class="stat-icon total-i" data-icon="clipboard"></div></div>
               <div class="stat-value" id="statTotal">0</div>
               <div class="stat-label">Solicitudes registradas</div>
             </div>
             <div class="stat-card pending">
-              <div class="stat-top"><div class="stat-icon pend-i">⏳</div></div>
+              <div class="stat-top"><div class="stat-icon pend-i" data-icon="clock"></div></div>
               <div class="stat-value" id="statPending">0</div>
               <div class="stat-label">Pendientes de atender</div>
             </div>
             <div class="stat-card progress">
-              <div class="stat-top"><div class="stat-icon prog-i">🔧</div></div>
+              <div class="stat-top"><div class="stat-icon prog-i" data-icon="wrench"></div></div>
               <div class="stat-value" id="statProgress">0</div>
               <div class="stat-label">En proceso</div>
             </div>
             <div class="stat-card clients">
-              <div class="stat-top"><div class="stat-icon cli-i">👥</div></div>
+              <div class="stat-top"><div class="stat-icon cli-i" data-icon="users"></div></div>
               <div class="stat-value" id="statClients">0</div>
               <div class="stat-label">Clientes registrados</div>
             </div>
@@ -570,7 +577,7 @@
 
     /* Fecha del topbar */
     const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('topbarDate').textContent = `📅 ${new Date().toLocaleDateString('es-VE', dateOptions)}`;
+    document.getElementById('topbarDate').innerHTML = `<span data-icon="calendar" style="margin-right:6px"></span>${new Date().toLocaleDateString('es-VE', dateOptions)}`;
 
     /* ───────── TOAST ───────── */
     function showToast(message, type = 'success') {
@@ -686,7 +693,7 @@
         const failureDesc = equip ? equip.failureDescription : (apt.notes || 'Revisión general');
         const initials = ((apt.client.firstName[0] || '') + (apt.client.lastName[0] || '')).toUpperCase();
         const waPhone = apt.client.phone ? apt.client.phone.replace(/[^0-9]/g, '') : '';
-        const waLink = waPhone ? `<a href="https://wa.me/${waPhone}" target="_blank" class="action-btn" title="WhatsApp">💬</a>` : '';
+        const waLink = waPhone ? `<a href="https://wa.me/${waPhone}" target="_blank" class="action-btn" title="WhatsApp"><span data-icon="whatsapp"></span></a>` : '';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -712,6 +719,7 @@
       });
       document.getElementById('tableInfoSummary').textContent = `${list.length} solicitudes en la base de datos`;
       document.getElementById('tableFooterInfo').textContent = `Mostrando ${list.length} de ${allAppointments.length} solicitudes`;
+      if (window.FSIcons) window.FSIcons.render();
     }
 
     function filterTable() {
@@ -763,7 +771,7 @@
         const nCitas = c._count ? c._count.appointments : 0;
         const waPhone = c.phone ? c.phone.replace(/[^0-9]/g, '') : '';
         const phoneCell = waPhone
-          ? `<a href="https://wa.me/${waPhone}" target="_blank" style="color:var(--blue-700); font-weight:600; text-decoration:none;">${c.phone} 💬</a>`
+          ? `<a href="https://wa.me/${waPhone}" target="_blank" style="color:var(--blue-700); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">${c.phone} <span data-icon="whatsapp"></span></a>`
           : 'N/A';
         const verified = c.isVerified
           ? '<span class="status-select st-COMPLETED" style="padding:4px 12px;">Verificado</span>'
@@ -787,6 +795,7 @@
       });
       document.getElementById('clientsInfoSummary').textContent = `${list.length} clientes registrados`;
       document.getElementById('clientsFooterInfo').textContent = `Mostrando ${list.length} de ${allClients.length} clientes`;
+      if (window.FSIcons) window.FSIcons.render();
     }
 
     function filterClients() {
