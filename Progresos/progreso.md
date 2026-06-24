@@ -152,3 +152,22 @@ Fresh-Service-Digital/
 - Backend NestJS intacto. El HTML viejo queda como referencia.
 - **Levantar frontend:** `cd frontend-react && pnpm install && node node_modules/vite/bin/vite.js build`, luego `PORT=4100 pm2 start serve.mjs --name fresh-frontend`.
 - Incidente nginx/Traefik resuelto (ver historial Fase 8).
+
+---
+
+## 📌 PENDIENTE PARA MAÑANA (2026-06-25)
+
+**Frontend React nuevo (https://fresh.pedroservicios.xyz):**
+- [ ] Revisar la 1ª versión del rediseño con Pedro y afinar (colores, textos, espaciados, copy).
+- [ ] Reemplazar las **fotos de stock** (Unsplash) por **fotos reales del taller/trabajos** cuando Pedro las pase (`frontend-react/src/lib/images.js`).
+- [ ] Decidir qué hacer con el viejo GitHub Pages: redirigir a `fresh.pedroservicios.xyz` o dejarlo como está.
+- [ ] Favicon propio (ahora usa `/favicon.svg` que no existe aún) + meta/OG tags para compartir el link.
+
+**Backend / seguridad (no urgente para demo, sí antes de producción real):**
+- [ ] Servicio de **correo real** para activación (dejar de devolver `activationUrl` en la respuesta).
+- [ ] Refresh tokens + expiración de sesión más fina.
+- [ ] Rate-limiting en login/registro.
+
+**Infra / operación:**
+- [ ] Confirmar `pm2 startup` para que `fresh-frontend`, `fresh-service` e `inmoya` reaparezcan solos tras un reinicio del VPS.
+- [ ] Recordatorio: **nginx quedó deshabilitado** (Traefik usa 80/443). Abrir puertos a Docker SIEMPRE con `ufw` (no iptables directo).
