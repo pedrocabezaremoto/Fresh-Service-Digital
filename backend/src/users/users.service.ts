@@ -5,12 +5,14 @@ import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   /**
@@ -87,19 +89,15 @@ export class UsersService {
     const baseUrl = process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 4000}`;
     const activationUrl = `${baseUrl}/users/verify-link?token=${verificationToken}`;
 
-    console.log(`\n======================================================`);
-    console.log(`📬 [SIMULACIÓN DE CORREO] Enlace de Verificación`);
-    console.log(`Para: ${email}`);
-    console.log(`Enlace: ${activationUrl}`);
-    console.log(`======================================================\n`);
+    // 6. Enviar correo real o simular si no está configurado SMTP
+    const sent = await this.mailService.sendVerificationEmail(email, activationUrl);
 
-    // NOTA: mientras no haya servicio de correo real, devolvemos el enlace
-    // para que la demo pueda activar la cuenta. Quitar cuando se integre el email.
     return {
-      message: 'Usuario registrado exitosamente. Por favor, haz clic en el enlace de activación enviado a tu correo.',
+      message: 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico para activar tu cuenta.',
       userId: user.id,
       email: user.email,
-      activationUrl,
+      // Solo devolvemos activationUrl si no se pudo enviar el correo real (modo de simulación offline)
+      ...(!sent ? { activationUrl } : {}),
     };
   }
 

@@ -1,8 +1,18 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Snowflake, CheckCircle2 } from 'lucide-react';
 import { IMG } from '../lib/images';
 
 export default function AuthShell({ title, subtitle, children, perks }) {
+  const navigate = useNavigate();
+
+  const handleBack = (e) => {
+    e.preventDefault();
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left brand panel */}
@@ -41,16 +51,16 @@ export default function AuthShell({ title, subtitle, children, perks }) {
       {/* Right form */}
       <div className="flex items-center justify-center bg-brand-50 px-5 py-10 sm:px-8">
         <div className="w-full max-w-md">
-          <Link to="/" className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:hidden">
-            <ArrowLeft size={16} /> Volver al inicio
+          <Link to="/" onClick={handleBack} className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:hidden">
+            <ArrowLeft size={16} /> Volver
           </Link>
           <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100 sm:p-9">
             <h1 className="font-display text-2xl font-extrabold text-ink-900">{title}</h1>
             {subtitle && <p className="mt-1.5 text-sm text-ink-500">{subtitle}</p>}
             <div className="mt-6">{children}</div>
           </div>
-          <Link to="/" className="mt-6 hidden items-center justify-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:flex">
-            <ArrowLeft size={16} /> Volver al inicio
+          <Link to="/" onClick={handleBack} className="mt-6 hidden items-center justify-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:flex">
+            <ArrowLeft size={16} /> Volver
           </Link>
         </div>
       </div>

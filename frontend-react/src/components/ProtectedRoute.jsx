@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, isAdmin, ready } = useAuth();
+export default function ProtectedRoute({ children, requireAdmin = false, requireTechnician = false }) {
+  const { isAuthenticated, isAdmin, isTechnician, ready } = useAuth();
   const location = useLocation();
 
   if (!ready) {
@@ -18,6 +18,10 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
   }
 
   if (requireAdmin && !isAdmin) {
+    return <Navigate to="/panel" replace />;
+  }
+
+  if (requireTechnician && !isTechnician) {
     return <Navigate to="/panel" replace />;
   }
 

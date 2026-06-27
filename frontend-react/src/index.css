@@ -112,3 +112,82 @@
     50% { transform: translateY(-12px); }
   }
 }
+
+/* =====================================================
+   SOPORTE PARA MODO OSCURO (DARK MODE)
+   ===================================================== */
+
+/* Registro de variante clase de dark mode para Tailwind v4 */
+@variant dark (&:where(.dark-mode, .dark-mode *));
+
+.dark-mode {
+  /* Sobrescribir solo variables de texto y contenedores semánticos */
+  --color-brand-50: #082f49;       /* Fondo global de la página */
+  
+  --color-ink-900: #f8fafc;        /* Texto principal claro */
+  --color-ink-700: #cbd5e1;        /* Texto secundario */
+  --color-ink-500: #94a3b8;        /* Texto secundario atenuado */
+  
+  --color-slate-100: #075985;      /* Bordes divisores en layouts */
+  --color-slate-50: #0b1a26;       /* Fondos alternativos */
+}
+
+/* Evitar colisión de text-white: no sobrescribimos --color-white globalmente, 
+   sino que cambiamos el fondo de los elementos .bg-white en modo oscuro */
+.dark-mode .bg-white {
+  background-color: #0b1a26 !important;
+}
+
+.dark-mode .bg-white\/90 {
+  background-color: rgba(11, 26, 38, 0.9) !important;
+}
+
+/* Cambiar los fondos de marca semánticos en modo oscuro */
+.dark-mode .bg-brand-50 {
+  background-color: #082f49 !important;
+}
+
+.dark-mode .bg-brand-100 {
+  background-color: #0c4a6e !important;
+}
+
+.dark-mode .border-brand-100,
+.dark-mode .ring-brand-100 {
+  border-color: #075985 !important;
+  --tw-ring-color: #075985 !important;
+}
+
+/* Corregir texto del Logo en el navbar oscuro */
+.dark-mode .text-brand-950 {
+  color: var(--color-ink-900) !important;
+}
+
+/* Ajustes finos de UI en modo oscuro para campos de entrada */
+.dark-mode input, 
+.dark-mode select, 
+.dark-mode textarea {
+  background-color: #0c4a6e !important;
+  border-color: #075985 !important;
+  color: var(--color-ink-900) !important;
+}
+
+.dark-mode input::placeholder, 
+.dark-mode select::placeholder, 
+.dark-mode textarea::placeholder {
+  color: rgba(248, 250, 252, 0.4) !important;
+}
+
+/* Ajustar los bordes de cabecera y footer */
+.dark-mode header, 
+.dark-mode footer {
+  border-color: #075985 !important;
+}
+
+/* Ajustar el fondo de las tarjetas de vidrio (glass) en modo oscuro */
+.dark-mode .glass {
+  background: rgba(8, 47, 73, 0.55) !important;
+  border-color: rgba(56, 189, 248, 0.22) !important;
+}
+
+
+

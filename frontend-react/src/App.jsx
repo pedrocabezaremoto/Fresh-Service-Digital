@@ -8,6 +8,7 @@ import Registro from './pages/Registro';
 import Solicitud from './pages/Solicitud';
 import ClienteDashboard from './pages/ClienteDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import TecnicoDashboard from './pages/TecnicoDashboard';
 
 export default function App() {
   return (
@@ -22,6 +23,16 @@ export default function App() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Panel técnico (pantalla completa similar a admin) */}
+      <Route
+        path="/tecnico"
+        element={
+          <ProtectedRoute requireTechnician>
+            <TecnicoDashboard />
           </ProtectedRoute>
         }
       />

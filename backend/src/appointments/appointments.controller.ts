@@ -17,10 +17,10 @@ export class AppointmentsController {
     return this.appointmentsService.create(createDto);
   }
 
-  // Ver TODAS las citas: solo ADMIN (panel del taller)
+  // Ver TODAS las citas: ADMIN y TECHNICIAN (panel del taller)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'TECHNICIAN')
   async getAll() {
     return this.appointmentsService.findAll();
   }
@@ -32,17 +32,17 @@ export class AppointmentsController {
     return this.appointmentsService.findByClient(clientId);
   }
 
-  // Cambiar estado de una cita: solo ADMIN
+  // Cambiar estado de una cita: ADMIN y TECHNICIAN
   @Patch(':id/complete')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'TECHNICIAN')
   async complete(@Param('id') id: string) {
     return this.appointmentsService.completeAppointment(id);
   }
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'TECHNICIAN')
   async updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateStatusDto,

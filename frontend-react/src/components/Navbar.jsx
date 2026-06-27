@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, LayoutDashboard, LogOut } from 'lucide-react';
+import { Menu, X, ArrowRight, LayoutDashboard, LogOut, Sun, Moon } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, isTechnician, user, logout } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
 
   const links = [
@@ -15,7 +17,7 @@ export default function Navbar() {
     { to: '/solicitud', label: 'Solicitar' },
   ];
 
-  const panelLink = isAdmin ? '/admin' : '/panel';
+  const panelLink = isAdmin ? '/admin' : isTechnician ? '/tecnico' : '/panel';
 
   const linkClass = ({ isActive }) =>
     `text-sm font-semibold uppercase tracking-wide transition-colors ${
@@ -42,6 +44,14 @@ export default function Navbar() {
               {l.label}
             </NavLink>
           ))}
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+            className="grid h-9 w-9 place-items-center rounded-full text-ink-700 hover:bg-brand-50 transition-colors cursor-pointer"
+          >
+            {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-brand-700" />}
+          </button>
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <Link
@@ -49,7 +59,7 @@ export default function Navbar() {
                 className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
               >
                 <LayoutDashboard size={16} />
-                {isAdmin ? 'Panel Taller' : 'Mi Panel'}
+                {isAdmin ? 'Panel Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
               </Link>
               <button
                 onClick={handleLogout}
@@ -70,13 +80,22 @@ export default function Navbar() {
         </div>
 
         {/* Mobile toggle */}
-        <button
-          className="grid h-10 w-10 place-items-center rounded-lg text-ink-700 lg:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Menú"
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            onClick={toggleTheme}
+            title={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
+            className="grid h-10 w-10 place-items-center rounded-lg text-ink-700 cursor-pointer"
+          >
+            {isDark ? <Sun size={20} className="text-amber-500" /> : <Moon size={20} className="text-brand-700" />}
+          </button>
+          <button
+            className="grid h-10 w-10 place-items-center rounded-lg text-ink-700"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Menú"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile menu */}
@@ -106,7 +125,7 @@ export default function Navbar() {
                     onClick={() => setOpen(false)}
                     className="rounded-full bg-brand-50 px-4 py-3 text-center text-sm font-bold text-brand-700"
                   >
-                    {isAdmin ? 'Panel del Taller' : 'Mi Panel'}
+                    {isAdmin ? 'Panel del Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
                   </Link>
                   <button
                     onClick={handleLogout}
