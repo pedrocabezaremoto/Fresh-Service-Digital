@@ -22,6 +22,8 @@ export class MailService {
           user,
           pass,
         },
+        connectionTimeout: 3000,
+        greetingTimeout: 3000,
       });
       this.logger.log(`SMTP Mailer initialized with host: ${host}`);
     } else {

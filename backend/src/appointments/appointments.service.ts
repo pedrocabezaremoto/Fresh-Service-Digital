@@ -40,13 +40,32 @@ export class AppointmentsService {
   }
 
   /**
-   * Obtiene todas las citas de la base de datos, incluyendo la relación
-   * con el cliente (User) y sus equipos asociados (Equipment).
+   * Obtiene todas las citas de la base de datos (con filtrado si el rol es TECHNICIAN),
+   * incluyendo la relación con el cliente (User), técnico asignado (User) y sus equipos asociados (Equipment).
    */
-  async findAll() {
+  async findAll(user?: any) {
+    const where: any = {};
+    if (user && user.role === 'TECHNICIAN') {
+      where.OR = [
+        { technicianId: user.sub },
+        { technicianId: null, status: AppointmentStatus.PENDING },
+      ];
+    }
+
     return this.prisma.appointment.findMany({
+      where,
       include: {
         client: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            role: true,
+          },
+        },
+        technician: {
           select: {
             id: true,
             email: true,
@@ -97,6 +116,49 @@ export class AppointmentsService {
     return this.prisma.appointment.update({
       where: { id: appointmentId },
       data: { status },
+    });
+  }
+
+  /**
+   * Asigna un técnico a una cita. Si se pasa un técnico y el estado era PENDING,
+   * se actualiza automáticamente a ASSIGNED.
+   */
+  async assignTechnician(appointmentId: string, technicianId: string | null) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    const data: any = { technicianId };
+    if (technicianId && appointment && appointment.status === AppointmentStatus.PENDING) {
+      data.status = AppointmentStatus.ASSIGNED;
+    }
+
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data,
+      include: {
+        client: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            role: true,
+          },
+        },
+        technician: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            role: true,
+          },
+        },
+        equipment: true,
+      },
     });
   }
 }

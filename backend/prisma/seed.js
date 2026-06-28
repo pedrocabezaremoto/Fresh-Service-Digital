@@ -78,7 +78,7 @@ async function main() {
 
   // Limpiar datos previos (citas/equipos caen en cascada al borrar usuarios)
   await prisma.user.deleteMany({});
-  console.log('   🧹 Datos previos eliminados');
+  console.log('   Datos previos eliminados');
 
   // Usuario ADMIN del taller (para entrar al dashboard administrativo)
   await prisma.user.create({
@@ -93,6 +93,20 @@ async function main() {
     },
   });
   console.log('   👑 Admin creado: admin@freshservice.com / Admin1234');
+
+  // Usuario TECHNICIAN del taller (para probar el panel de técnico)
+  const tech = await prisma.user.create({
+    data: {
+      email: 'tecnico@freshservice.com',
+      password: PASS,
+      firstName: 'Carlos',
+      lastName: 'Técnico',
+      phone: '+584121234567',
+      role: 'TECHNICIAN',
+      isVerified: true,
+    },
+  });
+  console.log('   🔧 Técnico creado: tecnico@freshservice.com / Demo1234');
 
   for (const c of clientes) {
     const existing = await prisma.user.findUnique({ where: { email: c.email } });
@@ -121,10 +135,35 @@ async function main() {
       const eq = rnd(equipos);
       const mes = Math.floor(Math.random() * 5);
       const fecha = fechaEnMes(mes);
+
+      // Lógica de estado y asignación realista
+      let status = 'PENDING';
+      let technicianId = null;
+
+      const rand = Math.random();
+      if (rand < 0.5) {
+        // 50% de las citas están pendientes y listas para ser tomadas/asignadas
+        status = 'PENDING';
+        technicianId = null;
+      } else if (rand < 0.8) {
+        // 30% completadas (ya asignadas al técnico)
+        status = 'COMPLETED';
+        technicianId = tech.id;
+      } else if (rand < 0.9) {
+        // 10% en ejecución (asignadas al técnico)
+        status = 'IN_PROGRESS';
+        technicianId = tech.id;
+      } else {
+        // 10% canceladas (sin técnico)
+        status = 'CANCELLED';
+        technicianId = null;
+      }
+
       await prisma.appointment.create({
         data: {
           clientId: user.id,
-          status: rnd(estados),
+          status,
+          technicianId,
           scheduledAt: fecha,
           createdAt: fecha,
           notes: rnd(fallas),

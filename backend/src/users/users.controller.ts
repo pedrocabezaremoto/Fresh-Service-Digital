@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Query, Body, HttpCode, HttpStatus, Header, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Query, Body, HttpCode, HttpStatus, UseGuards, Res } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -18,15 +18,30 @@ export class UsersController {
     return this.usersService.findAllClients();
   }
 
+  // Solo un ADMIN logueado puede ver el listado de técnicos del taller
+  @Get('technicians')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async findTechnicians() {
+    return this.usersService.findAllTechnicians();
+  }
+
   @Post('register')
   async register(@Body() registerDto: RegisterUserDto) {
     return this.usersService.register(registerDto);
   }
 
   @Get('verify-link')
-  @Header('Content-Type', 'text/html')
-  async verifyLink(@Query('token') token: string) {
-    return this.usersService.verifyEmailLink(token);
+  async verifyLink(@Query('token') token: string, @Res() res: any) {
+    try {
+      await this.usersService.verifyEmailLink(token);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+      return res.redirect(`${frontendUrl}/login?verified=true`);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+      const errMsg = encodeURIComponent(error.message || 'Error de verificación');
+      return res.redirect(`${frontendUrl}/login?error=${errMsg}`);
+    }
   }
 
   @Post('login')

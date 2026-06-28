@@ -72,6 +72,29 @@ export default function TecnicoDashboard() {
     }
   }
 
+  async function claimJob(id) {
+    try {
+      const updated = await api.assignTechnician(id, user.id);
+      setAppts((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                technicianId: user.id,
+                technician: user,
+                status: updated.status,
+              }
+            : a
+        )
+      );
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        logout();
+        navigate('/login');
+      }
+    }
+  }
+
   const filteredAppts = useMemo(() => {
     return appts.filter((a) => {
       // Filtrar por pestaña activa
@@ -338,14 +361,24 @@ export default function TecnicoDashboard() {
                                   target="_blank"
                                   rel="noreferrer"
                                   title="Contactar al cliente"
-                                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:ring-1 dark:ring-emerald-500/20"
                                 >
                                   <MessageCircle size={20} />
                                 </a>
                               )}
 
-                              {/* Ejecución de Estados */}
-                              {['PENDING', 'ASSIGNED'].includes(a.status) && (
+                              {/* Botón de Tomar Servicio */}
+                              {!a.technicianId && (
+                                <button
+                                  onClick={() => claimJob(a.id)}
+                                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gradient py-2.5 font-bold text-white shadow-glow hover:shadow-glow-lg transition cursor-pointer"
+                                >
+                                  <ClipboardList size={16} /> Tomar servicio
+                                </button>
+                              )}
+
+                              {/* Iniciar servicio (solo si ya está asignado al técnico actual) */}
+                              {a.technicianId === user?.id && ['PENDING', 'ASSIGNED'].includes(a.status) && (
                                 <button
                                   onClick={() => changeStatus(a.id, 'IN_PROGRESS')}
                                   className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-brand-gradient py-2.5 font-bold text-white shadow-glow hover:shadow-glow-lg transition cursor-pointer"
@@ -364,7 +397,7 @@ export default function TecnicoDashboard() {
                               )}
 
                               {a.status === 'COMPLETED' && (
-                                <div className="flex-1 text-center py-2 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-xl">
+                                <div className="flex-1 text-center py-2 text-sm font-bold text-emerald-600 bg-emerald-50 rounded-xl dark:bg-emerald-950/20 dark:text-emerald-400 dark:ring-1 dark:ring-emerald-500/20">
                                   ✓ Servicio Completado
                                 </div>
                               )}

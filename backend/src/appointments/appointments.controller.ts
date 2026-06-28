@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -21,8 +21,8 @@ export class AppointmentsController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'TECHNICIAN')
-  async getAll() {
-    return this.appointmentsService.findAll();
+  async getAll(@Req() req: any) {
+    return this.appointmentsService.findAll(req.user);
   }
 
   // Historial de un cliente: requiere estar autenticado
@@ -48,5 +48,20 @@ export class AppointmentsController {
     @Body() updateStatusDto: UpdateStatusDto,
   ) {
     return this.appointmentsService.updateStatus(id, updateStatusDto.status);
+  }
+
+  // Asignar técnico a una cita: ADMIN y TECHNICIAN (auto-asignación)
+  @Patch(':id/assign')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'TECHNICIAN')
+  async assign(
+    @Param('id') id: string,
+    @Body('technicianId') technicianId: string | null,
+    @Req() req: any,
+  ) {
+    if (req.user.role === 'TECHNICIAN') {
+      return this.appointmentsService.assignTechnician(id, req.user.sub);
+    }
+    return this.appointmentsService.assignTechnician(id, technicianId);
   }
 }

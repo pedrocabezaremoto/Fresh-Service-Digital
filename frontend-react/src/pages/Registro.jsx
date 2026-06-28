@@ -59,17 +59,10 @@ export default function Registro() {
             <MailCheck size={32} />
           </div>
           <p className="mt-5 text-sm leading-relaxed text-ink-500">
-            Enviamos un enlace de activación a tu correo. Haz clic para activar tu
-            cuenta y poder iniciar sesión.
+            Enviamos un enlace de activación a tu correo electrónico. Por favor, revisa tu bandeja de entrada (y la carpeta de spam si es necesario) y haz clic en el enlace para activar tu cuenta.
           </p>
-          {done.activationUrl && (
-            <a href={done.activationUrl} target="_blank" rel="noreferrer"
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-6 py-3 font-semibold text-white shadow-glow transition hover:shadow-glow-lg sheen">
-              Activar mi cuenta ahora <ExternalLink size={17} />
-            </a>
-          )}
-          <Link to="/login" className="mt-3 inline-flex w-full items-center justify-center rounded-full border-2 border-brand-100 px-6 py-3 font-semibold text-brand-700 transition hover:bg-brand-50">
-            Ir al login
+          <Link to="/login" className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand-gradient px-6 py-3 font-semibold text-white shadow-glow transition hover:shadow-glow-lg">
+            Ir al inicio de sesión
           </Link>
         </div>
       </AuthShell>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import AuthShell, { Field, inputClass } from '../components/AuthShell';
 import Button from '../components/Button';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,9 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const verified = searchParams.get('verified') === 'true';
+  const urlError = searchParams.get('error');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
@@ -20,7 +23,13 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email.trim(), password);
-      navigate(user.role === 'ADMIN' ? '/admin' : '/panel');
+      if (user.role === 'ADMIN') {
+        navigate('/admin');
+      } else if (user.role === 'TECHNICIAN') {
+        navigate('/tecnico');
+      } else {
+        navigate('/panel');
+      }
     } catch (err) {
       setError(err.message || 'No se pudo iniciar sesión');
     } finally {
@@ -41,6 +50,20 @@ export default function Login() {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {verified && (
+          <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:ring-emerald-500/20">
+            <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>¡Cuenta activada con éxito! Ya puedes iniciar sesión.</span>
+          </div>
+        )}
+
+        {urlError && (
+          <div className="flex items-start gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:ring-rose-500/20">
+            <AlertCircle size={18} className="mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+            <span>{urlError}</span>
+          </div>
+        )}
+
         {error && (
           <div className="flex items-start gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
             <AlertCircle size={18} className="mt-0.5 shrink-0" /> {error}
@@ -74,7 +97,7 @@ export default function Login() {
       </form>
 
       <p className="mt-5 text-center text-xs text-ink-500">
-        Demo admin: <span className="font-semibold text-ink-700">admin@freshservice.com</span> / Admin1234
+        Demos: <span className="font-semibold text-ink-700">admin@freshservice.com</span> (Admin1234) · <span className="font-semibold text-ink-700">tecnico@freshservice.com</span> (Demo1234)
       </p>
     </AuthShell>
   );

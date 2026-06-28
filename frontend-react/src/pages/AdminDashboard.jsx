@@ -59,6 +59,7 @@ export default function AdminDashboard() {
   const [view, setView] = useState('dashboard');
   const [appts, setAppts] = useState([]);
   const [clients, setClients] = useState([]);
+  const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -67,8 +68,14 @@ export default function AdminDashboard() {
   async function load() {
     setLoading(true);
     try {
-      const [a, c] = await Promise.all([api.getAllAppointments(), api.getClients()]);
-      setAppts(a); setClients(c);
+      const [a, c, t] = await Promise.all([
+        api.getAllAppointments(),
+        api.getClients(),
+        api.getTechnicians()
+      ]);
+      setAppts(a);
+      setClients(c);
+      setTechs(t || []);
     } catch (err) {
       if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
     } finally { setLoading(false); }
@@ -110,6 +117,26 @@ export default function AdminDashboard() {
     try {
       await api.updateStatus(id, status);
       setAppts((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
+    }
+  }
+
+  async function handleAssign(id, technicianId) {
+    try {
+      const updated = await api.assignTechnician(id, technicianId);
+      setAppts((prev) =>
+        prev.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                technicianId,
+                technician: techs.find((t) => t.id === technicianId) || null,
+                status: updated.status,
+              }
+            : a
+        )
+      );
     } catch (err) {
       if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
     }
@@ -258,13 +285,13 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
-                    <tr><th className="px-5 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Fecha</th><th className="px-3 py-3">Estado</th><th className="px-5 py-3"></th></tr>
+                    <tr><th className="px-5 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Fecha</th><th className="px-3 py-3">Técnico</th><th className="px-3 py-3">Estado</th><th className="px-5 py-3"></th></tr>
                   </thead>
                   <tbody>
                     {filteredAppts.map((a) => {
-                      const eq = a.equipment?.[0];
-                      const wa = a.client.phone ? a.client.phone.replace(/\D/g, '') : '';
-                      return (
+                       const eq = a.equipment?.[0];
+                       const wa = a.client.phone ? a.client.phone.replace(/\D/g, '') : '';
+                       return (
                         <tr key={a.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-3">
@@ -283,13 +310,27 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-3 py-3 text-ink-700">{fmtDate(a.scheduledAt)}<div className="text-xs text-ink-400">{fmtTime(a.scheduledAt)}</div></td>
                           <td className="px-3 py-3">
+                            <select
+                              value={a.technicianId || ''}
+                              onChange={(e) => handleAssign(a.id, e.target.value || null)}
+                              className="rounded-xl border border-slate-200 px-2 py-1 text-xs outline-none bg-slate-50 text-ink-700 font-semibold focus:ring-1 focus:ring-brand-400"
+                            >
+                              <option value="">Sin asignar</option>
+                              {techs.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.firstName} {t.lastName}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-3 py-3">
                             <select value={a.status} onChange={(e) => changeStatus(a.id, e.target.value)}
                               className={`rounded-full px-3 py-1 text-xs font-bold outline-none ${STATUS[a.status]?.cls}`}>
                               {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                             </select>
                           </td>
                           <td className="px-5 py-3">
-                            {wa && <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100"><MessageCircle size={16} /></a>}
+                            {wa && <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:ring-1 dark:ring-emerald-500/20"><MessageCircle size={16} /></a>}
                           </td>
                         </tr>
                       );

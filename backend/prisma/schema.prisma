@@ -34,22 +34,26 @@ model User {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   appointments     Appointment[] @relation("ClientAppointments")
+  assignedServices Appointment[] @relation("TechnicianAppointments")
 
   @@map("users")
 }
 
 model Appointment {
-  id          String            @id @default(uuid())
-  clientId    String
-  client      User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
-  status      AppointmentStatus @default(PENDING)
-  scheduledAt DateTime
-  notes       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  equipment   Equipment[]
+  id           String            @id @default(uuid())
+  clientId     String
+  client       User              @relation("ClientAppointments", fields: [clientId], references: [id], onDelete: Cascade)
+  technicianId String?
+  technician   User?             @relation("TechnicianAppointments", fields: [technicianId], references: [id], onDelete: SetNull)
+  status       AppointmentStatus @default(PENDING)
+  scheduledAt  DateTime
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  equipment    Equipment[]
 
   @@index([clientId])
+  @@index([technicianId])
   @@map("appointments")
 }
 

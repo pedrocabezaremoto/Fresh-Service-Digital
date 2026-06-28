@@ -52,6 +52,7 @@ export const api = {
 
   // Usuarios (admin)
   getClients: () => request('/users', { auth: true }),
+  getTechnicians: () => request('/users/technicians', { auth: true }),
 
   // Citas
   createAppointment: (payload) =>
@@ -61,4 +62,6 @@ export const api = {
     request(`/appointments/client/${clientId}`, { auth: true }),
   updateStatus: (id, status) =>
     request(`/appointments/${id}/status`, { method: 'PATCH', body: { status }, auth: true }),
+  assignTechnician: (id, technicianId) =>
+    request(`/appointments/${id}/assign`, { method: 'PATCH', body: { technicianId }, auth: true }),
 };
