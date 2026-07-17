@@ -22,3 +22,6 @@ yarn-error.log*
 *.sln
 *.sw?
 .DS_Store
+
+# Log del webhook de deploy (local al VPS)
+deploy-webhook.log
