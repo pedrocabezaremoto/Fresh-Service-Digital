@@ -383,3 +383,52 @@ Durante el despliegue, un reschedule del Docker Swarm dejó **Traefik en 0/1**: 
 - **Fix Traefik:** `systemctl stop nginx && systemctl disable nginx` → Traefik recuperó el 80 (1/1).
 - **Fix InmoYa:** sus reglas de firewall del puerto 3001 eran `iptables` directas (no ufw) y se perdieron al recargar ufw; se re-agregaron con `ufw allow ... port 3001`.
 - **Lección:** abrir puertos a Docker SIEMPRE con ufw (persistente); nginx no debe correr (Traefik es el proxy de 80/443).
+
+---
+
+## 🤖 Fase 9 — Automatización de Deploy (webhook GitHub + script) y fix de migración
+
+**Fecha:** 2026-07-17 (noche) / 2026-07-18
+
+**Contexto:** María (colaboradora, `mariab1709`) trabajó desde su máquina local y empujó cambios a `main` los días 26–27 jun (modo oscuro, verificación por correo, elección de citas para técnicos). El sitio en vivo **no reflejaba** esos cambios porque nadie había reconstruido/redeployado en el VPS: el `dist/` del frontend era del 24-jun y el backend corría código viejo.
+
+### 🐛 Bug encontrado y corregido — migración faltante
+- María cambió `backend/prisma/schema.prisma` (agregó `technicianId` + relación `technician` en `Appointment`, índice y FK a `users` con `onDelete: SetNull`) **sin generar la migración**.
+- La tabla real `appointments` en la DB del VPS **no tenía** la columna `technicianId` → reiniciar el backend así habría roto la función de citas de técnicos.
+- **Fix:** se generó la migración con `prisma migrate diff` (schema viejo vs nuevo) y se creó `backend/prisma/migrations/20260717233942_add_technician_to_appointment/` (cambio aditivo, sin pérdida de datos). Aplicada con `prisma migrate deploy`. Verificado: `GET /appointments` → 401 (protegido, no 500).
+- **Regla nueva para el equipo:** al tocar la base de datos, correr `npx prisma migrate dev --name descripcion` y subir la carpeta `prisma/migrations/`. Nunca cambiar el schema sin migración.
+
+### 🚀 `deploy.sh` — despliegue seguro de un comando
+Script en la raíz del repo. Flujo: **git pull → migraciones → build frontend → build backend → restart pm2 → health check**.
+- **Seguridad:** construye TODO antes de reiniciar; si un build falla, aborta y el sitio viejo sigue en vivo (nunca deja producción caída a medias).
+- Detector de migraciones pendientes / desincronización de schema (avisa si alguien cambió el schema sin migración).
+- Health check a `:4000` (backend) y `:4100` (frontend); marca CAÍDO si responde 000/5xx.
+- Uso manual: `cd /root/Fresh-Service-Digital && ./deploy.sh`.
+
+### 🔔 Webhook de GitHub — deploy automático en cada push a main
+- **`webhook.mjs`** (Node, sin dependencias) bajo pm2 `fresh-webhook`, puerto **4200**.
+  - Verifica firma **HMAC-SHA256** (`X-Hub-Signature-256`) contra el secreto en `/root/.fresh-webhook-secret` (chmod 600, fuera del repo).
+  - Solo despliega en `refs/heads/main`; responde 202 rápido y corre `deploy.sh` en background con lock anti-solape. Log en `deploy-webhook.log` (gitignored).
+- **Traefik:** `/etc/easypanel/traefik/config/fresh-webhook.yaml` → router `Host(api.pedroservicios.xyz) && PathPrefix(/deploy-hook)` prioridad **100** (gana sobre el backend) → `172.18.0.1:4200`. HTTPS con el cert letsencrypt existente de `api.`.
+- **ufw:** abierto 4200 desde `172.16.0.0/12` y `10.0.0.0/8` (igual que 4000/4100).
+- **URL del webhook:** `https://api.pedroservicios.xyz/deploy-hook`.
+- **Configurado en GitHub** (repo Settings → Webhooks): content-type `application/json`, evento `push`, SSL on. Ping inicial ✅ verde.
+
+### ✅ Prueba end-to-end
+- Tests locales del webhook: firma inválida → 401, ping → pong, push a rama ≠ main → ignorado. ✔
+- Push de prueba (commit vacío) a `main` → webhook disparó `deploy.sh` solo → **✅ Deploy COMPLETO (exit 0)**, frontend 200 / backend 404 OK.
+
+### Commits
+- `5277ba77` — migración `technicianId` + `deploy.sh`.
+- `6f800d81` — `webhook.mjs` + `.gitignore`.
+- `71da1033` — commit vacío de prueba del webhook.
+
+### ⚠️ Nota / pendiente — npm vs pnpm
+`deploy.sh` usa `npm install`/`npm run build`. El proyecto históricamente usaba **pnpm** en el backend ("por seguridad", Fase 2). Ya hay mezcla (María subió `backend/package-lock.json` de npm). Funciona, pero conviene decidir un solo gestor y unificar lockfiles para evitar drift.
+
+### Flujo final (ya operativo)
+```
+push a main → GitHub avisa al webhook → verifica firma → deploy.sh
+   → git pull → migraciones → build front/back → restart pm2 → health check
+   → cambios en vivo en https://fresh.pedroservicios.xyz
+```

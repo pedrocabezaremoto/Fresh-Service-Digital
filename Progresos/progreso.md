@@ -171,3 +171,39 @@ Fresh-Service-Digital/
 **Infra / operación:**
 - [ ] Confirmar `pm2 startup` para que `fresh-frontend`, `fresh-service` e `inmoya` reaparezcan solos tras un reinicio del VPS.
 - [ ] Recordatorio: **nginx quedó deshabilitado** (Traefik usa 80/443). Abrir puertos a Docker SIEMPRE con `ufw` (no iptables directo).
+
+---
+
+## 🤖 2026-07-17/18 — Deploy AUTOMÁTICO (webhook) + fix de migración
+
+**Estado:** el sitio ya despliega solo en cada `git push` a `main`. No hay que correr nada a mano.
+
+### Lo que se hizo hoy
+| Logro | Estado |
+|---|---|
+| Absorber cambios de María (dark mode, verificación por correo, citas de técnicos) | ✅ en vivo |
+| Migración faltante `technicianId` en `appointments` (la agregó al schema sin migrar) | ✅ creada y aplicada |
+| `deploy.sh` — despliegue seguro de un comando (build antes de reiniciar) | ✅ probado |
+| `webhook.mjs` (pm2 `fresh-webhook`, puerto 4200) + firma HMAC | ✅ corriendo |
+| Ruta Traefik `https://api.pedroservicios.xyz/deploy-hook` | ✅ 200 OK |
+| Webhook conectado en GitHub (push event) | ✅ ping verde |
+| Prueba end-to-end: push → deploy automático → COMPLETO | ✅ |
+
+### Flujo de trabajo NUEVO (para Pedro y María)
+1. Hacer cambios en el código.
+2. `git add . && git commit -m "..." && git push`
+3. Esperar ~40 s → recargar la web con **Ctrl+Shift+R**.
+4. Los cambios ya están en **https://fresh.pedroservicios.xyz**.
+
+- Deploy manual (si hace falta): `cd /root/Fresh-Service-Digital && ./deploy.sh`
+- Ver deploys en vivo: `tail -f /root/Fresh-Service-Digital/deploy-webhook.log`
+- Secreto del webhook: `/root/.fresh-webhook-secret` (NO subir a git; ya está en GitHub Settings).
+
+### ⚠️ REGLA para María (base de datos)
+> Al cambiar la base de datos, correr `npx prisma migrate dev --name descripcion` y subir la carpeta `prisma/migrations/`. **Nunca** cambiar el `schema.prisma` sin migración (rompe el deploy automático).
+
+### 📌 Pendientes que siguen abiertos
+- [ ] Unificar gestor de paquetes: `deploy.sh` usa **npm**; el backend históricamente usaba **pnpm**. Hay lockfiles mezclados → elegir uno.
+- [ ] `pm2 startup` para que `fresh-frontend`, `fresh-service`, `fresh-webhook` e `inmoya` reaparezcan solos tras reiniciar el VPS (ya se hizo `pm2 save`).
+- [ ] Mandarle a María la regla de migraciones (arriba).
+- [ ] Los pendientes de diseño/fotos/correo real de la sección anterior siguen vigentes.
