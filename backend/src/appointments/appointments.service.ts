@@ -1,17 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentStatus } from '@prisma/client';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { MailService } from '../mail/mail.service';
+import { RateService } from '../rate/rate.service';
+import { priceUsd as derivePriceUsd } from '../common/prices';
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger('AppointmentsService');
+
+  constructor(
+    private prisma: PrismaService,
+    private mail: MailService,
+    private rate: RateService,
+  ) {}
 
   /**
    * Crea una nueva cita de servicio y asocia el equipo de refrigeración de forma transaccional.
    */
   async create(dto: CreateAppointmentDto) {
-    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription } = dto;
+    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription, priceUsd } = dto;
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Crear la cita
@@ -19,6 +28,7 @@ export class AppointmentsService {
         data: {
           clientId,
           scheduledAt: new Date(scheduledAt),
+          priceUsd: priceUsd ?? null,
           notes,
           status: AppointmentStatus.PENDING,
         },
@@ -136,7 +146,7 @@ export class AppointmentsService {
       data.status = AppointmentStatus.ASSIGNED;
     }
 
-    return this.prisma.appointment.update({
+    const updated = await this.prisma.appointment.update({
       where: { id: appointmentId },
       data,
       include: {
@@ -162,6 +172,35 @@ export class AppointmentsService {
         },
         equipment: true,
       },
+    });
+
+    // Aviso por correo al cliente (proforma). No bloquea ni rompe la asignación si falla.
+    if (technicianId && updated.client?.email && updated.technician) {
+      void this.notifyAssigned(updated).catch((e) =>
+        this.logger.warn(`No se pudo enviar el correo de asignación: ${e.message}`),
+      );
+    }
+
+    return updated;
+  }
+
+  private async notifyAssigned(appt: any) {
+    const eq = appt.equipment?.[0];
+    const usd = appt.priceUsd ?? derivePriceUsd(eq?.brand, eq?.model);
+    const rate = this.rate.getRate().rate;
+    const priceBs = rate
+      ? 'Bs ' + (usd * rate).toLocaleString('es-VE', { maximumFractionDigits: 2 })
+      : null;
+    const base = process.env.PUBLIC_WEB_URL || 'https://fresh.pedroservicios.xyz';
+    await this.mail.sendServiceAssignedEmail(appt.client.email, {
+      clientName: appt.client.firstName,
+      service: eq ? `${eq.brand} · ${eq.model}` : 'Servicio',
+      ref: appt.id.substring(0, 8).toUpperCase(),
+      priceUsd: usd,
+      priceBs,
+      technicianName: `${appt.technician.firstName} ${appt.technician.lastName}`,
+      technicianPhone: appt.technician.phone || null,
+      panelUrl: `${base}/panel`,
     });
   }
 }

@@ -47,6 +47,7 @@ model Appointment {
   technician   User?             @relation("TechnicianAppointments", fields: [technicianId], references: [id], onDelete: SetNull)
   status       AppointmentStatus @default(PENDING)
   scheduledAt  DateTime
+  priceUsd     Float?            // precio congelado del servicio en USD (para proforma/total)
   notes        String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt

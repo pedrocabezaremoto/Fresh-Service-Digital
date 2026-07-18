@@ -157,4 +157,77 @@ export class MailService {
       return false;
     }
   }
+
+  /**
+   * Aviso al cliente de que su servicio fue asignado a un técnico, con el precio (proforma).
+   */
+  async sendServiceAssignedEmail(
+    to: string,
+    d: {
+      clientName: string;
+      service: string;
+      ref: string;
+      priceUsd: number;
+      priceBs: string | null;
+      technicianName: string;
+      technicianPhone: string | null;
+      panelUrl: string;
+    },
+  ): Promise<boolean> {
+    const from = process.env.SMTP_FROM || '"Fresh Service Digital" <noreply@freshservice.com>';
+    const subject = `Tu servicio fue asignado — Ref #${d.ref}`;
+    const montoBs = d.priceBs ? `${d.priceBs}` : `$${d.priceUsd}`;
+    const waLink = d.technicianPhone
+      ? `https://wa.me/${d.technicianPhone.replace(/\D/g, '')}`
+      : null;
+
+    const htmlContent = `
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><style>
+  body{background:#F0F9FF;color:#0C1A26;font-family:'Segoe UI',Tahoma,sans-serif;margin:0;padding:0}
+  .container{max-width:600px;margin:40px auto;background:#fff;border:1px solid #BAE6FD;border-radius:16px;overflow:hidden}
+  .header{background:linear-gradient(135deg,#082F49,#075985);padding:26px;text-align:center}
+  .logo{font-size:22px;font-weight:800;color:#fff}.logo span{color:#38BDF8}
+  .content{padding:32px 30px}
+  h1{font-size:20px;color:#075985;margin:0 0 14px}
+  p{font-size:15px;line-height:1.6;color:#4A7A9B;margin:0 0 14px}
+  .box{background:#F0F9FF;border:1px solid #E0F2FE;border-radius:12px;padding:18px;margin:18px 0}
+  .row{font-size:14px;color:#0C1A26;margin:6px 0}
+  .total{font-size:22px;font-weight:800;color:#075985}
+  .btn{display:inline-block;padding:12px 26px;background:#0284C7;color:#fff!important;text-decoration:none;border-radius:8px;font-weight:700}
+  .footer{background:#F0F9FF;padding:18px;text-align:center;font-size:12px;color:#4A7A9B;border-top:1px solid #E0F2FE}
+</style></head><body>
+  <div class="container">
+    <div class="header"><div class="logo">❄️ Fresh<span> Service</span></div></div>
+    <div class="content">
+      <h1>¡Tu servicio fue asignado, ${d.clientName}!</h1>
+      <p>Un técnico ya está asignado a tu solicitud. Aquí tienes el detalle:</p>
+      <div class="box">
+        <div class="row"><strong>Servicio:</strong> ${d.service}</div>
+        <div class="row"><strong>Referencia:</strong> #${d.ref}</div>
+        <div class="row"><strong>Técnico:</strong> ${d.technicianName}${d.technicianPhone ? ` · ${d.technicianPhone}` : ''}</div>
+        <div class="row" style="margin-top:12px"><strong>Total a pagar:</strong> <span class="total">${montoBs}</span></div>
+        <div class="row" style="font-size:12px;color:#4A7A9B">Ref. $${d.priceUsd} · monto en Bs sujeto a la tasa oficial del BCV del día de pago.</div>
+      </div>
+      <p>Puedes ver el estado y <strong>descargar tu proforma</strong> desde tu panel:</p>
+      <p style="text-align:center"><a href="${d.panelUrl}" class="btn" target="_blank">Ver mi panel</a></p>
+      ${waLink ? `<p style="text-align:center;font-size:13px">O contacta a tu técnico por <a href="${waLink}" style="color:#059669">WhatsApp</a>.</p>` : ''}
+    </div>
+    <div class="footer">San Juan de los Morros, Guárico, Venezuela<br>© 2026 Fresh Service Digital</div>
+  </div>
+</body></html>`;
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({ from, to, subject, html: htmlContent });
+        this.logger.log(`Correo de asignación enviado a: ${to}`);
+        return true;
+      } catch (error) {
+        this.logger.error(`Falló el correo de asignación a ${to}: ${error.message}`);
+        return false;
+      }
+    }
+    this.logger.log(`\n📬 [SIMULACIÓN] Servicio asignado → ${to} | ${d.service} | Total: ${montoBs} | Técnico: ${d.technicianName}\n`);
+    return false;
+  }
 }
+

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsInt, IsISO8601 } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsInt, IsISO8601, IsNumber } from 'class-validator';
 
 export class CreateAppointmentDto {
   @IsString({ message: 'El ID del cliente debe ser una cadena de texto' })
@@ -24,6 +24,10 @@ export class CreateAppointmentDto {
   @IsInt({ message: 'La capacidad en BTU debe ser un número entero' })
   @IsOptional()
   btuCapacity?: number;
+
+  @IsNumber({}, { message: 'El precio debe ser un número' })
+  @IsOptional()
+  priceUsd?: number;
 
   @IsString({ message: 'La descripción de la falla es requerida' })
   @IsNotEmpty({ message: 'La descripción de la falla o servicio es requerida' })

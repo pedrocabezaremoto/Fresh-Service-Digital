@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Snowflake, Plus, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, Snowflake, Plus, MessageCircle, FileText } from 'lucide-react';
 import Button from '../components/Button';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useRate } from '../context/RateContext';
+import { priceUsd } from '../lib/prices';
+import { formatBs, formatUsd } from '../lib/money';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
 
 function StatCard({ value, label, accent }) {
@@ -17,8 +21,12 @@ function StatCard({ value, label, accent }) {
 
 export default function ClienteDashboard() {
   const { user } = useAuth();
+  const { rate } = useRate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const priceOf = (a) => a.priceUsd ?? priceUsd(a.equipment?.[0]?.brand, a.equipment?.[0]?.model);
+  const money = (usd) => formatBs(usd, rate) || formatUsd(usd);
 
   useEffect(() => {
     (async () => {
@@ -34,8 +42,10 @@ export default function ClienteDashboard() {
   }, [user.id]);
 
   const total = items.length;
-  const active = items.filter((a) => ['PENDING', 'ASSIGNED', 'IN_PROGRESS'].includes(a.status)).length;
+  const activeItems = items.filter((a) => ['PENDING', 'ASSIGNED', 'IN_PROGRESS'].includes(a.status));
+  const active = activeItems.length;
   const completed = items.filter((a) => a.status === 'COMPLETED').length;
+  const totalUsd = activeItems.reduce((s, a) => s + priceOf(a), 0);
 
   return (
     <div className="min-h-screen bg-brand-50">
@@ -57,6 +67,20 @@ export default function ClienteDashboard() {
           <StatCard value={active} label="Servicios activos" accent="bg-amber-500" />
           <StatCard value={completed} label="Completados" accent="bg-emerald-500" />
         </div>
+
+        {/* Total a pagar */}
+        {totalUsd > 0 && (
+          <div className="mt-6 flex flex-col gap-4 rounded-3xl bg-brand-950 p-6 text-white sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-brand-300">Total a pagar · servicios activos</div>
+              <div className="mt-1 font-display text-3xl font-extrabold">{money(totalUsd)}</div>
+              <div className="mt-0.5 text-xs text-brand-200/80">Ref. {formatUsd(totalUsd)} · monto en Bs sujeto a la tasa BCV del día</div>
+            </div>
+            <Link to="/proforma" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-brand-700 shadow transition hover:bg-brand-50">
+              <FileText size={18} /> Descargar proforma
+            </Link>
+          </div>
+        )}
 
         {/* Historial */}
         <div className="mt-8 rounded-3xl bg-white p-6 ring-1 ring-slate-100 shadow-sm sm:p-8">
@@ -94,9 +118,15 @@ export default function ClienteDashboard() {
                         </div>
                       )}
                     </div>
-                    <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.cls}`}>
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} /> {st.label}
-                    </span>
+                    <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end sm:gap-1.5">
+                      <div className="text-right">
+                        <div className="font-display text-base font-bold text-ink-900">{money(priceOf(a))}</div>
+                        <div className="text-[11px] text-ink-400">Ref. {formatUsd(priceOf(a))}</div>
+                      </div>
+                      <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.cls}`}>
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} /> {st.label}
+                      </span>
+                    </div>
                   </div>
                 );
               })}

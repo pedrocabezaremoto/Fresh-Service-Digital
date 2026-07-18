@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Solicitud from './pages/Solicitud';
 import ClienteDashboard from './pages/ClienteDashboard';
+import Proforma from './pages/Proforma';
 import AdminDashboard from './pages/AdminDashboard';
 import TecnicoDashboard from './pages/TecnicoDashboard';
 
@@ -23,6 +24,16 @@ export default function App() {
         element={
           <ProtectedRoute requireAdmin>
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Proforma imprimible (pantalla completa, sin navbar) */}
+      <Route
+        path="/proforma"
+        element={
+          <ProtectedRoute>
+            <Proforma />
           </ProtectedRoute>
         }
       />

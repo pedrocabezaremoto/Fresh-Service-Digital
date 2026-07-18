@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, MapPin, Clock, Zap, MessageCircle, Snowflake } from 'lucide-react';
 import Button from '../components/Button';
+import Price from '../components/Price';
 import { Field, inputClass } from '../components/AuthShell';
 import { api } from '../lib/api';
+import { priceUsd } from '../lib/prices';
 import { useAuth } from '../context/AuthContext';
 
 const equipos = [
@@ -46,6 +48,7 @@ export default function Solicitud() {
         brand: f.equipo,
         model: f.servicio,
         btuCapacity: eq?.btu || null,
+        priceUsd: priceUsd(f.equipo, f.servicio),
         failureDescription: f.descripcion || 'Sin descripción adicional',
         notes: `Cédula: ${f.cedTipo}-${f.cedNum}\nWhatsApp: +58 ${f.phonePrefix}-${f.phoneNum}\nDirección: ${f.direccion}\nHorario: ${f.horario}`,
       };
@@ -177,6 +180,13 @@ export default function Solicitud() {
 
         {/* Sidebar info */}
         <aside className="space-y-5">
+          <div className="rounded-3xl border-2 border-brand-200 bg-brand-50/60 p-6 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600">Precio estimado del servicio</h3>
+            <div className="mt-2">
+              <Price usd={priceUsd(f.equipo, f.servicio)} size="lg" />
+            </div>
+            <p className="mt-3 text-xs text-ink-500">{f.equipo} · {f.servicio}. Monto en Bs sujeto a la tasa oficial del BCV del día de pago.</p>
+          </div>
           <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-100 shadow-sm">
             <h3 className="mb-4 font-display font-bold text-ink-900">Información de contacto</h3>
             <ul className="space-y-4 text-sm">
