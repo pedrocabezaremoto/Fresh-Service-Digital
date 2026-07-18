@@ -91,6 +91,9 @@ export class AppointmentsService {
       where: { clientId },
       include: {
         equipment: true,
+        technician: {
+          select: { firstName: true, lastName: true, phone: true },
+        },
       },
       orderBy: {
         createdAt: 'desc',

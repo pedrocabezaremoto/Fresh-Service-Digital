@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Loader2, Snowflake, Plus, MessageCircle } from 'lucide-react';
 import Button from '../components/Button';
 import { api } from '../lib/api';
@@ -84,6 +83,16 @@ export default function ClienteDashboard() {
                     <div className="border-l-2 border-brand-300 pl-3">
                       <div className="font-semibold text-ink-900">{eq ? `${eq.brand} · ${eq.model}` : a.brand || 'Servicio'}</div>
                       <div className="text-xs text-ink-500">{fmtDate(a.scheduledAt)} · {fmtTime(a.scheduledAt)} · Ref #{a.id.substring(0, 8).toUpperCase()}</div>
+                      {a.technician && (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                          <span className="font-semibold text-brand-700">Técnico: {a.technician.firstName} {a.technician.lastName}</span>
+                          {a.technician.phone && (
+                            <a href={`https://wa.me/${a.technician.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-600 transition hover:bg-emerald-100">
+                              <MessageCircle size={12} /> {a.technician.phone}
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.cls}`}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} /> {st.label}
