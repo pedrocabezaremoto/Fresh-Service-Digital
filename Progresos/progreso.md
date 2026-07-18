@@ -239,10 +239,10 @@ Fresh-Service-Digital/
 
 > Pedro terminó cansado; estos son los grandes. Detalle completo en `History/historial.md` (Roadmap Fase 10).
 
-**Panel Taller — Dashboard**
-- [ ] Stat cards clickeables → redirigen a su vista/filtro.
-- [ ] Donut "Citas por estado" con datos **reales** (no mock).
-- [ ] **Exportar reporte** real en Excel/XML (confirmar formato exacto con Pedro).
+**Panel Taller — Dashboard** ✅ HECHO (2026-07-18 noche)
+- [x] Stat cards clickeables → redirigen a Solicitudes con su filtro (Pendientes→PENDING, En proceso→PROGRESS, Clientes→vista clientes).
+- [x] Donut "Citas por estado" — ya era real (se calcula en vivo de la DB); confirmado.
+- [x] **Exportar reporte**: botón "Exportar Excel" en el dashboard → descarga CSV (abre en Excel) con todas las solicitudes. Si Pedro quiere `.xlsx` nativo, se agrega SheetJS.
 
 **Panel Taller — Gestión de Solicitudes**
 - [ ] Filtros por columna (cliente, servicio, fecha, técnico, estado).

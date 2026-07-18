@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, Snowflake, CheckCircle2,
+  ArrowRight, Download,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -42,14 +43,23 @@ function Donut({ data, total }) {
   );
 }
 
-function KPI({ icon: Icon, value, label, color, accent }) {
+function KPI({ icon: Icon, value, label, color, accent, onClick }) {
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
+    <Tag
+      onClick={onClick}
+      className={`group relative w-full overflow-hidden rounded-2xl bg-white p-5 text-left ring-1 ring-slate-100 shadow-sm transition ${onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:ring-brand-200' : ''}`}
+    >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
       <div className={`grid h-11 w-11 place-items-center rounded-xl ${color}`}><Icon size={21} /></div>
       <div className="mt-4 font-display text-3xl font-extrabold text-ink-900">{value}</div>
       <div className="text-sm font-medium text-ink-500">{label}</div>
-    </div>
+      {onClick && (
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600 opacity-0 transition group-hover:opacity-100">
+          Ver <ArrowRight size={12} />
+        </span>
+      )}
+    </Tag>
   );
 }
 
@@ -145,9 +155,49 @@ export default function AdminDashboard() {
   const filteredAppts = appts.filter((a) => {
     const name = `${a.client.firstName} ${a.client.lastName}`.toLowerCase();
     const okQ = name.includes(q.toLowerCase()) || a.client.email.toLowerCase().includes(q.toLowerCase());
-    const okS = statusFilter === 'ALL' || a.status === statusFilter;
+    const okS =
+      statusFilter === 'ALL' ? true
+      : statusFilter === 'PROGRESS' ? ['ASSIGNED', 'IN_PROGRESS'].includes(a.status)
+      : a.status === statusFilter;
     return okQ && okS;
   });
+
+  // Ir a la lista de solicitudes con un filtro puesto (desde las tarjetas del dashboard)
+  function goToSolicitudes(filter) {
+    setStatusFilter(filter);
+    setView('solicitudes');
+  }
+
+  // Exportar reporte real de solicitudes (CSV, abre en Excel)
+  function exportReport() {
+    if (!appts.length) return;
+    const cols = ['Referencia', 'Cliente', 'Email', 'Teléfono', 'Servicio', 'Fecha', 'Hora', 'Técnico', 'Estado'];
+    const rows = appts.map((a) => {
+      const eq = a.equipment?.[0];
+      return [
+        a.id.substring(0, 8).toUpperCase(),
+        `${a.client.firstName} ${a.client.lastName}`,
+        a.client.email,
+        a.client.phone || '',
+        eq ? `${eq.brand} ${eq.model}` : (a.notes || ''),
+        fmtDate(a.scheduledAt),
+        fmtTime(a.scheduledAt),
+        a.technician ? `${a.technician.firstName} ${a.technician.lastName}` : 'Sin asignar',
+        STATUS[a.status]?.label || a.status,
+      ];
+    });
+    const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [cols, ...rows].map((r) => r.map(esc).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `reporte-solicitudes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
   const filteredClients = clients.filter((c) =>
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(cq.toLowerCase()) || c.email.toLowerCase().includes(cq.toLowerCase()));
 
@@ -216,15 +266,21 @@ export default function AdminDashboard() {
             <div className="grid place-items-center py-32 text-brand-400"><Loader2 className="animate-spin" size={36} /></div>
           ) : view === 'dashboard' ? (
             <div className="space-y-6">
-              <div>
-                <h2 className="font-display text-2xl font-extrabold text-ink-900">Resumen del Taller</h2>
-                <p className="text-sm text-ink-500">Estadísticas en vivo desde la base de datos</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-2xl font-extrabold text-ink-900">Resumen del Taller</h2>
+                  <p className="text-sm text-ink-500">Estadísticas en vivo desde la base de datos</p>
+                </div>
+                <button onClick={exportReport} disabled={!appts.length}
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-50">
+                  <Download size={15} /> Exportar Excel
+                </button>
               </div>
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                <KPI icon={ClipboardCheck} value={stats.total} label="Solicitudes registradas" color="bg-brand-100 text-brand-600" accent="#0ea5e9" />
-                <KPI icon={Clock3} value={stats.pending} label="Pendientes de atender" color="bg-amber-100 text-amber-600" accent="#f59e0b" />
-                <KPI icon={Wrench} value={stats.progress} label="En proceso" color="bg-violet-100 text-violet-600" accent="#8b5cf6" />
-                <KPI icon={Users} value={stats.clients} label="Clientes registrados" color="bg-emerald-100 text-emerald-600" accent="#10b981" />
+                <KPI icon={ClipboardCheck} value={stats.total} label="Solicitudes registradas" color="bg-brand-100 text-brand-600" accent="#0ea5e9" onClick={() => goToSolicitudes('ALL')} />
+                <KPI icon={Clock3} value={stats.pending} label="Pendientes de atender" color="bg-amber-100 text-amber-600" accent="#f59e0b" onClick={() => goToSolicitudes('PENDING')} />
+                <KPI icon={Wrench} value={stats.progress} label="En proceso" color="bg-violet-100 text-violet-600" accent="#8b5cf6" onClick={() => goToSolicitudes('PROGRESS')} />
+                <KPI icon={Users} value={stats.clients} label="Clientes registrados" color="bg-emerald-100 text-emerald-600" accent="#10b981" onClick={() => setView('clientes')} />
               </div>
               <div className="grid gap-6 lg:grid-cols-2">
                 <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm">
@@ -278,6 +334,7 @@ export default function AdminDashboard() {
                   </div>
                   <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-full bg-slate-50 px-3 py-1.5 text-sm ring-1 ring-slate-200 outline-none">
                     <option value="ALL">Todos</option>
+                    <option value="PROGRESS">En proceso (asignadas + en curso)</option>
                     {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
