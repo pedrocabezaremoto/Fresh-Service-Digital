@@ -495,3 +495,82 @@ Sesión de mejoras visuales sobre el frontend React (todo desplegado en vivo ví
 - **Precios base (mantenimiento)** que dio Pedro: **ventana $25 · split $35 · tonelada $50**.
 - Para los demás servicios usar precios **con lógica** (una **reparación** vale más que un **mantenimiento**, etc.), coherentes por tipo.
 - **Pendiente de Pedro:** dar los ejemplos/valores exactos por servicio (y confirmar el endpoint BCV que usa InmoYa para reutilizarlo).
+
+---
+
+## 🛠️ Fase 11 — Panel del Taller: técnicos, orden, sugerencias + mejoras
+
+**Fecha:** 2026-07-18
+
+### Técnicos asignables (end-to-end)
+- 3 técnicos sembrados idempotentes (`backend/prisma/seed-technicians.js`, upsert por email, no borra datos):
+  **Juan** — Aires de Ventana (+58 412-111 2233), **Carlos** — Aires Split (+58 414-222 3344),
+  **Jorge** — Aires por Toneladas (+58 424-333 4455). Rol TECHNICIAN, clave demo `Tecnico1234`.
+- `findByClient` ahora incluye `technician` (nombre + phone) → el **panel del cliente** muestra
+  "Técnico: <nombre>" + botón WhatsApp al número del técnico cuando la cita está asignada.
+- Re-sembrar: `cd backend && node prisma/seed-technicians.js`.
+
+### Dashboard del Taller
+- **KPIs clickeables:** las tarjetas del Panel de Control llevan a Solicitudes con el filtro puesto
+  (Pendientes→PENDING, En proceso→ASSIGNED+IN_PROGRESS, Clientes→vista clientes).
+- **Exportar Excel:** botón que descarga CSV (abre en Excel) con todas las solicitudes.
+- Donut "Citas por estado" confirmado como **real** (se calcula de la DB en vivo).
+
+### Gestión de Solicitudes
+- **Orden por columna:** Cliente, Fecha, Estado (clic en encabezado, ▲▼).
+- **Sugerencia de técnico automática:** "Sugerido: <nombre>" según el tipo de aire (ventana/split/toneladas),
+  clic asigna directo.
+- (WhatsApp por fila al cliente ya existía.)
+
+### Marketing / SEO
+- **OG tags** en index.html (Open Graph + Twitter) → vista previa con logo al compartir el link por WhatsApp.
+
+### Commits
+`b517f909` (técnicos), `863eba6f` (KPIs+export), `f04d9bf4` (orden+sugerencia+OG).
+
+---
+
+## 💱 Fase 12 — Precios anclados al dólar (BCV) + Proforma + Correo
+
+**Fecha:** 2026-07-18 / 2026-07-19
+
+Modelo de anclaje (igual que InmoYa, ver `info-api-BCV.md` en la raíz): los precios se guardan en **USD**
+y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se recalculan solos.
+
+### Backend
+- **Tasa BCV:** `RateService` consume DolarAPI (`https://ve.dolarapi.com/v1/dolares/oficial`, gratis, sin key),
+  refresca cada 6h, **tolerante a fallos** (usa la última tasa si la API cae, timeout 10s), cachea en tabla
+  `settings`. Endpoint público `GET /rate`. Modelo Prisma `Setting` + migración `add_settings`.
+- **Precio congelado:** campo `priceUsd` en `Appointment` (migración `add_price_to_appointment`); se guarda
+  al crear la solicitud. Tabla de precios espejo en `src/common/prices.ts` (para citas viejas sin precio).
+- **Correo al asignar técnico:** `MailService.sendServiceAssignedEmail` (HTML estilo frost) disparado
+  fire-and-forget en `assignTechnician` (no bloquea ni rompe la asignación). **Simula en consola si no hay SMTP.**
+
+### Frontend
+- `RateProvider` (carga la tasa 1 vez) + `lib/money.js` + componente `<Price usd>` (Bs grande + Ref. USD).
+- **Catálogo:** 7 servicios con precio. **Home:** "Desde $X" por tipo. **Solicitud:** precio estimado en vivo
+  que se congela al enviar (`lib/prices.js` = fuente única).
+- **Panel del cliente:** precio por servicio + tarjeta "Total a pagar · servicios activos".
+- **Proforma** (`/proforma`, ruta protegida sin navbar): documento imprimible con logo, Nº, cliente,
+  desglose, TOTAL en Bs + USD, nota de validez (7 días) y tasa BCV, WhatsApp; botón "Imprimir / Guardar PDF"
+  (print-to-PDF del navegador, sin librerías).
+
+### Tabla de precios (USD)
+| Equipo | Mant. | Reparación | Diagnóstico | Recarga gas | Instalación |
+|---|---|---|---|---|---|
+| Ventana | 25 | 40 | 15 | 30 | 45 |
+| Split | 35 | 55 | 20 | 40 | 70 |
+| 1 Tonelada | 50 | 75 | 30 | 55 | 90 |
+| 2 Toneladas | 75 | 110 | 40 | 80 | 130 |
+| 3 Toneladas | 100 | 150 | 55 | 105 | 170 |
+
+### Infra
+- **Repo de respaldo (espejo):** `git@github.com:pedrocabezaremoto/Fresh-Service-Digital-respaldo.git`
+  como remote `backup`. `deploy.sh` hace push automático al backup tras cada deploy exitoso.
+
+### Commits
+`cdde35f5` (tasa BCV + precios en catálogo/home), `276bf907` (priceUsd + proforma + correo).
+
+### Pendientes
+- **SMTP sin configurar** → el correo se simula en consola. Falta poner `SMTP_HOST/PORT/USER/PASS/FROM` en `backend/.env`.
+- Precios confirmables por Pedro (ajustables en `lib/prices.js` + `common/prices.ts`).

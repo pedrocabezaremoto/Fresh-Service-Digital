@@ -280,3 +280,28 @@ Fresh-Service-Digital/
 - [ ] (Opcional) campo `specialty` real en técnicos + asignación automática al crear la solicitud.
 - [ ] (Opcional) reporte en `.xlsx`/XML nativo (hoy es CSV que abre en Excel).
 - [ ] Alimentar `History/historial.md` con esta 2ª tanda (Fase 11) — Pedro pidió dejarlo para mañana.
+
+---
+
+## 💱 2026-07-19 — Precios BCV + Proforma + Respaldo (COMPLETO)
+
+**Estado:** flujo de precios/proforma EN VIVO. Todo desplegado por webhook.
+
+| Cambio | Estado |
+|---|---|
+| Tasa BCV (DolarAPI) cacheada en DB, refresh 6h, endpoint `/rate` | ✅ |
+| Precios en USD → Bs en Catálogo, Home y Solicitud | ✅ |
+| Precio congelado (`priceUsd`) en cada solicitud | ✅ |
+| Panel cliente: precio por servicio + Total a pagar | ✅ |
+| Proforma imprimible `/proforma` (PDF por navegador) | ✅ |
+| Correo al asignar técnico (simula en consola sin SMTP) | ✅ (código listo) |
+| Repo de respaldo (espejo) + push automático en cada deploy | ✅ |
+
+**Fuente única de precios:** `frontend-react/src/lib/prices.js` (y espejo `backend/src/common/prices.ts`).
+Cambiar un precio = editar ahí y push.
+
+### PENDIENTES
+- [ ] **Configurar SMTP** en `backend/.env` para que el correo salga de verdad (hoy se simula en consola).
+- [ ] Confirmar/ajustar precios con Pedro.
+- [ ] Activar **branch protection** en GitHub (que María no pueda empujar directo a main).
+- [ ] (Opcional) Mostrar precio también en el panel del técnico / recordatorio de pago.

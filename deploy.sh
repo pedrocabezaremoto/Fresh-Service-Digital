@@ -111,5 +111,15 @@ if [ "$FAIL" -ne 0 ]; then
   exit 1
 fi
 
+# ---------- 7. Espejo al repo de respaldo (no crítico) ----------
+if git remote | grep -qx backup; then
+  step "Respaldando al repo espejo (backup)"
+  if git push backup "$BRANCH" 2>&1 | tail -2; then
+    ok "Respaldo actualizado en el repo backup."
+  else
+    warn "No se pudo actualizar el repo de respaldo (no crítico)."
+  fi
+fi
+
 echo -e "\n${GRN}${BLD}✅ DEPLOY COMPLETO.${RST}"
 echo -e "${GRN}Míralo en: https://fresh.pedroservicios.xyz  (recarga con Ctrl+Shift+R)${RST}"
