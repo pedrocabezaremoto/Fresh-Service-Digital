@@ -1,16 +1,18 @@
-import { Snowflake } from 'lucide-react';
-
 export default function Logo({ size = 'md', light = false }) {
-  const box = size === 'sm' ? 'h-8 w-8' : size === 'lg' ? 'h-11 w-11' : 'h-9 w-9';
-  const icon = size === 'sm' ? 18 : size === 'lg' ? 26 : 22;
+  const box = size === 'sm' ? 'h-9 w-9' : size === 'lg' ? 'h-12 w-12' : 'h-10 w-10';
   const text = size === 'lg' ? 'text-xl' : 'text-base';
   return (
     <div className="flex items-center gap-2.5">
-      <div
-        className={`${box} grid place-items-center rounded-xl bg-brand-gradient-bright text-white shadow-glow sheen`}
+      {/* Chip blanco fijo para que el logo se vea bien en navbar claro y oscuro */}
+      <span
+        className={`${box} grid shrink-0 place-items-center rounded-xl bg-[#ffffff] p-1 shadow-sm ring-1 ring-slate-200/80`}
       >
-        <Snowflake size={icon} strokeWidth={2.2} />
-      </div>
+        <img
+          src="/logo.png"
+          alt="Fresh Service — Refrigeración a domicilio"
+          className="h-full w-full object-contain"
+        />
+      </span>
       <span
         className={`font-display font-extrabold ${text} tracking-tight ${
           light ? 'text-white' : 'text-brand-950'
