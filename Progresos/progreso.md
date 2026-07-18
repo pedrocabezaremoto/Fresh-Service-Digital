@@ -256,3 +256,27 @@ Fresh-Service-Digital/
 
 **Pendiente opcional de hoy**
 - [ ] Fotos de acción por tarjeta (reparando vs lavando) — Pedro genera 2-3 imágenes y se cambian.
+
+---
+
+## 🌙 2026-07-18 (noche, 2ª tanda) — Técnicos + mejoras chicas del taller
+
+**Hecho (todo EN VIVO):**
+| Cambio | Detalle |
+|---|---|
+| **3 técnicos asignables** | Juan (Ventana +58 412-111 2233), Carlos (Split +58 414-222 3344), Jorge (Toneladas +58 424-333 4455). Sembrados con `backend/prisma/seed-technicians.js` (upsert idempotente, NO borra datos). |
+| **Técnico en panel del cliente** | `findByClient` ahora incluye `technician`; el cliente ve "Técnico: <nombre>" + botón WhatsApp al número del técnico cuando ya está asignado. |
+| **Orden por columna (taller)** | Cliente, Fecha y Estado son ordenables (clic en el encabezado, flecha ▲▼). |
+| **Sugerir técnico automático** | En cada solicitud sin asignar aparece "Sugerido: <nombre>" según el tipo de aire (ventana/split/toneladas, detectado del equipo/notas); clic asigna directo. |
+| **OG tags** | index.html con Open Graph + Twitter (título/descr/imagen `icon-512.png`) → vista previa al compartir el link por WhatsApp. |
+| Técnico en reporte Excel | Ya salía (columna Técnico en el CSV). |
+
+**Notas técnicas:**
+- Técnicos: rol TECHNICIAN, clave demo `Tecnico1234`, especialidad codificada en el apellido ("— Aires de Ventana", etc.). Si se quiere un campo `specialty` propio → requiere migración (futuro).
+- Re-sembrar técnicos si hiciera falta: `cd backend && node prisma/seed-technicians.js`.
+
+**PENDIENTE MAÑANA (sin tocar hoy):**
+- [ ] Precios anclados al dólar (BCV) como InmoYa — falta endpoint BCV + valores exactos de Pedro.
+- [ ] (Opcional) campo `specialty` real en técnicos + asignación automática al crear la solicitud.
+- [ ] (Opcional) reporte en `.xlsx`/XML nativo (hoy es CSV que abre en Excel).
+- [ ] Alimentar `History/historial.md` con esta 2ª tanda (Fase 11) — Pedro pidió dejarlo para mañana.

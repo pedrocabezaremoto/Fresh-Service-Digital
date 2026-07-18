@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, Snowflake, CheckCircle2,
-  ArrowRight, Download,
+  ArrowRight, Download, ChevronUp, ChevronDown, ChevronsUpDown, Sparkles,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -63,6 +63,19 @@ function KPI({ icon: Icon, value, label, color, accent, onClick }) {
   );
 }
 
+/* Encabezado de columna ordenable */
+function ThSort({ label, k, sort, onSort, className }) {
+  const active = sort.key === k;
+  return (
+    <th className={className}>
+      <button onClick={() => onSort(k)} className="inline-flex items-center gap-1 uppercase tracking-wide transition hover:text-brand-600">
+        {label}
+        {active ? (sort.dir === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ChevronsUpDown size={13} className="opacity-40" />}
+      </button>
+    </th>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -74,6 +87,7 @@ export default function AdminDashboard() {
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [cq, setCq] = useState('');
+  const [sort, setSort] = useState({ key: 'fecha', dir: 'desc' });
 
   async function load() {
     setLoading(true);
@@ -161,6 +175,35 @@ export default function AdminDashboard() {
       : a.status === statusFilter;
     return okQ && okS;
   });
+
+  const STATUS_ORDER = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+  const sortedAppts = [...filteredAppts].sort((a, b) => {
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    let av, bv;
+    if (sort.key === 'cliente') {
+      av = `${a.client.firstName} ${a.client.lastName}`.toLowerCase();
+      bv = `${b.client.firstName} ${b.client.lastName}`.toLowerCase();
+    } else if (sort.key === 'estado') {
+      av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status);
+    } else { // fecha
+      av = new Date(a.scheduledAt).getTime(); bv = new Date(b.scheduledAt).getTime();
+    }
+    return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
+  });
+  const toggleSort = (key) =>
+    setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
+
+  // Sugerir técnico según el tipo de aire (ventana/split/toneladas)
+  function suggestTech(a) {
+    const eq = a.equipment?.[0];
+    const text = `${eq?.brand || ''} ${eq?.model || ''} ${a.notes || ''}`.toLowerCase();
+    const key = text.includes('ventana') ? 'ventana'
+      : text.includes('split') ? 'split'
+      : (text.includes('tonelada') || text.includes('toneladas')) ? 'tonelada'
+      : null;
+    if (!key) return null;
+    return techs.find((t) => `${t.firstName} ${t.lastName}`.toLowerCase().includes(key)) || null;
+  }
 
   // Ir a la lista de solicitudes con un filtro puesto (desde las tarjetas del dashboard)
   function goToSolicitudes(filter) {
@@ -342,10 +385,17 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
-                    <tr><th className="px-5 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Fecha</th><th className="px-3 py-3">Técnico</th><th className="px-3 py-3">Estado</th><th className="px-5 py-3"></th></tr>
+                    <tr>
+                      <ThSort label="Cliente" k="cliente" sort={sort} onSort={toggleSort} className="px-5 py-3" />
+                      <th className="px-3 py-3">Servicio</th>
+                      <ThSort label="Fecha" k="fecha" sort={sort} onSort={toggleSort} className="px-3 py-3" />
+                      <th className="px-3 py-3">Técnico</th>
+                      <ThSort label="Estado" k="estado" sort={sort} onSort={toggleSort} className="px-3 py-3" />
+                      <th className="px-5 py-3"></th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {filteredAppts.map((a) => {
+                    {sortedAppts.map((a) => {
                        const eq = a.equipment?.[0];
                        const wa = a.client.phone ? a.client.phone.replace(/\D/g, '') : '';
                        return (
@@ -379,6 +429,16 @@ export default function AdminDashboard() {
                                 </option>
                               ))}
                             </select>
+                            {!a.technicianId && (() => {
+                              const sug = suggestTech(a);
+                              return sug ? (
+                                <button onClick={() => handleAssign(a.id, sug.id)}
+                                  title={`Asignar a ${sug.firstName} ${sug.lastName}`}
+                                  className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-brand-600 transition hover:text-brand-700">
+                                  <Sparkles size={11} /> Sugerido: {sug.firstName}
+                                </button>
+                              ) : null;
+                            })()}
                           </td>
                           <td className="px-3 py-3">
                             <select value={a.status} onChange={(e) => changeStatus(a.id, e.target.value)}
