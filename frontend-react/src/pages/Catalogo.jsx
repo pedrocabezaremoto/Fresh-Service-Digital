@@ -51,25 +51,24 @@ export default function Catalogo() {
         {groups.map((g) => (
           <section key={g.title}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand-gradient text-white shadow-glow sheen">
-                  <g.icon size={26} />
-                </div>
-                <div>
-                  <span className="inline-block rounded-full bg-brand-50 px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-brand-600 ring-1 ring-brand-100">{g.tag}</span>
-                  <h2 className="mt-1 font-display text-2xl font-extrabold text-ink-900">{g.title}</h2>
-                </div>
+              <div>
+                <span className="inline-block rounded-full bg-brand-50 px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-brand-600 ring-1 ring-brand-100">{g.tag}</span>
+                <h2 className="mt-1 font-display text-2xl font-extrabold text-ink-900">{g.title}</h2>
               </div>
             </div>
 
             <div className={`mt-8 grid gap-6 ${g.cards.length === 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2'}`}>
               {g.cards.map((c) => (
-                <div key={c.name} className={`relative flex flex-col overflow-hidden rounded-3xl bg-white ring-1 transition hover:-translate-y-1 hover:shadow-glow ${c.popular ? 'ring-2 ring-brand-400 shadow-glow' : 'ring-slate-100 shadow-sm'}`}>
-                  {c.popular && (
-                    <div className="bg-brand-gradient py-1.5 text-center text-xs font-bold uppercase tracking-wider text-white">★ Más solicitado</div>
-                  )}
+                <div key={c.name} className={`group relative flex flex-col overflow-hidden rounded-3xl bg-white ring-1 transition hover:-translate-y-1 hover:shadow-glow ${c.popular ? 'ring-2 ring-brand-400 shadow-glow' : 'ring-slate-100 shadow-sm'}`}>
+                  <div className="relative h-40 overflow-hidden">
+                    <img src={g.img} alt={g.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 via-brand-950/10 to-transparent" />
+                    {c.popular && (
+                      <div className="absolute right-3 top-3 rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-glow">★ Más solicitado</div>
+                    )}
+                    <h3 className="absolute bottom-3 left-4 font-display text-lg font-bold text-white drop-shadow">{c.name}</h3>
+                  </div>
                   <div className="flex flex-1 flex-col p-6">
-                    <h3 className="font-display text-xl font-bold text-ink-900">{c.name}</h3>
                     <p className="text-sm font-semibold text-brand-600">{c.sub}</p>
                     <ul className="mt-5 flex-1 space-y-2.5">
                       {c.points.map((p) => (

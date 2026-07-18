@@ -136,9 +136,6 @@ export default function Home() {
                 <div className="relative h-48 overflow-hidden">
                   <img src={s.img} alt={s.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-brand-950/10 to-transparent" />
-                  <div className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-xl bg-white/90 text-brand-600 shadow-lg backdrop-blur">
-                    <s.icon size={22} />
-                  </div>
                   <h3 className="absolute bottom-3 left-4 font-display text-xl font-bold text-white">{s.title}</h3>
                 </div>
                 <div className="p-6">
