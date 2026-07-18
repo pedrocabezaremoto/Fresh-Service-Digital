@@ -111,6 +111,20 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-12px); }
   }
+  /* Float suave para el logo (footer) */
+  .animate-logo-float {
+    animation: logoFloat 3.4s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+}
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-float { animation: none; }
 }
 
 /* =====================================================

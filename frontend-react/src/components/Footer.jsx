@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Snowflake, MapPin, Phone, Clock, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Clock, MessageCircle } from 'lucide-react';
+import Logo from './Logo';
 
 export default function Footer() {
   return (
@@ -7,14 +8,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-5 pb-10 pt-16 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient-bright text-white shadow-glow">
-                <Snowflake size={20} />
-              </div>
-              <span className="font-display text-lg font-extrabold text-white">
-                Fresh Service
-              </span>
-            </div>
+            <Logo light size="lg" effect="float" />
             <p className="mt-4 text-sm leading-relaxed text-brand-300">
               Servicio técnico de refrigeración y climatización a domicilio.
               Rapidez, calidad y garantía en cada visita.
