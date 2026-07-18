@@ -4,6 +4,7 @@ import {
   ArrowRight, CheckCircle2, PhoneCall, Award, ThermometerSnowflake,
 } from 'lucide-react';
 import Button from '../components/Button';
+import Price from '../components/Price';
 import { IMG } from '../lib/images';
 
 function Stat({ value, label }) {
@@ -17,17 +18,17 @@ function Stat({ value, label }) {
 
 const services = [
   {
-    icon: Wind, title: 'Aires de Ventana', img: IMG.maintenance,
+    icon: Wind, title: 'Aires de Ventana', img: IMG.maintenance, priceFrom: 25,
     desc: 'Reparación, mantenimiento e instalación de unidades de ventana de todas las marcas.',
     points: ['Diagnóstico incluido', 'Recarga de gas', 'Limpieza profunda'],
   },
   {
-    icon: ThermometerSnowflake, title: 'Aires Split', img: IMG.install,
+    icon: ThermometerSnowflake, title: 'Aires Split', img: IMG.install, priceFrom: 35,
     desc: 'Servicio integral para sistemas Split mini y maxi: unidad interna y externa.',
     points: ['Lavado a presión', 'Revisión de plaquetas', 'Recarga y hermeticidad'],
   },
   {
-    icon: Wrench, title: 'Aires por Toneladas', img: IMG.repair,
+    icon: Wrench, title: 'Aires por Toneladas', img: IMG.repair, priceFrom: 50,
     desc: 'Equipos de 1 a 3 toneladas para locales y espacios grandes. Servicio especializado.',
     points: ['Hasta 80 m²', 'Línea trifásica', 'Diagnóstico de compresor'],
   },
@@ -147,9 +148,15 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/catalogo" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 transition hover:gap-2.5">
-                    Explorar <ArrowRight size={15} />
-                  </Link>
+                  <div className="mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                    <div>
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Desde</div>
+                      <Price usd={s.priceFrom} />
+                    </div>
+                    <Link to="/catalogo" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 transition hover:gap-2.5">
+                      Explorar <ArrowRight size={15} />
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}

@@ -69,3 +69,12 @@ model Equipment {
 
   @@map("equipments")
 }
+
+// Cache de configuraciones simples (clave/valor). Usado para la tasa BCV.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

@@ -1,29 +1,30 @@
 import { Link } from 'react-router-dom';
 import { Wind, ThermometerSnowflake, Wrench, CheckCircle2, Snowflake, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
+import Price from '../components/Price';
 import { IMG } from '../lib/images';
 
 const groups = [
   {
     tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: IMG.maintenance,
     cards: [
-      { name: 'Reparación', sub: 'Diagnóstico + Reparación', points: ['Diagnóstico completo', 'Revisión eléctrica y mecánica', 'Prueba de funcionamiento', 'Informe técnico'] },
-      { name: 'Mantenimiento', sub: 'Limpieza + Revisión', points: ['Lavado de filtros y tinas', 'Limpieza de serpentines', 'Revisión del compresor', 'Recarga de gas (si aplica)'] },
+      { name: 'Reparación', sub: 'Diagnóstico + Reparación', price: 40, points: ['Diagnóstico completo', 'Revisión eléctrica y mecánica', 'Prueba de funcionamiento', 'Informe técnico'] },
+      { name: 'Mantenimiento', sub: 'Limpieza + Revisión', price: 25, points: ['Lavado de filtros y tinas', 'Limpieza de serpentines', 'Revisión del compresor', 'Recarga de gas (si aplica)'] },
     ],
   },
   {
     tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: IMG.install,
     cards: [
-      { name: 'Reparación', sub: 'Mini + Maxi Split', points: ['Diagnóstico interior y exterior', 'Revisión de plaquetas', 'Verificación de tuberías', 'Recarga y verificación de gas'] },
-      { name: 'Mantenimiento', sub: 'Preventivo + Correctivo', points: ['Desmontaje y lavado a presión', 'Limpieza de drenaje', 'Revisión del condensador', 'Control de temperatura'] },
+      { name: 'Reparación', sub: 'Mini + Maxi Split', price: 55, points: ['Diagnóstico interior y exterior', 'Revisión de plaquetas', 'Verificación de tuberías', 'Recarga y verificación de gas'] },
+      { name: 'Mantenimiento', sub: 'Preventivo + Correctivo', price: 35, points: ['Desmontaje y lavado a presión', 'Limpieza de drenaje', 'Revisión del condensador', 'Control de temperatura'] },
     ],
   },
   {
     tag: 'Tipo 3', title: 'Aires por Toneladas', icon: Wrench, img: IMG.repair,
     cards: [
-      { name: '1 Tonelada', sub: 'Hasta 30 m²', points: ['Cuartos y oficinas pequeñas', 'Recarga R-22 / R-410A', 'Instalación de soportes', 'Mantenimiento preventivo'] },
-      { name: '2 Toneladas', sub: 'Hasta 55 m²', popular: true, points: ['Salas y oficinas medianas', 'Revisión completa del sistema', 'Recarga y hermeticidad', 'Limpieza profunda'] },
-      { name: '3 Toneladas', sub: 'Hasta 80 m²', points: ['Locales y espacios abiertos', 'Revisión trifásica', 'Línea dedicada', 'Diagnóstico de compresor'] },
+      { name: '1 Tonelada', sub: 'Hasta 30 m²', price: 50, points: ['Cuartos y oficinas pequeñas', 'Recarga R-22 / R-410A', 'Instalación de soportes', 'Mantenimiento preventivo'] },
+      { name: '2 Toneladas', sub: 'Hasta 55 m²', price: 75, popular: true, points: ['Salas y oficinas medianas', 'Revisión completa del sistema', 'Recarga y hermeticidad', 'Limpieza profunda'] },
+      { name: '3 Toneladas', sub: 'Hasta 80 m²', price: 100, points: ['Locales y espacios abiertos', 'Revisión trifásica', 'Línea dedicada', 'Diagnóstico de compresor'] },
     ],
   },
 ];
@@ -77,11 +78,8 @@ export default function Catalogo() {
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
-                      <div>
-                        <div className="text-xs text-ink-500">Desde</div>
-                        <div className="font-display font-bold text-ink-900">Consultar precio</div>
-                      </div>
+                    <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
+                      <Price usd={c.price} />
                       <Button to="/solicitud" size="sm">Solicitar</Button>
                     </div>
                   </div>
