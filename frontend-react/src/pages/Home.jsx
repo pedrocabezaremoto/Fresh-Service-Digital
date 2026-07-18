@@ -95,43 +95,23 @@ export default function Home() {
 
           {/* Visual */}
           <div className="relative">
-            <div className="relative overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg">
+            <div className="group relative overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg transition duration-300 ease-out hover:-translate-y-2 hover:shadow-glow-lg hover:ring-frost-300/40 will-change-transform">
               <img
                 src={IMG.heroTech}
                 alt="Técnico de refrigeración trabajando"
-                className="h-[420px] w-full object-cover sm:h-[480px]"
+                className="h-[420px] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] sm:h-[480px]"
                 loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 to-transparent" />
-            </div>
-            {/* Floating cards */}
-            <div className="absolute -left-4 top-8 flex items-center gap-3 rounded-2xl glass px-4 py-3 shadow-xl sm:-left-8">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15 text-emerald-600">
-                <CheckCircle2 size={22} />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-ink-900">+1.200 servicios</div>
-                <div className="text-xs text-ink-500">completados</div>
-              </div>
-            </div>
-            <div className="absolute -bottom-5 right-2 flex items-center gap-3 rounded-2xl glass px-4 py-3 shadow-xl sm:right-6">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-400/20 text-amber-500">
-                <Star size={22} fill="currentColor" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-ink-900">4.9 / 5</div>
-                <div className="text-xs text-ink-500">satisfacción</div>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Stats strip */}
         <div className="relative border-t border-white/10 bg-white/5">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-5 py-8 sm:grid-cols-4 lg:px-8">
-            <Stat value="+1.200" label="Servicios" />
+          <div className="mx-auto grid max-w-7xl grid-cols-3 gap-6 px-5 py-8 lg:px-8">
+            <Stat value="+500" label="Servicios" />
             <Stat value="8 años" label="Experiencia" />
-            <Stat value="< 2h" label="Respuesta" />
             <Stat value="4.9★" label="Calificación" />
           </div>
         </div>
