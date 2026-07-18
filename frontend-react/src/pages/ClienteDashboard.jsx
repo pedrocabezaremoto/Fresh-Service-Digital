@@ -1,21 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardList, Loader2, CheckCircle2, Snowflake, Plus, MessageCircle, Wind } from 'lucide-react';
+import { Loader2, Snowflake, Plus, MessageCircle } from 'lucide-react';
 import Button from '../components/Button';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
 
-function StatCard({ icon: Icon, value, label, color }) {
+function StatCard({ value, label, accent }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
-      <div className={`grid h-12 w-12 place-items-center rounded-xl ${color}`}>
-        <Icon size={22} />
-      </div>
-      <div>
-        <div className="font-display text-2xl font-extrabold text-ink-900">{value}</div>
-        <div className="text-xs font-medium text-ink-500">{label}</div>
-      </div>
+    <div className="rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
+      <div className={`h-1 w-10 rounded-full ${accent}`} />
+      <div className="mt-3 font-display text-3xl font-extrabold text-ink-900">{value}</div>
+      <div className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-ink-500">{label}</div>
     </div>
   );
 }
@@ -50,7 +46,7 @@ export default function ClienteDashboard() {
           <Snowflake className="absolute -right-4 -top-4 text-white/15" size={130} />
           <div className="relative">
             <span className="text-xs font-bold uppercase tracking-wider text-brand-100">Área de clientes</span>
-            <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">¡Hola, {user.firstName}! 👋</h1>
+            <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">¡Hola, {user.firstName}!</h1>
             <p className="mt-2 max-w-md text-brand-50/90">Aquí puedes seguir el estado de tus solicitudes y agendar nuevos servicios a domicilio.</p>
             <Button to="/solicitud" variant="dark" className="mt-5"><Plus size={18} /> Solicitar servicio</Button>
           </div>
@@ -58,9 +54,9 @@ export default function ClienteDashboard() {
 
         {/* Stats */}
         <div className="mt-8 grid gap-5 sm:grid-cols-3">
-          <StatCard icon={ClipboardList} value={total} label="Total solicitados" color="bg-brand-100 text-brand-600" />
-          <StatCard icon={Loader2} value={active} label="Servicios activos" color="bg-amber-100 text-amber-600" />
-          <StatCard icon={CheckCircle2} value={completed} label="Completados" color="bg-emerald-100 text-emerald-600" />
+          <StatCard value={total} label="Total solicitados" accent="bg-brand-500" />
+          <StatCard value={active} label="Servicios activos" accent="bg-amber-500" />
+          <StatCard value={completed} label="Completados" accent="bg-emerald-500" />
         </div>
 
         {/* Historial */}
@@ -85,14 +81,9 @@ export default function ClienteDashboard() {
                 const st = STATUS[a.status] || STATUS.PENDING;
                 return (
                   <div key={a.id} className="flex flex-col gap-3 rounded-2xl border border-slate-100 p-4 transition hover:border-brand-200 hover:bg-brand-50/40 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                        <Wind size={20} />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-ink-900">{eq ? `${eq.brand} · ${eq.model}` : a.brand || 'Servicio'}</div>
-                        <div className="text-xs text-ink-500">{fmtDate(a.scheduledAt)} · {fmtTime(a.scheduledAt)} · Ref #{a.id.substring(0, 8).toUpperCase()}</div>
-                      </div>
+                    <div className="border-l-2 border-brand-300 pl-3">
+                      <div className="font-semibold text-ink-900">{eq ? `${eq.brand} · ${eq.model}` : a.brand || 'Servicio'}</div>
+                      <div className="text-xs text-ink-500">{fmtDate(a.scheduledAt)} · {fmtTime(a.scheduledAt)} · Ref #{a.id.substring(0, 8).toUpperCase()}</div>
                     </div>
                     <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${st.cls}`}>
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} /> {st.label}

@@ -432,3 +432,66 @@ push a main → GitHub avisa al webhook → verifica firma → deploy.sh
    → git pull → migraciones → build front/back → restart pm2 → health check
    → cambios en vivo en https://fresh.pedroservicios.xyz
 ```
+
+---
+
+## 🎨 Fase 10 — Branding real + limpieza de UI (logo, favicon, fotos, panel cliente)
+
+**Fecha:** 2026-07-18
+
+Sesión de mejoras visuales sobre el frontend React (todo desplegado en vivo vía webhook automático).
+
+### Hero (Home)
+- Quitados los badges flotantes "+1.200 servicios" y "4.9/5 satisfacción" de la foto del técnico.
+- Foto del hero con efecto **hover-lift** (sube + zoom suave + glow), igual que las tarjetas del catálogo.
+- Barra de stats ajustada a valores creíbles: **+500 servicios · 8 años · 4.9★** (se quitó "< 2h respuesta"); grid a 3 columnas.
+
+### Logo de marca (copo de hielo + llave/engranaje)
+- Pedro generó el logo con un LLM y lo subió por SCP (`logo-original.jpeg`, 1376×768).
+- Procesado en el VPS con **rembg + u2net** (`/root/venv`): fondo quitado, recortado al contenido, cuadrado, optimizado a 256px (91KB → `public/logo.png`).
+- Componente `Logo.jsx` reescrito: usa la imagen en un **chip blanco fijo** (`bg-[#ffffff]`) para verse bien en navbar claro Y oscuro (en dark mode el navbar es azul oscuro, un logo transparente mostraría medio disco blanco feo).
+- Prop `effect`: **hover** (default, navbar) / **float** lento (footer, bob ~3.4s con `@keyframes logoFloat`, respeta `prefers-reduced-motion`).
+- Logo aplicado en: **navbar** (hover), **footer** (float, reemplaza ícono viejo), **login/AuthShell** (panel izquierdo oscuro, `<Logo light>`).
+- Masters guardados en `brand/` (jpeg original + png full). Solo `logo.png` se sirve.
+
+### Favicon
+- Generado desde el logo: `favicon.ico` (16/32/48), `favicon-16/32/48.png`, `apple-touch-icon.png` (180, fondo blanco), `icon-192/512.png` (PWA). `index.html` actualizado (reemplaza el `favicon.svg` genérico que no existía bien).
+
+### Sección de servicios — fotos reales, sin iconos genéricos
+- **Home "Nuestros servicios":** quitados los iconos genéricos (badges blancos con símbolo) sobre las fotos.
+- **Catálogo:** quitados los cuadros de icono genéricos de los encabezados de grupo; cada tarjeta (Reparación/Mantenimiento/Toneladas) ahora lleva la **foto de su tipo** como banner superior (reusa `img-window/split/tonnage-ac.png`) con hover-zoom y el nombre sobre la foto.
+- Solo hay 4 fotos reales (ventana, split, toneladas, técnico); pendiente opcional: fotos de acción distintas por tarjeta (reparando vs lavando) → requieren generar 2-3 imágenes nuevas.
+
+### Panel del cliente (ClienteDashboard) — limpieza
+- Quitado el emoji de mano 👋 del saludo "¡Hola, {nombre}!".
+- Quitados los **iconos genéricos**: stat cards rediseñadas (número + label + acento de color, sin ícono); item del historial sin ícono (acento de borde izquierdo). Se conservó el ícono real de WhatsApp y los watermarks sutiles de copo.
+
+### Commits de la fase
+`2557cdcd` (hero/stats), `f7c7e4a1` (logo navbar), `b6e9f59e` (logo footer + efectos), `83cdb26d` (favicon + fotos servicios), + commit de limpieza panel cliente/login.
+
+---
+
+## 🗺️ ROADMAP — Cambios GRANDES pendientes (para 2026-07-19)
+
+> Anotado a pedido de Pedro (fin de jornada 2026-07-18). Son los cambios grandes a atacar mañana.
+
+### A) Panel del Taller (Admin) — Dashboard
+1. **Stat cards → botones funcionales:** cada tarjeta del "Resumen del Taller" (Solicitudes registradas, Pendientes de atender, En proceso, Clientes registrados) debe ser **clickeable** y redirigir a la vista/filtro que corresponde (p.ej. "Pendientes" → Solicitudes filtradas por Pendiente).
+2. **Gráfico de pastel real:** el donut "Citas por estado" debe reflejar **estadísticas reales** de la DB (no mock).
+3. **Reporte exportable:** poder **descargar reporte real en formato XLS/XML** (Pedro dijo "XLM" → confirmar si Excel `.xlsx` o XML).
+
+### B) Panel del Taller — Gestión de Solicitudes
+1. **Filtros por columna:** cliente, servicio, fecha, técnico, estado (ordenar/filtrar cada uno).
+2. **Botón real de WhatsApp** por fila: que abra `wa.me/<numero>` con el **número registrado** del cliente.
+3. **Técnicos ficticios (3):** columna Técnico trabaja con:
+   - **Juan** — especialista en aires de **ventana**
+   - **Carlos** — especialista en **split**
+   - **Jorge** — especialista en aires por **toneladas**
+   - Al asignar un técnico, debe reflejarse en el **panel del cliente** con **nombre + número de WhatsApp ficticio** del técnico (sensación real).
+
+### C) Precios anclados al dólar (BCV) — como InmoYa
+- InmoYa (`/root/Proptech-InmoYa`) ya usa una **API del Banco Central de Venezuela**: precios en Bolívares anclados al dólar, se **actualizan solos a la tasa oficial** cada día (el VPS nunca se apaga). Referencia visual: `inmoya.pedroservicios.xyz/propiedad/46` muestra "Bs 34.792,74 · Ref. $48".
+- Aplicar el **mismo mecanismo** a Fresh Service: los precios de los servicios se guardan en **USD** y se muestran en Bs a la tasa BCV del día (y también en la solicitud/tarjeta).
+- **Precios base (mantenimiento)** que dio Pedro: **ventana $25 · split $35 · tonelada $50**.
+- Para los demás servicios usar precios **con lógica** (una **reparación** vale más que un **mantenimiento**, etc.), coherentes por tipo.
+- **Pendiente de Pedro:** dar los ejemplos/valores exactos por servicio (y confirmar el endpoint BCV que usa InmoYa para reutilizarlo).

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Snowflake, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { IMG } from '../lib/images';
+import Logo from './Logo';
 
 export default function AuthShell({ title, subtitle, children, perks }) {
   const navigate = useNavigate();
@@ -21,11 +22,8 @@ export default function AuthShell({ title, subtitle, children, perks }) {
         <div className="absolute inset-0 bg-gradient-to-br from-brand-950/90 via-brand-900/80 to-brand-800/70" />
         <div className="absolute -right-20 top-10 h-80 w-80 rounded-full bg-brand-500/20 blur-3xl" />
 
-        <Link to="/" className="relative flex items-center gap-2.5">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-gradient-bright shadow-glow sheen">
-            <Snowflake size={22} />
-          </div>
-          <span className="font-display text-lg font-extrabold">Fresh Service</span>
+        <Link to="/" className="relative">
+          <Logo light size="lg" />
         </Link>
 
         <div className="relative max-w-md">

@@ -207,3 +207,52 @@ Fresh-Service-Digital/
 - [ ] `pm2 startup` para que `fresh-frontend`, `fresh-service`, `fresh-webhook` e `inmoya` reaparezcan solos tras reiniciar el VPS (ya se hizo `pm2 save`).
 - [ ] Mandarle a María la regla de migraciones (arriba).
 - [ ] Los pendientes de diseño/fotos/correo real de la sección anterior siguen vigentes.
+
+---
+
+## 🎨 2026-07-18 — Branding + limpieza UI (sesión de la tarde/noche)
+
+**Estado:** frontend con logo real, favicon, fotos en servicios y panel de cliente limpio. Todo EN VIVO (deploy automático por webhook).
+
+### Hecho hoy
+| Cambio | Estado |
+|---|---|
+| Hero: quitar badges "+1.200"/"4.9★", efecto hover en foto, stats +500/8años/4.9★ | ✅ |
+| Logo real (copo+llave): navbar, footer, login | ✅ |
+| Logo: chip blanco (claro/oscuro), hover en navbar, float lento en footer | ✅ |
+| Favicon desde el logo (ico + apple-touch + PWA) | ✅ |
+| Home servicios: sin iconos genéricos | ✅ |
+| Catálogo: foto del tipo en cada tarjeta, sin iconos genéricos | ✅ |
+| Panel cliente: sin mano 👋, sin iconos genéricos (stat cards + historial) | ✅ |
+
+### Cómo procesar imágenes (para el futuro)
+- Quitar fondo: `/root/venv/bin/python` con **rembg** (modelo u2net en `/root/.u2net/`).
+- Pedro sube archivos por **SCP** a `frontend-react/public/` (ruta con comillas por los espacios; apuntar al archivo, no a la carpeta).
+
+### Verificado en vivo (flujo cliente↔taller)
+- Cliente pide servicio → aparece en su panel como **Pendiente** y en el **Panel Taller** (Solicitudes en vivo).
+- Taller asigna técnico → el estado pasa a **Asignada** en el panel del cliente. ✅ funciona.
+
+---
+
+## 📌 PARA MAÑANA (2026-07-19) — Cambios GRANDES
+
+> Pedro terminó cansado; estos son los grandes. Detalle completo en `History/historial.md` (Roadmap Fase 10).
+
+**Panel Taller — Dashboard**
+- [ ] Stat cards clickeables → redirigen a su vista/filtro.
+- [ ] Donut "Citas por estado" con datos **reales** (no mock).
+- [ ] **Exportar reporte** real en Excel/XML (confirmar formato exacto con Pedro).
+
+**Panel Taller — Gestión de Solicitudes**
+- [ ] Filtros por columna (cliente, servicio, fecha, técnico, estado).
+- [ ] Botón **WhatsApp** real por fila (al número registrado del cliente).
+- [ ] 3 técnicos ficticios: **Juan** (ventana), **Carlos** (split), **Jorge** (toneladas); al asignar, mostrar **nombre + WhatsApp ficticio** en el panel del cliente.
+
+**Precios anclados al dólar (BCV) — como InmoYa**
+- [ ] Reusar la **API del BCV** que usa InmoYa (`/root/Proptech-InmoYa`) para mostrar precios en Bs a tasa oficial del día (VPS siempre encendido).
+- [ ] Precios base mantenimiento: **ventana $25 · split $35 · tonelada $50**; demás servicios con lógica (reparación > mantenimiento).
+- [ ] **Falta que Pedro dé:** valores exactos por servicio + confirmar endpoint BCV de InmoYa.
+
+**Pendiente opcional de hoy**
+- [ ] Fotos de acción por tarjeta (reparando vs lavando) — Pedro genera 2-3 imágenes y se cambian.
