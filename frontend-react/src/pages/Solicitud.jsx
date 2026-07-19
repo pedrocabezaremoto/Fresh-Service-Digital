@@ -22,10 +22,19 @@ const horarios = [
   { v: 'noche', t: 'Noche (5:00 PM – 7:00 PM)', h: '18:00:00' },
 ];
 
+const PREFIJOS = ['412', '414', '424', '416', '426'];
+
 export default function Solicitud() {
   const { user } = useAuth();
+  // Precargar teléfono desde la cuenta y cédula/dirección desde la última solicitud
+  const digits = (user?.phone || '').replace(/\D/g, '').replace(/^58/, '');
+  const hasPrefix = PREFIJOS.includes(digits.slice(0, 3));
   const [f, setF] = useState({
-    cedTipo: 'V', cedNum: '', phonePrefix: '412', phoneNum: '', direccion: '',
+    cedTipo: localStorage.getItem('fsd_cedTipo') || 'V',
+    cedNum: localStorage.getItem('fsd_cedNum') || '',
+    phonePrefix: hasPrefix ? digits.slice(0, 3) : '412',
+    phoneNum: hasPrefix ? digits.slice(3) : '',
+    direccion: localStorage.getItem('fsd_direccion') || '',
     equipo: 'Aire de Ventana', servicio: 'Reparación', descripcion: '', fecha: '', horario: 'manana',
   });
   const [error, setError] = useState('');
@@ -53,6 +62,10 @@ export default function Solicitud() {
         notes: `Cédula: ${f.cedTipo}-${f.cedNum}\nWhatsApp: +58 ${f.phonePrefix}-${f.phoneNum}\nDirección: ${f.direccion}\nHorario: ${f.horario}`,
       };
       const data = await api.createAppointment(payload);
+      // Recordar datos personales para la próxima solicitud (no re-escribir)
+      localStorage.setItem('fsd_cedTipo', f.cedTipo);
+      localStorage.setItem('fsd_cedNum', f.cedNum);
+      localStorage.setItem('fsd_direccion', f.direccion);
       setRef(data.id.substring(0, 8).toUpperCase());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {

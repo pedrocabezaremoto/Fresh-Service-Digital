@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, Snowflake, CheckCircle2,
   ArrowRight, Download, ChevronUp, ChevronDown, ChevronsUpDown, Sparkles,
-  TrendingUp, Calendar,
+  TrendingUp, Calendar, Pencil, Trash2, X,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -93,6 +93,9 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [cq, setCq] = useState('');
   const [sort, setSort] = useState({ key: 'fecha', dir: 'desc' });
+  const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
+  const [savingUser, setSavingUser] = useState(false);
+  const [userMsg, setUserMsg] = useState('');
 
   async function load() {
     setLoading(true);
@@ -248,6 +251,38 @@ export default function AdminDashboard() {
   }
   const filteredClients = clients.filter((c) =>
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(cq.toLowerCase()) || c.email.toLowerCase().includes(cq.toLowerCase()));
+
+  // ---- Gestión de usuarios (editar / eliminar) ----
+  function openEdit(c) {
+    setUserMsg('');
+    setEditUser({ id: c.id, firstName: c.firstName, lastName: c.lastName, email: c.email, phone: c.phone || '', role: c.role, password: '' });
+  }
+  async function saveUser(e) {
+    e.preventDefault();
+    setSavingUser(true);
+    setUserMsg('');
+    try {
+      const { id, password, ...rest } = editUser;
+      const payload = { ...rest };
+      if (password) payload.password = password;
+      const updated = await api.updateUser(id, payload);
+      setClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...updated } : c)));
+      setEditUser(null);
+    } catch (err) {
+      setUserMsg(err.message || 'No se pudo guardar');
+    } finally {
+      setSavingUser(false);
+    }
+  }
+  async function removeUser(c) {
+    if (!window.confirm(`¿Eliminar a ${c.firstName} ${c.lastName} (${c.email})? Se borrarán también sus solicitudes. Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.deleteUser(c.id);
+      setClients((prev) => prev.filter((x) => x.id !== c.id));
+    } catch (err) {
+      alert(err.message || 'No se pudo eliminar');
+    }
+  }
 
   // ---- Ingresos: servicios COMPLETADOS (ganancias reales) ----
   const priceOf = (a) => a.priceUsd ?? priceUsd(a.equipment?.[0]?.brand, a.equipment?.[0]?.model);
@@ -586,7 +621,7 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
-                    <tr><th className="px-5 py-3">Cliente</th><th className="px-3 py-3">Correo</th><th className="px-3 py-3">Teléfono</th><th className="px-3 py-3">Citas</th><th className="px-3 py-3">Cuenta</th><th className="px-5 py-3">Registrado</th></tr>
+                    <tr><th className="px-5 py-3">Cliente</th><th className="px-3 py-3">Correo</th><th className="px-3 py-3">Teléfono</th><th className="px-3 py-3">Citas</th><th className="px-3 py-3">Cuenta</th><th className="px-3 py-3">Registrado</th><th className="px-5 py-3 text-right">Acciones</th></tr>
                   </thead>
                   <tbody>
                     {filteredClients.map((c) => {
@@ -611,7 +646,15 @@ export default function AdminDashboard() {
                               {c.isVerified ? <CheckCircle2 size={12} /> : null} {c.isVerified ? 'Verificado' : 'Pendiente'}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-ink-500">{fmtDate(c.createdAt)}</td>
+                          <td className="px-3 py-3 text-ink-500">{fmtDate(c.createdAt)}</td>
+                          <td className="px-5 py-3">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button onClick={() => openEdit(c)} title="Editar"
+                                className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100"><Pencil size={15} /></button>
+                              <button onClick={() => removeUser(c)} title="Eliminar"
+                                className="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100"><Trash2 size={15} /></button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -622,6 +665,42 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      {/* Modal de edición de usuario */}
+      {editUser && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => setEditUser(null)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={saveUser}
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Editar usuario</h3>
+              <button type="button" onClick={() => setEditUser(null)} className="grid h-8 w-8 place-items-center rounded-lg text-ink-500 hover:bg-slate-100"><X size={18} /></button>
+            </div>
+            {userMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{userMsg}</div>}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre</span>
+                <input required value={editUser.firstName} onChange={(e) => setEditUser({ ...editUser, firstName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Apellido</span>
+                <input required value={editUser.lastName} onChange={(e) => setEditUser({ ...editUser, lastName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Correo</span>
+              <input required type="email" value={editUser.email} onChange={(e) => setEditUser({ ...editUser, email: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Teléfono</span>
+                <input value={editUser.phone} onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })} placeholder="+58 412-0000000" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Rol</span>
+                <select value={editUser.role} onChange={(e) => setEditUser({ ...editUser, role: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                  <option value="CLIENT">Cliente</option><option value="TECHNICIAN">Técnico</option><option value="ADMIN">Admin</option>
+                </select></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nueva contraseña <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
+              <input type="text" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} placeholder="Dejar vacío para no cambiarla" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditUser(null)} className="rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100">Cancelar</button>
+              <button type="submit" disabled={savingUser} className="rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50">{savingUser ? 'Guardando…' : 'Guardar cambios'}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

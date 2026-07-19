@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Query, Body, HttpCode, HttpStatus, UseGuards, Res } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Query, Body, HttpCode, HttpStatus, UseGuards, Res } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -48,5 +49,21 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginUserDto) {
     return this.usersService.login(loginDto);
+  }
+
+  // Editar un usuario (solo ADMIN del taller)
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.updateUser(id, dto);
+  }
+
+  // Eliminar un usuario (solo ADMIN del taller)
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async remove(@Param('id') id: string) {
+    return this.usersService.deleteUser(id);
   }
 }

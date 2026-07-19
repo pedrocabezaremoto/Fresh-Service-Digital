@@ -55,10 +55,9 @@ export default function ClienteDashboard() {
           <Snowflake className="absolute -right-4 -top-4 text-white/15" size={130} />
           <div className="relative">
             <span className="text-xs font-bold uppercase tracking-wider text-brand-100">Área de clientes</span>
-            <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">¡Hola, {user.firstName}!</h1>
-            <p className="mt-2 max-w-md text-brand-50/90">Aquí puedes seguir el estado de tus solicitudes y agendar nuevos servicios a domicilio.</p>
+            <h1 className="mt-1.5 font-display text-xl font-bold sm:text-2xl">Hola, {user.firstName} {user.lastName}</h1>
+            <p className="mt-1.5 max-w-md text-sm text-brand-50/90">Sigue el estado de tus solicitudes y agenda nuevos servicios a domicilio.</p>
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-brand-50/90">
-              <span><span className="text-brand-200">Nombre:</span> {user.firstName} {user.lastName}</span>
               <span><span className="text-brand-200">Correo:</span> {user.email}</span>
               {user.phone && <span><span className="text-brand-200">WhatsApp:</span> {user.phone}</span>}
             </div>

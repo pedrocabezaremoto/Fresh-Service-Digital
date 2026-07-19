@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -54,6 +54,41 @@ export class UsersService {
       },
       orderBy: { firstName: 'asc' },
     });
+  }
+
+  /**
+   * Actualiza los datos de un usuario (panel del taller). Solo cambia lo que se envía.
+   */
+  async updateUser(id: string, dto: any) {
+    const data: any = {};
+    for (const k of ['firstName', 'lastName', 'email', 'phone', 'role']) {
+      if (dto[k] !== undefined) data[k] = dto[k];
+    }
+    if (dto.password) data.password = await this.hashPassword(dto.password);
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data,
+        select: { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, isVerified: true },
+      });
+    } catch (e: any) {
+      if (e.code === 'P2002') throw new ConflictException('Ese correo ya está registrado en otra cuenta');
+      if (e.code === 'P2025') throw new NotFoundException('Usuario no encontrado');
+      throw e;
+    }
+  }
+
+  /**
+   * Elimina un usuario (y en cascada sus citas). Solo para el panel del taller.
+   */
+  async deleteUser(id: string) {
+    try {
+      await this.prisma.user.delete({ where: { id } });
+      return { deleted: true };
+    } catch (e: any) {
+      if (e.code === 'P2025') throw new NotFoundException('Usuario no encontrado');
+      throw e;
+    }
   }
 
   /**

@@ -53,6 +53,8 @@ export const api = {
   // Usuarios (admin)
   getClients: () => request('/users', { auth: true }),
   getTechnicians: () => request('/users/technicians', { auth: true }),
+  updateUser: (id, data) => request(`/users/${id}`, { method: 'PATCH', body: data, auth: true }),
+  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE', auth: true }),
 
   // Citas
   createAppointment: (payload) =>
