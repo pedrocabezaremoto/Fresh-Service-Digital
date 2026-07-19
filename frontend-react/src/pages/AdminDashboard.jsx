@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
-  ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, Snowflake, CheckCircle2,
+  ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   ArrowRight, Download, ChevronUp, ChevronDown, ChevronsUpDown, Sparkles,
   TrendingUp, Calendar, Pencil, Trash2, X,
 } from 'lucide-react';
@@ -52,17 +52,22 @@ function KPI({ icon: Icon, value, label, color, accent, onClick }) {
   return (
     <Tag
       onClick={onClick}
-      className={`group relative w-full overflow-hidden rounded-2xl bg-white p-5 text-left ring-1 ring-slate-100 shadow-sm transition ${onClick ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-glow hover:ring-brand-200' : ''}`}
+      style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
+      className={`group relative w-full overflow-hidden rounded-2xl p-5 text-left shadow-sm ring-1 ring-white/60 backdrop-blur transition duration-300 ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-glow-lg hover:ring-brand-200' : ''}`}
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
-      <div className={`grid h-11 w-11 place-items-center rounded-xl ${color}`}><Icon size={21} /></div>
-      <div className="mt-4 font-display text-3xl font-extrabold text-ink-900">{value}</div>
-      <div className="text-sm font-medium text-ink-500">{label}</div>
-      {onClick && (
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600 opacity-0 transition group-hover:opacity-100">
-          Ver <ArrowRight size={12} />
-        </span>
-      )}
+      {/* marca de agua translúcida */}
+      <Icon size={104} className="pointer-events-none absolute -bottom-5 -right-4 opacity-[0.08] transition duration-300 group-hover:scale-110 group-hover:opacity-[0.12]" style={{ color: accent }} />
+      <div className="relative">
+        <div className={`grid h-11 w-11 place-items-center rounded-xl ${color} shadow-sm ring-1 ring-white/40`}><Icon size={21} /></div>
+        <div className="mt-4 font-display text-3xl font-extrabold text-ink-900">{value}</div>
+        <div className="text-sm font-medium text-ink-500">{label}</div>
+        {onClick && (
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600 opacity-0 transition group-hover:opacity-100">
+            Ver <ArrowRight size={12} />
+          </span>
+        )}
+      </div>
     </Tag>
   );
 }
@@ -341,7 +346,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand-950 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-6 py-5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient-bright text-white shadow-glow sheen"><Snowflake size={20} /></div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white p-1 shadow-sm"><img src="/logo.png" alt="Fresh Service" className="h-full w-full object-contain" /></span>
           <div>
             <div className="font-display text-sm font-extrabold text-white leading-none">Fresh Service</div>
             <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-400">Panel Taller</div>
@@ -357,7 +362,7 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div className="space-y-2 border-t border-white/10 p-4">
-          <Link to="/" className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-brand-100/70 transition hover:bg-white/5 hover:text-white"><Globe size={17} /> Ver sitio web</Link>
+          <Link to="/" target="_blank" className="flex items-center justify-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/15 transition hover:bg-white/20 hover:ring-white/30"><Globe size={16} /> Ver sitio web</Link>
           <button onClick={() => { logout(); navigate('/'); }} className="flex w-full items-center gap-2 rounded-xl bg-rose-500/15 px-4 py-2.5 text-sm font-semibold text-rose-300 transition hover:bg-rose-500/25"><LogOut size={17} /> Cerrar sesión</button>
           <div className="flex items-center gap-2.5 pt-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>
@@ -422,12 +427,18 @@ export default function AdminDashboard() {
                   <p className="mb-6 text-xs text-ink-500">Solicitudes recibidas (últimos 6 meses)</p>
                   <div className="flex h-44 items-end justify-between gap-3">
                     {months.map((m) => (
-                      <div key={m.l} className="flex flex-1 flex-col items-center gap-2">
-                        <div className="text-xs font-bold text-ink-700">{m.v || ''}</div>
+                      <div key={m.l} className="group flex flex-1 flex-col items-center gap-2">
+                        <div className="text-xs font-bold text-brand-700 opacity-70 transition group-hover:opacity-100">{m.v || ''}</div>
                         <div className="flex w-full items-end" style={{ height: '120px' }}>
-                          <div className="w-full rounded-t-lg bg-brand-gradient-bright transition-all" style={{ height: `${Math.max(m.pct, 3)}%` }} />
+                          <div
+                            className="w-full rounded-t-lg shadow-[inset_0_2px_4px_rgba(255,255,255,0.45),0_6px_14px_-3px_rgba(2,132,199,0.5)] ring-1 ring-inset ring-white/25 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:brightness-110"
+                            style={{
+                              height: `${Math.max(m.pct, 3)}%`,
+                              background: 'linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 55%, #0284c7 100%)',
+                            }}
+                          />
                         </div>
-                        <div className="text-xs font-medium text-ink-500">{m.l}</div>
+                        <div className="text-xs font-medium text-ink-500 transition group-hover:font-bold group-hover:text-brand-700">{m.l}</div>
                       </div>
                     ))}
                   </div>
