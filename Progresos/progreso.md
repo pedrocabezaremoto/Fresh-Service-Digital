@@ -305,3 +305,27 @@ Cambiar un precio = editar ahí y push.
 - [ ] Confirmar/ajustar precios con Pedro.
 - [ ] Activar **branch protection** en GitHub (que María no pueda empujar directo a main).
 - [ ] (Opcional) Mostrar precio también en el panel del técnico / recordatorio de pago.
+
+---
+
+## 🚀 2026-07-19 (tarde) — Correo REAL + Control de Servicios Realizados (cierre v1.0)
+
+**Hecho:**
+| Cambio | Estado |
+|---|---|
+| **SMTP activo** (Gmail `freshservicedigital2026@gmail.com` + contraseña de app) | ✅ correos REALES |
+| Correo de prueba enviado a `pedrocabezasocial@gmail.com` (Luis, cuenta de la defensa) | ✅ recibido |
+| **Control de Servicios Realizados** (panel taller, vista "Ingresos") | ✅ |
+| Ganancias por período: Hoy / Semana / Mes / Año (servicios COMPLETADOS) | ✅ |
+| Descarga de reporte CSV por período (diario/semanal/mensual/anual) | ✅ |
+| Tabla de servicios completados con monto Bs + USD | ✅ |
+
+- **Ingresos = suma de `priceUsd` de citas COMPLETED**, fechadas por `scheduledAt`. Solo frontend (usa `appts` ya cargados).
+- Config SMTP vive en `backend/.env` (gitignored, solo en el VPS). Si falta correo real, revisar esas vars.
+
+### ✅ VERSIÓN 1.0 — cerrada para la defensa (lunes 8:00 AM)
+
+## 🔮 ROADMAP v1.1 (apuntado, NO en 1.0)
+1. **Chat en tiempo real cliente↔taller** — se habilita al registrarse y cuando el taller aprueba al usuario (para dudas/comunicación).
+2. **Gestión de usuarios** (panel taller) — editar/eliminar usuarios: nombre, correo, clave, rol, etc.
+3. **Ubicación con Google Maps** — el cliente marca su ubicación real en el mapa desde su panel; ayuda al técnico a llegar y a la empresa a ubicar el servicio. Dejar enganchado en backend + frontend.

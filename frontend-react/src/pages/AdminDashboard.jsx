@@ -4,9 +4,13 @@ import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, Snowflake, CheckCircle2,
   ArrowRight, Download, ChevronUp, ChevronDown, ChevronsUpDown, Sparkles,
+  TrendingUp, Calendar,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useRate } from '../context/RateContext';
+import { priceUsd } from '../lib/prices';
+import { formatBs, formatUsd } from '../lib/money';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
 
 const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -78,6 +82,7 @@ function ThSort({ label, k, sort, onSort, className }) {
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
+  const { rate } = useRate();
   const navigate = useNavigate();
   const [view, setView] = useState('dashboard');
   const [appts, setAppts] = useState([]);
@@ -244,9 +249,55 @@ export default function AdminDashboard() {
   const filteredClients = clients.filter((c) =>
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(cq.toLowerCase()) || c.email.toLowerCase().includes(cq.toLowerCase()));
 
+  // ---- Ingresos: servicios COMPLETADOS (ganancias reales) ----
+  const priceOf = (a) => a.priceUsd ?? priceUsd(a.equipment?.[0]?.brand, a.equipment?.[0]?.model);
+  const techName = (a) => {
+    const t = a.technician || techs.find((x) => x.id === a.technicianId);
+    return t ? `${t.firstName} ${t.lastName}` : 'Sin asignar';
+  };
+  const inPeriod = (d, period) => {
+    const dt = new Date(d), now = new Date();
+    if (period === 'day') return dt.toDateString() === now.toDateString();
+    if (period === 'week') {
+      const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0, 0, 0, 0);
+      return dt >= start;
+    }
+    if (period === 'month') return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
+    if (period === 'year') return dt.getFullYear() === now.getFullYear();
+    return true;
+  };
+  const completedAppts = appts.filter((a) => a.status === 'COMPLETED');
+  const earnings = (period) =>
+    completedAppts.filter((a) => inPeriod(a.scheduledAt, period)).reduce((s, a) => s + priceOf(a), 0);
+  const money = (usd) => formatBs(usd, rate) || formatUsd(usd);
+
+  function exportEarnings(period) {
+    const label = { day: 'diario', week: 'semanal', month: 'mensual', year: 'anual' }[period];
+    const list = completedAppts.filter((a) => inPeriod(a.scheduledAt, period));
+    const cols = ['Fecha', 'Cliente', 'Servicio', 'Técnico', 'Precio USD', 'Precio Bs'];
+    const rows = list.map((a) => {
+      const eq = a.equipment?.[0];
+      const usd = priceOf(a);
+      return [fmtDate(a.scheduledAt), `${a.client.firstName} ${a.client.lastName}`,
+        eq ? `${eq.brand} ${eq.model}` : '', techName(a), usd, rate ? (usd * rate).toFixed(2) : ''];
+    });
+    const totalUsd = rows.reduce((s, r) => s + r[4], 0);
+    const totalRow = ['TOTAL', '', '', '', totalUsd, rate ? (totalUsd * rate).toFixed(2) : ''];
+    const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [cols, ...rows, [], totalRow].map((r) => r.map(esc).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ingresos-${label}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   const nav = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'solicitudes', label: 'Solicitudes', icon: ClipboardList, badge: stats.pending },
+    { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
     { id: 'clientes', label: 'Clientes', icon: Users, badge: stats.clients },
   ];
 
@@ -289,14 +340,14 @@ export default function AdminDashboard() {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8">
           <div>
             <div className="font-display font-bold text-ink-900">
-              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : 'Clientes del Taller'}
+              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : 'Clientes del Taller'}
             </div>
             <div className="text-xs text-ink-500">Fresh Service Digital · Taller de Refrigeración</div>
           </div>
           <div className="flex items-center gap-3">
             {/* Mobile nav */}
             <select value={view} onChange={(e) => setView(e.target.value)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm lg:hidden">
-              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="clientes">Clientes</option>
+              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="clientes">Clientes</option>
             </select>
             <button onClick={load} className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100">
               <RefreshCw size={15} /> <span className="hidden sm:inline">Actualizar</span>
@@ -454,6 +505,70 @@ export default function AdminDashboard() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          ) : view === 'ingresos' ? (
+            <div className="space-y-6">
+              <div>
+                <h2 className="font-display text-2xl font-extrabold text-ink-900">Control de Servicios Realizados</h2>
+                <p className="text-sm text-ink-500">Ingresos por servicios completados · {completedAppts.length} servicios</p>
+              </div>
+
+              {/* Tarjetas por período con descarga */}
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { p: 'day', label: 'Hoy', accent: '#0ea5e9', icon: Calendar },
+                  { p: 'week', label: 'Esta semana', accent: '#8b5cf6', icon: Calendar },
+                  { p: 'month', label: 'Este mes', accent: '#f59e0b', icon: Calendar },
+                  { p: 'year', label: 'Este año', accent: '#10b981', icon: TrendingUp },
+                ].map(({ p, label, accent, icon: Icon }) => (
+                  <div key={p} className="relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
+                    <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wide text-ink-500">{label}</span>
+                      <Icon size={16} className="text-ink-400" />
+                    </div>
+                    <div className="mt-3 font-display text-2xl font-extrabold text-ink-900">{money(earnings(p))}</div>
+                    <div className="text-xs text-ink-400">Ref. {formatUsd(earnings(p))}</div>
+                    <button onClick={() => exportEarnings(p)}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100">
+                      <Download size={13} /> CSV
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tabla de servicios completados */}
+              <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 p-5">
+                  <h3 className="font-display font-bold text-ink-900">Servicios completados</h3>
+                  <span className="text-xs text-ink-500">Total histórico: <strong className="text-ink-900">{money(earnings('all'))}</strong></span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
+                      <tr><th className="px-5 py-3">Fecha</th><th className="px-3 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Técnico</th><th className="px-5 py-3 text-right">Monto</th></tr>
+                    </thead>
+                    <tbody>
+                      {completedAppts.length === 0 ? (
+                        <tr><td colSpan={5} className="px-5 py-10 text-center text-ink-500">Aún no hay servicios completados.</td></tr>
+                      ) : (
+                        [...completedAppts].sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)).map((a) => {
+                          const eq = a.equipment?.[0];
+                          return (
+                            <tr key={a.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                              <td className="px-5 py-3 text-ink-700">{fmtDate(a.scheduledAt)}</td>
+                              <td className="px-3 py-3 font-medium text-ink-900">{a.client.firstName} {a.client.lastName}</td>
+                              <td className="px-3 py-3 text-ink-700">{eq ? `${eq.brand} · ${eq.model}` : '—'}</td>
+                              <td className="px-3 py-3 text-ink-600">{techName(a)}</td>
+                              <td className="px-5 py-3 text-right"><div className="font-semibold text-ink-900">{money(priceOf(a))}</div><div className="text-[11px] text-ink-400">Ref. {formatUsd(priceOf(a))}</div></td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           ) : (
