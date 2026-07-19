@@ -351,3 +351,23 @@ Cambiar un precio = editar ahí y push.
 - [ ] Chat cliente↔taller en tiempo real.
 - [ ] Google Maps para ubicación del cliente.
 - [ ] (Opcional) pedir cédula en el registro para tenerla desde el día 1.
+
+---
+
+## 🔐 2026-07-19 (madrugada) — Reset real + filtros + docs (v1.0 lista para defensa)
+
+| Cambio | Estado |
+|---|---|
+| Reset de contraseña real por correo (/recuperar, /restablecer) | ✅ |
+| Filtros inteligentes en Solicitudes y Clientes (4 columnas c/u) | ✅ |
+| Modal profesional al eliminar usuario | ✅ |
+| Estética panel: logo sidebar, "Ver sitio web", barras 3D, KPIs glass | ✅ |
+| Login: "¿Olvidaste tu contraseña?" + botón "Volver" | ✅ |
+| Carpeta `docs/`: MANUAL-USUARIO.md + GUIA-CASOS-DE-USO.md | ✅ |
+
+### ✅ VERSIÓN 1.0 — funcional y lista para la defensa del lunes
+
+## 📌 PARA MAÑANA (mejoras)
+- [ ] Mejorar la **sección Ingresos** del panel taller (más detalle/visual, quizá PDF, rangos de fecha).
+- [ ] **Detalles tontos de frontend** (pulir estilos sueltos que Pedro indique).
+- [ ] (v1.1) dominio propio anti-spam, chat cliente↔taller, Google Maps.

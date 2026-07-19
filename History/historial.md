@@ -610,3 +610,38 @@ y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se
 
 ### Commits
 `42c6cb98` (UX Solicitar→Registro), `4b0449e5` (logo correos + texto plano + datos panel), `b42b516f` (gestión usuarios + solicitud precargada + hero), + commit de cédula en cuenta.
+
+---
+
+## 🔐 Fase 14 — Reset de contraseña real, filtros y documentación
+
+**Fecha:** 2026-07-19
+
+### Reset de contraseña por correo (flujo real)
+- Backend: campos `resetToken`/`resetTokenExpiry` (migración `add_reset_token`).
+  Endpoints públicos `POST /users/forgot-password` (token 1h + correo) y
+  `POST /users/reset-password` (valida token no expirado, cambia clave bcrypt, invalida token).
+  No revela si el correo existe (seguridad). Correo de reseteo con logo + texto plano.
+- Frontend: páginas `/recuperar` (pedir enlace) y `/restablecer?token=` (nueva clave).
+  El login enlaza a `/recuperar` (ya no WhatsApp).
+
+### Panel Taller — filtros y modal
+- **Solicitudes:** 4 filtros inteligentes uniformes (Cliente, Servicio, Fecha, Estado)
+  con búsqueda + datalist; se quitaron los sort-arrows; botón "Limpiar filtros".
+- **Clientes:** mismos 4 filtros (Cliente, Correo, Teléfono, Registrado).
+- **Modal profesional de eliminación** (reemplaza el `window.confirm`).
+
+### Panel Taller — estética
+- Sidebar con **logo real** (chip blanco); botón **"Ver sitio web"** definido.
+- **Barras "Citas por mes"** con gradiente 3D + hover (lift + brillo).
+- **Tarjetas KPI** con tinte de color + marca de agua translúcida (efecto vidrio, menos blanco).
+
+### Otros
+- Login: botón **"Volver al inicio"** con estilo; enlace **"¿Olvidaste tu contraseña?"**.
+
+### Documentación (nueva carpeta `docs/`)
+- `docs/MANUAL-USUARIO.md` — manual paso a paso (cliente, taller, técnicos, FAQ).
+- `docs/GUIA-CASOS-DE-USO.md` — arquitectura, actores, casos de uso, endpoints, flujos (para programadores y la defensa).
+
+### Commits
+`cb591a62` (estética panel), `8d072d67` (filtros solicitudes + login), `edc59f76` (reset real + filtros/modal clientes).
