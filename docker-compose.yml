@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: freshservice
+      POSTGRES_PASSWORD: freshservice
+      POSTGRES_DB: freshservice
+    volumes:
+      - ./docker/seed-data.sql:/docker-entrypoint-initdb.d/seed-data.sql:ro
+      - fresh_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freshservice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: "postgresql://freshservice:freshservice@db:5432/freshservice?schema=public"
+      JWT_SECRET: "clave-demo-local-fresh-service"
+      JWT_EXPIRES: "7d"
+      PORT: "4000"
+      PUBLIC_API_URL: "http://localhost:4000"
+      FRONTEND_URL: "http://localhost:8080"
+      # SIN variables SMTP → los correos se simulan en consola (offline OK)
+      # BCV_API_URL no se define → sin internet usa la tasa cacheada del respaldo
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend-react
+    environment:
+      PORT: "4100"
+    ports:
+      - "8080:4100"
+    depends_on:
+      - backend
+
+volumes:
+  fresh_db:
