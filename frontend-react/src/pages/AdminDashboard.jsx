@@ -4,10 +4,11 @@ import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   ArrowRight, Download, Sparkles,
-  TrendingUp, Calendar, Pencil, Trash2, X,
+  TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useRate } from '../context/RateContext';
 import { priceUsd } from '../lib/prices';
 import { formatBs, formatUsd } from '../lib/money';
@@ -91,6 +92,7 @@ function FilterInput({ label, value, onChange, options, placeholder }) {
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { rate } = useRate();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const [view, setView] = useState('dashboard');
   const [appts, setAppts] = useState([]);
@@ -108,6 +110,12 @@ export default function AdminDashboard() {
   const [fcReg, setFcReg] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null); // cliente a eliminar (modal)
   const [deleting, setDeleting] = useState(false);
+  // Ingresos: período activo (día/semana/mes/año o null=todos) + filtros de columna
+  const [ingPeriodo, setIngPeriodo] = useState(null);
+  const [fiFecha, setFiFecha] = useState('');
+  const [fiCliente, setFiCliente] = useState('');
+  const [fiServicio, setFiServicio] = useState('');
+  const [fiTecnico, setFiTecnico] = useState('');
   const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
   const [savingUser, setSavingUser] = useState(false);
   const [userMsg, setUserMsg] = useState('');
@@ -338,6 +346,24 @@ export default function AdminDashboard() {
     completedAppts.filter((a) => inPeriod(a.scheduledAt, period)).reduce((s, a) => s + priceOf(a), 0);
   const money = (usd) => formatBs(usd, rate) || formatUsd(usd);
 
+  // Tabla de servicios completados: filtrada por período (calendario) + filtros de columna
+  const completedFiltered = completedAppts.filter((a) => {
+    if (ingPeriodo && !inPeriod(a.scheduledAt, ingPeriodo)) return false;
+    const cli = `${a.client.firstName} ${a.client.lastName} ${a.client.email}`.toLowerCase();
+    return (
+      (!fiFecha || fmtDate(a.scheduledAt).toLowerCase().includes(fiFecha.toLowerCase())) &&
+      (!fiCliente || cli.includes(fiCliente.toLowerCase())) &&
+      (!fiServicio || servTxt(a).toLowerCase().includes(fiServicio.toLowerCase())) &&
+      (!fiTecnico || techName(a).toLowerCase().includes(fiTecnico.toLowerCase()))
+    );
+  });
+  const optIFecha = uniq(completedAppts.map((a) => fmtDate(a.scheduledAt)));
+  const optICliente = uniq(completedAppts.map((a) => `${a.client.firstName} ${a.client.lastName}`));
+  const optIServicio = uniq(completedAppts.map(servTxt));
+  const optITecnico = uniq(completedAppts.map(techName));
+  const hayFiltrosI = fiFecha || fiCliente || fiServicio || fiTecnico || ingPeriodo;
+  const limpiarFiltrosI = () => { setFiFecha(''); setFiCliente(''); setFiServicio(''); setFiTecnico(''); setIngPeriodo(null); };
+
   function exportEarnings(period) {
     const label = { day: 'diario', week: 'semanal', month: 'mensual', year: 'anual' }[period];
     const list = completedAppts.filter((a) => inPeriod(a.scheduledAt, period));
@@ -416,6 +442,9 @@ export default function AdminDashboard() {
             <select value={view} onChange={(e) => setView(e.target.value)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm lg:hidden">
               <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="clientes">Clientes</option>
             </select>
+            <button onClick={toggleTheme} title="Cambiar tema" className="grid h-9 w-9 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100">
+              {isDark ? <Sun size={17} className="text-amber-500" /> : <Moon size={17} className="text-brand-700" />}
+            </button>
             <button onClick={load} className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100">
               <RefreshCw size={15} /> <span className="hidden sm:inline">Actualizar</span>
             </button>
@@ -590,35 +619,61 @@ export default function AdminDashboard() {
                 <p className="text-sm text-ink-500">Ingresos por servicios completados · {completedAppts.length} servicios</p>
               </div>
 
-              {/* Tarjetas por período con descarga */}
+              {/* Tarjetas por período — CLICK filtra la tabla; el botón CSV descarga */}
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   { p: 'day', label: 'Hoy', accent: '#0ea5e9', icon: Calendar },
                   { p: 'week', label: 'Esta semana', accent: '#8b5cf6', icon: Calendar },
                   { p: 'month', label: 'Este mes', accent: '#f59e0b', icon: Calendar },
                   { p: 'year', label: 'Este año', accent: '#10b981', icon: TrendingUp },
-                ].map(({ p, label, accent, icon: Icon }) => (
-                  <div key={p} className="relative overflow-hidden rounded-2xl bg-white p-5 ring-1 ring-slate-100 shadow-sm">
-                    <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wide text-ink-500">{label}</span>
-                      <Icon size={16} className="text-ink-400" />
-                    </div>
-                    <div className="mt-3 font-display text-2xl font-extrabold text-ink-900">{money(earnings(p))}</div>
-                    <div className="text-xs text-ink-400">Ref. {formatUsd(earnings(p))}</div>
-                    <button onClick={() => exportEarnings(p)}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100">
-                      <Download size={13} /> CSV
+                ].map(({ p, label, accent, icon: Icon }) => {
+                  const active = ingPeriodo === p;
+                  return (
+                    <button key={p} type="button" onClick={() => setIngPeriodo(active ? null : p)}
+                      title="Filtrar la tabla por este período"
+                      style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
+                      className={`group relative overflow-hidden rounded-2xl p-5 text-left shadow-sm transition ${active ? 'shadow-glow ring-2 ring-brand-500' : 'ring-1 ring-white/60 hover:-translate-y-0.5 hover:shadow-glow-lg'}`}>
+                      <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
+                      <Icon size={104} className="pointer-events-none absolute -bottom-5 -right-4 opacity-[0.08]" style={{ color: accent }} />
+                      <div className="relative">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase tracking-wide text-ink-500">{label}</span>
+                          <Icon size={16} style={{ color: accent }} />
+                        </div>
+                        <div className="mt-3 font-display text-2xl font-extrabold text-ink-900">{money(earnings(p))}</div>
+                        <div className="text-xs text-ink-400">Ref. {formatUsd(earnings(p))}</div>
+                        <span onClick={(e) => { e.stopPropagation(); exportEarnings(p); }}
+                          className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100">
+                          <Download size={13} /> CSV
+                        </span>
+                        {active && <span className="mt-2 block text-[11px] font-bold text-brand-600">● Filtrando la tabla ↓ (clic para quitar)</span>}
+                      </div>
                     </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Tabla de servicios completados */}
+              {/* Tabla de servicios completados con filtros por columna */}
               <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-                <div className="flex items-center justify-between border-b border-slate-100 p-5">
-                  <h3 className="font-display font-bold text-ink-900">Servicios completados</h3>
-                  <span className="text-xs text-ink-500">Total histórico: <strong className="text-ink-900">{money(earnings('all'))}</strong></span>
+                <div className="border-b border-slate-100 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="font-display font-bold text-ink-900">Servicios completados</h3>
+                      <p className="text-xs text-ink-500">{completedFiltered.length} de {completedAppts.length}{ingPeriodo ? ' · período seleccionado' : ''}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {hayFiltrosI && (
+                        <button onClick={limpiarFiltrosI} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200"><X size={13} /> Limpiar</button>
+                      )}
+                      <span className="text-xs text-ink-500">Total: <strong className="text-ink-900">{money(completedFiltered.reduce((s, a) => s + priceOf(a), 0))}</strong></span>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <FilterInput label="Fecha" value={fiFecha} onChange={setFiFecha} options={optIFecha} placeholder="Fecha…" />
+                    <FilterInput label="Cliente" value={fiCliente} onChange={setFiCliente} options={optICliente} placeholder="Cliente…" />
+                    <FilterInput label="Servicio" value={fiServicio} onChange={setFiServicio} options={optIServicio} placeholder="Servicio…" />
+                    <FilterInput label="Técnico" value={fiTecnico} onChange={setFiTecnico} options={optITecnico} placeholder="Técnico…" />
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -626,10 +681,10 @@ export default function AdminDashboard() {
                       <tr><th className="px-5 py-3">Fecha</th><th className="px-3 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Técnico</th><th className="px-5 py-3 text-right">Monto</th></tr>
                     </thead>
                     <tbody>
-                      {completedAppts.length === 0 ? (
-                        <tr><td colSpan={5} className="px-5 py-10 text-center text-ink-500">Aún no hay servicios completados.</td></tr>
+                      {completedFiltered.length === 0 ? (
+                        <tr><td colSpan={5} className="px-5 py-10 text-center text-ink-500">No hay servicios completados con esos filtros.</td></tr>
                       ) : (
-                        [...completedAppts].sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)).map((a) => {
+                        [...completedFiltered].sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)).map((a) => {
                           const eq = a.equipment?.[0];
                           return (
                             <tr key={a.id} className="border-t border-slate-100 hover:bg-slate-50/60">
