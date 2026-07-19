@@ -57,6 +57,11 @@ export default function ClienteDashboard() {
             <span className="text-xs font-bold uppercase tracking-wider text-brand-100">Área de clientes</span>
             <h1 className="mt-1 font-display text-3xl font-extrabold sm:text-4xl">¡Hola, {user.firstName}!</h1>
             <p className="mt-2 max-w-md text-brand-50/90">Aquí puedes seguir el estado de tus solicitudes y agendar nuevos servicios a domicilio.</p>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-brand-50/90">
+              <span><span className="text-brand-200">Nombre:</span> {user.firstName} {user.lastName}</span>
+              <span><span className="text-brand-200">Correo:</span> {user.email}</span>
+              {user.phone && <span><span className="text-brand-200">WhatsApp:</span> {user.phone}</span>}
+            </div>
             <Button to="/solicitud" variant="dark" className="mt-5"><Plus size={18} /> Solicitar servicio</Button>
           </div>
         </div>

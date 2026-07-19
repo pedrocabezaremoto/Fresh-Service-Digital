@@ -117,7 +117,8 @@ export class MailService {
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo">❄️ Fresh<span> Service Digital</span></div>
+      <img src="https://fresh.pedroservicios.xyz/logo.png" alt="Fresh Service" width="46" height="46" style="display:inline-block;vertical-align:middle;border-radius:10px;background:#ffffff;padding:4px" />
+      <span style="vertical-align:middle;margin-left:10px;font-size:22px;font-weight:800;color:#ffffff;font-family:'Exo 2','Segoe UI',sans-serif">Fresh<span style="color:#38BDF8"> Service Digital</span></span>
     </div>
     <div class="content">
       <h1>¡Te damos la bienvenida!</h1>
@@ -141,6 +142,7 @@ export class MailService {
           to,
           subject,
           html: htmlContent,
+          text: `Te damos la bienvenida a Fresh Service Digital.\n\nActiva tu cuenta abriendo este enlace:\n${activationUrl}\n\nSan Juan de los Morros, Guárico, Venezuela.`,
         });
         this.logger.log(`Verification email sent to: ${to}`);
         return true;
@@ -197,7 +199,10 @@ export class MailService {
   .footer{background:#F0F9FF;padding:18px;text-align:center;font-size:12px;color:#4A7A9B;border-top:1px solid #E0F2FE}
 </style></head><body>
   <div class="container">
-    <div class="header"><div class="logo">❄️ Fresh<span> Service</span></div></div>
+    <div class="header">
+      <img src="https://fresh.pedroservicios.xyz/logo.png" alt="Fresh Service" width="42" height="42" style="display:inline-block;vertical-align:middle;border-radius:9px;background:#ffffff;padding:4px" />
+      <span style="vertical-align:middle;margin-left:9px;font-size:20px;font-weight:800;color:#ffffff">Fresh<span style="color:#38BDF8"> Service</span></span>
+    </div>
     <div class="content">
       <h1>¡Tu servicio fue asignado, ${d.clientName}!</h1>
       <p>Un técnico ya está asignado a tu solicitud. Aquí tienes el detalle:</p>
@@ -218,7 +223,10 @@ export class MailService {
 
     if (this.transporter) {
       try {
-        await this.transporter.sendMail({ from, to, subject, html: htmlContent });
+        await this.transporter.sendMail({
+          from, to, subject, html: htmlContent,
+          text: `Tu servicio fue asignado, ${d.clientName}.\n\nServicio: ${d.service}\nReferencia: #${d.ref}\nTécnico: ${d.technicianName}${d.technicianPhone ? ' · ' + d.technicianPhone : ''}\nTotal a pagar: ${montoBs} (Ref. $${d.priceUsd})\n\nVer tu panel: ${d.panelUrl}\n\nFresh Service Digital — San Juan de los Morros, Venezuela.`,
+        });
         this.logger.log(`Correo de asignación enviado a: ${to}`);
         return true;
       } catch (error) {
