@@ -51,6 +51,8 @@ export const api = {
   login: (payload) => request('/users/login', { method: 'POST', body: payload }),
 
   // Usuarios (admin)
+  forgotPassword: (email) => request('/users/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, password) => request('/users/reset-password', { method: 'POST', body: { token, password } }),
   getClients: () => request('/users', { auth: true }),
   getTechnicians: () => request('/users/technicians', { auth: true }),
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PATCH', body: data, auth: true }),

@@ -92,6 +92,47 @@ export class UsersService {
   }
 
   /**
+   * Solicitud de recuperación: genera un token de 1h y envía el correo con el enlace.
+   * Siempre responde igual (no revela si el correo existe) por seguridad.
+   */
+  async requestPasswordReset(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { resetToken: token, resetTokenExpiry: expiry },
+      });
+      const base = process.env.FRONTEND_URL || 'http://localhost:5174';
+      const resetUrl = `${base}/restablecer?token=${token}`;
+      await this.mailService.sendPasswordResetEmail(email, resetUrl);
+    }
+    return { message: 'Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.' };
+  }
+
+  /**
+   * Restablece la contraseña con un token válido y no expirado.
+   */
+  async resetPassword(token: string, newPassword: string) {
+    if (!token) throw new BadRequestException('Token no proporcionado');
+    const user = await this.prisma.user.findFirst({
+      where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },
+    });
+    if (!user) throw new BadRequestException('El enlace es inválido o ya expiró. Solicita uno nuevo.');
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: await this.hashPassword(newPassword),
+        resetToken: null,
+        resetTokenExpiry: null,
+        isVerified: true, // si reseteó por correo, su correo es válido
+      },
+    });
+    return { message: 'Contraseña actualizada. Ya puedes iniciar sesión.' };
+  }
+
+  /**
    * Hashea una contraseña con bcrypt (lento a propósito, resistente a fuerza bruta).
    */
   private async hashPassword(password: string): Promise<string> {

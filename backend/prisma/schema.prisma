@@ -32,6 +32,8 @@ model User {
   role             Role          @default(CLIENT)
   isVerified       Boolean       @default(false)
   verificationCode String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   appointments     Appointment[] @relation("ClientAppointments")

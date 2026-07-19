@@ -5,6 +5,8 @@ import Home from './pages/Home';
 import Catalogo from './pages/Catalogo';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
+import Recuperar from './pages/Recuperar';
+import Restablecer from './pages/Restablecer';
 import Solicitud from './pages/Solicitud';
 import ClienteDashboard from './pages/ClienteDashboard';
 import Proforma from './pages/Proforma';
@@ -17,6 +19,8 @@ export default function App() {
       {/* Auth (sin layout público) */}
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/recuperar" element={<Recuperar />} />
+      <Route path="/restablecer" element={<Restablecer />} />
 
       {/* Panel admin (pantalla completa con sidebar propio) */}
       <Route

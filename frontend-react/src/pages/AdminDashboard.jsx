@@ -101,7 +101,13 @@ export default function AdminDashboard() {
   const [fServicio, setFServicio] = useState(''); // filtro Servicio
   const [fFecha, setFFecha] = useState('');       // filtro Fecha
   const [fEstado, setFEstado] = useState('');     // filtro Estado
-  const [cq, setCq] = useState('');
+  // Filtros de Clientes
+  const [fcNombre, setFcNombre] = useState('');
+  const [fcCorreo, setFcCorreo] = useState('');
+  const [fcTel, setFcTel] = useState('');
+  const [fcReg, setFcReg] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null); // cliente a eliminar (modal)
+  const [deleting, setDeleting] = useState(false);
   const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
   const [savingUser, setSavingUser] = useState(false);
   const [userMsg, setUserMsg] = useState('');
@@ -258,8 +264,21 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
-  const filteredClients = clients.filter((c) =>
-    `${c.firstName} ${c.lastName}`.toLowerCase().includes(cq.toLowerCase()) || c.email.toLowerCase().includes(cq.toLowerCase()));
+  const filteredClients = clients.filter((c) => {
+    const nombre = `${c.firstName} ${c.lastName}`.toLowerCase();
+    return (
+      (!fcNombre || nombre.includes(fcNombre.toLowerCase())) &&
+      (!fcCorreo || (c.email || '').toLowerCase().includes(fcCorreo.toLowerCase())) &&
+      (!fcTel || (c.phone || '').toLowerCase().includes(fcTel.toLowerCase())) &&
+      (!fcReg || fmtDate(c.createdAt).toLowerCase().includes(fcReg.toLowerCase()))
+    );
+  });
+  const optCNombre = uniq(clients.map((c) => `${c.firstName} ${c.lastName}`));
+  const optCCorreo = uniq(clients.map((c) => c.email));
+  const optCTel = uniq(clients.map((c) => c.phone));
+  const optCReg = uniq(clients.map((c) => fmtDate(c.createdAt)));
+  const hayFiltrosC = fcNombre || fcCorreo || fcTel || fcReg;
+  const limpiarFiltrosC = () => { setFcNombre(''); setFcCorreo(''); setFcTel(''); setFcReg(''); };
 
   // ---- Gestión de usuarios (editar / eliminar) ----
   function openEdit(c) {
@@ -283,13 +302,17 @@ export default function AdminDashboard() {
       setSavingUser(false);
     }
   }
-  async function removeUser(c) {
-    if (!window.confirm(`¿Eliminar a ${c.firstName} ${c.lastName} (${c.email})? Se borrarán también sus solicitudes. Esta acción no se puede deshacer.`)) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await api.deleteUser(c.id);
-      setClients((prev) => prev.filter((x) => x.id !== c.id));
+      await api.deleteUser(deleteTarget.id);
+      setClients((prev) => prev.filter((x) => x.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (err) {
       alert(err.message || 'No se pudo eliminar');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -626,14 +649,23 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
-                <div>
-                  <h3 className="font-display font-bold text-ink-900">Directorio de clientes</h3>
-                  <p className="text-xs text-ink-500">{filteredClients.length} clientes registrados</p>
+              <div className="border-b border-slate-100 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-display font-bold text-ink-900">Directorio de clientes</h3>
+                    <p className="text-xs text-ink-500">{filteredClients.length} clientes registrados</p>
+                  </div>
+                  {hayFiltrosC && (
+                    <button onClick={limpiarFiltrosC} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200">
+                      <X size={13} /> Limpiar filtros
+                    </button>
+                  )}
                 </div>
-                <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">
-                  <Search size={15} className="text-ink-500" />
-                  <input value={cq} onChange={(e) => setCq(e.target.value)} placeholder="Buscar cliente…" className="w-40 bg-transparent text-sm outline-none" />
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <FilterInput label="Cliente" value={fcNombre} onChange={setFcNombre} options={optCNombre} placeholder="Nombre…" />
+                  <FilterInput label="Correo" value={fcCorreo} onChange={setFcCorreo} options={optCCorreo} placeholder="Correo…" />
+                  <FilterInput label="Teléfono" value={fcTel} onChange={setFcTel} options={optCTel} placeholder="Teléfono…" />
+                  <FilterInput label="Registrado" value={fcReg} onChange={setFcReg} options={optCReg} placeholder="Fecha…" />
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -669,7 +701,7 @@ export default function AdminDashboard() {
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => openEdit(c)} title="Editar"
                                 className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100"><Pencil size={15} /></button>
-                              <button onClick={() => removeUser(c)} title="Eliminar"
+                              <button onClick={() => setDeleteTarget(c)} title="Eliminar"
                                 className="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100"><Trash2 size={15} /></button>
                             </div>
                           </td>
@@ -717,6 +749,27 @@ export default function AdminDashboard() {
               <button type="submit" disabled={savingUser} className="rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50">{savingUser ? 'Guardando…' : 'Guardar cambios'}</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-ink-900">¿Eliminar este cliente?</h3>
+            <p className="mt-2 text-sm text-ink-500">
+              Vas a eliminar a <strong className="text-ink-900">{deleteTarget.firstName} {deleteTarget.lastName}</strong> ({deleteTarget.email}).
+              {deleteTarget._count?.appointments > 0 && <> Se borrarán también sus <strong className="text-rose-600">{deleteTarget._count.appointments} solicitud(es)</strong>.</>}
+              {' '}Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-6 flex gap-2">
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 disabled:opacity-50">Cancelar</button>
+              <button onClick={confirmDelete} disabled={deleting} className="flex-1 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50">{deleting ? 'Eliminando…' : 'Sí, eliminar'}</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
