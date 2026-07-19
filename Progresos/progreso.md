@@ -371,3 +371,27 @@ Cambiar un precio = editar ahí y push.
 - [ ] Mejorar la **sección Ingresos** del panel taller (más detalle/visual, quizá PDF, rangos de fecha).
 - [ ] **Detalles tontos de frontend** (pulir estilos sueltos que Pedro indique).
 - [ ] (v1.1) dominio propio anti-spam, chat cliente↔taller, Google Maps.
+
+---
+
+## 🐳 2026-07-19 — Ingresos pulido + tema + Docker offline (plan B defensa)
+
+| Cambio | Estado |
+|---|---|
+| Ingresos: calendarios filtran + filtros en encabezado (incl. Monto) | ✅ |
+| Botón tema claro/oscuro en panel taller | ✅ |
+| Guía `docs/crear-docker.md` + dump `docker/seed-data.sql` | ✅ |
+| Archivos Docker (Dockerfiles, compose, README) — probados y supervisados | ✅ |
+| README docker corregido (build 1 vez con internet, luego offline sin --build) | ✅ |
+
+### Plan B defensa (laptop)
+- HOY con internet: `git pull` → `docker compose up --build` (construye y cachea).
+- En la defensa (offline): `docker compose up` (sin `--build`).
+- Login admin: `admin@freshservice.com` / `Admin1234`.
+
+### Nota
+- La DB tiene 7 clientes / 10 solicitudes porque Pedro **limpió clientes a propósito** (intencional).
+
+### Pendiente (mañana / v1.1)
+- [ ] Más detalles de la sección Ingresos y detalles sueltos de frontend.
+- [ ] v1.1: dominio anti-spam, chat cliente↔taller, Google Maps.

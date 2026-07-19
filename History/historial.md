@@ -645,3 +645,38 @@ y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se
 
 ### Commits
 `cb591a62` (estética panel), `8d072d67` (filtros solicitudes + login), `edc59f76` (reset real + filtros/modal clientes).
+
+---
+
+## 🐳 Fase 15 — Ingresos pulido, tema oscuro y paquete Docker offline
+
+**Fecha:** 2026-07-19
+
+### Panel Taller — Ingresos y tema
+- **Ingresos:** las tarjetas de período (Hoy/Semana/Mes/Año) son **clickeables** y filtran la
+  tabla de servicios completados; el botón CSV descarga aparte.
+- **Filtros integrados en el encabezado** de la tabla de completados (Fecha, Cliente, Servicio,
+  Técnico y **Monto**), una sola fila por columna (se quitó la doble fila fea).
+- **Botón de tema claro/oscuro** en la barra superior del panel del taller.
+
+### Paquete Docker offline (plan B para la defensa)
+- **Motivo:** poder correr todo el proyecto en la laptop **sin internet/VPS** si falla la conexión.
+- **Guía para IA:** `docs/crear-docker.md` — paso a paso ultra-detallado para que otro LLM
+  dockerice el stack (contexto, arquitectura, Dockerfiles de referencia, compose, pruebas).
+- **Respaldo de datos:** `docker/seed-data.sql` (dump de la DB en vivo: 11 usuarios, 7 clientes,
+  10 solicitudes, 6 completadas — coincide exacto con producción).
+- **Ejecutado por un LLM secundario y SUPERVISADO** por el principal. Archivos creados:
+  `backend/Dockerfile`, `frontend-react/Dockerfile`, `.dockerignore` (x2), `docker-compose.yml`,
+  `README-DOCKER.md`. Probado end-to-end (3 servicios arriba, `/rate` OK, login admin con datos).
+- **Correcciones de la supervisión:** (1) se restauró `info-api-BCV.md` que el LLM había borrado;
+  (2) se corrigió el README: **`--build` requiere internet** → construir una vez con internet y
+  en la defensa correr `docker compose up` **sin** `--build` (offline).
+- **CORS abierto** (`app.enableCors()`) → el frontend Docker (localhost:8080) habla con el
+  backend (localhost:4000) sin bloqueo.
+
+### Nota de datos
+- Pedro **limpió clientes** de la DB a propósito (por eso hay 7 clientes / 10 solicitudes; no es pérdida).
+
+### Commits
+`012f1cb1` (ingresos+tema), `9388ac53` (filtros encabezado + guía docker + dump),
+`7c6366bd` (archivos docker), `186026c6` (README docker --build online).
