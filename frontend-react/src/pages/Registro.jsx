@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, MailCheck, ArrowRight, ExternalLink } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, MailCheck, ArrowRight, ExternalLink, Info } from 'lucide-react';
 import AuthShell, { Field, inputClass } from '../components/AuthShell';
 import Button from '../components/Button';
 import { api } from '../lib/api';
@@ -22,6 +22,8 @@ const stMap = [
 ];
 
 export default function Registro() {
+  const location = useLocation();
+  const from = location.state?.from;
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirm: '' });
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
@@ -61,7 +63,7 @@ export default function Registro() {
           <p className="mt-5 text-sm leading-relaxed text-ink-500">
             Enviamos un enlace de activación a tu correo electrónico. Por favor, revisa tu bandeja de entrada (y la carpeta de spam si es necesario) y haz clic en el enlace para activar tu cuenta.
           </p>
-          <Link to="/login" className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand-gradient px-6 py-3 font-semibold text-white shadow-glow transition hover:shadow-glow-lg">
+          <Link to="/login" state={{ from }} className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-brand-gradient px-6 py-3 font-semibold text-white shadow-glow transition hover:shadow-glow-lg">
             Ir al inicio de sesión
           </Link>
         </div>
@@ -72,10 +74,16 @@ export default function Registro() {
   return (
     <AuthShell
       title="Crea tu cuenta"
-      subtitle={<>¿Ya tienes una? <Link to="/login" className="font-semibold text-brand-600 hover:underline">Inicia sesión</Link></>}
+      subtitle={<>¿Ya tienes una? <Link to="/login" state={{ from }} className="font-semibold text-brand-600 hover:underline">Inicia sesión</Link></>}
       perks={['Agenda servicios sin llamadas', 'Sigue el estado de tus reparaciones', 'Tu historial siempre a mano']}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {from === '/solicitud' && (
+          <div className="flex items-start gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700 ring-1 ring-brand-100">
+            <Info size={18} className="mt-0.5 shrink-0 text-brand-600" />
+            <span>Para solicitar un servicio necesitas una cuenta. Créala aquí (es gratis) y continúas con tu solicitud.</span>
+          </div>
+        )}
         {error && (
           <div className="flex items-start gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-100">
             <AlertCircle size={18} className="mt-0.5 shrink-0" /> {error}

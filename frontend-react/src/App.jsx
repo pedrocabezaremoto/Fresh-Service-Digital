@@ -55,7 +55,7 @@ export default function App() {
         <Route
           path="/solicitud"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute redirectTo="/registro">
               <Solicitud />
             </ProtectedRoute>
           }

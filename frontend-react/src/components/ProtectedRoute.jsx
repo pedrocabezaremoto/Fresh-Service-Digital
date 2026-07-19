@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function ProtectedRoute({ children, requireAdmin = false, requireTechnician = false }) {
+export default function ProtectedRoute({ children, requireAdmin = false, requireTechnician = false, redirectTo = '/login' }) {
   const { isAuthenticated, isAdmin, isTechnician, ready } = useAuth();
   const location = useLocation();
 
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requireAdmin = false, require
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to={redirectTo} state={{ from: location.pathname }} replace />;
   }
 
   if (requireAdmin && !isAdmin) {

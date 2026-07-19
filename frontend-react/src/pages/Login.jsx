@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import AuthShell, { Field, inputClass } from '../components/AuthShell';
 import Button from '../components/Button';
@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from;
   const [searchParams] = useSearchParams();
   const verified = searchParams.get('verified') === 'true';
   const urlError = searchParams.get('error');
@@ -28,7 +30,7 @@ export default function Login() {
       } else if (user.role === 'TECHNICIAN') {
         navigate('/tecnico');
       } else {
-        navigate('/panel');
+        navigate(from || '/panel'); // vuelve a donde quería ir (ej. /solicitud)
       }
     } catch (err) {
       setError(err.message || 'No se pudo iniciar sesión');
@@ -43,13 +45,19 @@ export default function Login() {
       subtitle={
         <>
           ¿No tienes cuenta?{' '}
-          <Link to="/registro" className="font-semibold text-brand-600 hover:underline">
+          <Link to="/registro" state={{ from }} className="font-semibold text-brand-600 hover:underline">
             Regístrate gratis
           </Link>
         </>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {from === '/solicitud' && (
+          <div className="flex items-start gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm font-medium text-brand-700 ring-1 ring-brand-100">
+            <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-brand-600" />
+            <span>Inicia sesión para continuar con tu solicitud de servicio.</span>
+          </div>
+        )}
         {verified && (
           <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 ring-1 ring-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:ring-emerald-500/20">
             <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
