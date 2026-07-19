@@ -233,6 +233,7 @@ export class UsersService {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
+        cedula: user.cedula,
         role: user.role,
       },
     };

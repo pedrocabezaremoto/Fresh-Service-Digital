@@ -31,6 +31,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  // Actualiza campos del usuario en memoria + localStorage (ej. guardar la cédula)
+  function patchUser(fields) {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...fields };
+      localStorage.setItem('fsd_user', JSON.stringify(next));
+      return next;
+    });
+  }
+
   const value = {
     user,
     ready,
@@ -39,6 +48,7 @@ export function AuthProvider({ children }) {
     isTechnician: user?.role === 'TECHNICIAN',
     login,
     logout,
+    patchUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

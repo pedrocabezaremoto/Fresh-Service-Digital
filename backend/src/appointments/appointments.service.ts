@@ -20,9 +20,13 @@ export class AppointmentsService {
    * Crea una nueva cita de servicio y asocia el equipo de refrigeración de forma transaccional.
    */
   async create(dto: CreateAppointmentDto) {
-    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription, priceUsd } = dto;
+    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription, priceUsd, cedula } = dto;
 
     return this.prisma.$transaction(async (tx) => {
+      // Recordar la cédula en la cuenta del cliente (para precargarla la próxima vez)
+      if (cedula) {
+        await tx.user.update({ where: { id: clientId }, data: { cedula } });
+      }
       // 1. Crear la cita
       const appointment = await tx.appointment.create({
         data: {

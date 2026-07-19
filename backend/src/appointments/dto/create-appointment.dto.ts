@@ -29,6 +29,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   priceUsd?: number;
 
+  @IsString({ message: 'La cédula debe ser texto' })
+  @IsOptional()
+  cedula?: string;
+
   @IsString({ message: 'La descripción de la falla es requerida' })
   @IsNotEmpty({ message: 'La descripción de la falla o servicio es requerida' })
   failureDescription: string;

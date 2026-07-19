@@ -329,3 +329,25 @@ Cambiar un precio = editar ahí y push.
 1. **Chat en tiempo real cliente↔taller** — se habilita al registrarse y cuando el taller aprueba al usuario (para dudas/comunicación).
 2. **Gestión de usuarios** (panel taller) — editar/eliminar usuarios: nombre, correo, clave, rol, etc.
 3. **Ubicación con Google Maps** — el cliente marca su ubicación real en el mapa desde su panel; ayuda al técnico a llegar y a la empresa a ubicar el servicio. Dejar enganchado en backend + frontend.
+
+---
+
+## 🧩 2026-07-19 (noche) — UX solicitud + gestión usuarios + cédula en cuenta
+
+| Cambio | Estado |
+|---|---|
+| "Solicitar" sin cuenta → Registro (no Login) + vuelve a la solicitud | ✅ |
+| Correos con logo real + texto plano (anti-spam) | ✅ |
+| SMTP real activo (Gmail app password) | ✅ |
+| Panel Taller/Clientes: Editar + Eliminar usuarios | ✅ |
+| Saludo del panel más elegante + datos del cliente | ✅ |
+| Cédula guardada en la cuenta + precarga en Solicitud | ✅ |
+| Backfill de cédula para clientes viejos | ✅ |
+
+**Nota:** para que a un cliente existente le precargue la cédula, debe **volver a iniciar sesión** una vez (el login ahora trae la cédula) o hacer una solicitud (se guarda con `patchUser`).
+
+### Pendiente / v1.1
+- [ ] Spam definitivo: dominio propio (SPF/DKIM/DMARC).
+- [ ] Chat cliente↔taller en tiempo real.
+- [ ] Google Maps para ubicación del cliente.
+- [ ] (Opcional) pedir cédula en el registro para tenerla desde el día 1.

@@ -574,3 +574,39 @@ y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se
 ### Pendientes
 - **SMTP sin configurar** → el correo se simula en consola. Falta poner `SMTP_HOST/PORT/USER/PASS/FROM` en `backend/.env`.
 - Precios confirmables por Pedro (ajustables en `lib/prices.js` + `common/prices.ts`).
+
+---
+
+## 🧩 Fase 13 — UX de solicitud, gestión de usuarios y datos de cuenta
+
+**Fecha:** 2026-07-19
+
+### Flujo de "Solicitar" (UX)
+- Usuario NO logueado que pulsa "Solicitar" → va a **/registro** (antes /login), con mensaje "necesitas una cuenta".
+- Login y Registro preservan el destino (`from`); tras autenticar, el cliente **vuelve directo a /solicitud**.
+- `ProtectedRoute` acepta prop `redirectTo`.
+
+### Correos
+- Verificación y asignación ahora usan el **logo real** (img) en vez del emoji ❄️.
+- Se agregó **versión de texto plano** a ambos correos → mejora deliverability (menos spam).
+- Nota spam: la causa es la reputación de la cuenta Gmail nueva. Workaround demo: "No es spam" + agregar a contactos. Definitivo (v1.1): dominio propio con SPF/DKIM/DMARC.
+- **SMTP activo:** Gmail `freshservicedigital2026@gmail.com` (contraseña de app) en `backend/.env` (no versionado). Correos reales funcionando.
+
+### Gestión de usuarios (panel Taller → Clientes)
+- Botones **Editar** (modal: nombre, apellido, correo, teléfono, rol, contraseña opcional) y **Eliminar** (con confirmación; borra en cascada las solicitudes).
+- Backend: `PATCH /users/:id` y `DELETE /users/:id` (solo ADMIN). DTO `UpdateUserDto`. Métodos `updateUser`/`deleteUser` (manejan P2002 correo duplicado y P2025 no encontrado).
+- API front: `updateUser`, `deleteUser`.
+
+### Datos del cliente en la cuenta
+- **Panel del cliente:** saludo compacto + muestra Correo y WhatsApp.
+- **Cédula en la cuenta:** nuevo campo `User.cedula` (migración `add_cedula_to_user`). El login lo devuelve.
+  - Al crear una solicitud se **guarda la cédula en la cuenta** (para precargarla la próxima vez).
+  - **Solicitud precarga** teléfono (desde la cuenta) y cédula (desde la cuenta; respaldo en localStorage). Dirección se recuerda en localStorage.
+  - `AuthContext.patchUser()` refresca el usuario en memoria tras guardar la cédula.
+  - **Backfill:** se extrajo la cédula de las notas de solicitudes viejas para clientes existentes.
+
+### Datos borrados (a pedido de Pedro)
+- Eliminados usuarios de prueba `pedrocabezaremoto@gmail.com`, `asesorpedrocabeza7254@gmail.com` (y Pedro borró `pedroventas86@gmail.com` con el botón nuevo) para liberar esos correos.
+
+### Commits
+`42c6cb98` (UX Solicitar→Registro), `4b0449e5` (logo correos + texto plano + datos panel), `b42b516f` (gestión usuarios + solicitud precargada + hero), + commit de cédula en cuenta.

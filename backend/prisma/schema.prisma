@@ -28,6 +28,7 @@ model User {
   firstName        String
   lastName         String
   phone            String?
+  cedula           String?
   role             Role          @default(CLIENT)
   isVerified       Boolean       @default(false)
   verificationCode String?

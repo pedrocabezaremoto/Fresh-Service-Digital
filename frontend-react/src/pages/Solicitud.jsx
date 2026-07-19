@@ -25,13 +25,15 @@ const horarios = [
 const PREFIJOS = ['412', '414', '424', '416', '426'];
 
 export default function Solicitud() {
-  const { user } = useAuth();
-  // Precargar teléfono desde la cuenta y cédula/dirección desde la última solicitud
+  const { user, patchUser } = useAuth();
+  // Precargar teléfono y cédula desde la CUENTA (o desde la última solicitud como respaldo)
   const digits = (user?.phone || '').replace(/\D/g, '').replace(/^58/, '');
   const hasPrefix = PREFIJOS.includes(digits.slice(0, 3));
+  const cedRaw = user?.cedula || localStorage.getItem('fsd_cedula') || '';
+  const cedM = cedRaw.match(/^\s*([VE])\s*-?\s*(\d+)/i);
   const [f, setF] = useState({
-    cedTipo: localStorage.getItem('fsd_cedTipo') || 'V',
-    cedNum: localStorage.getItem('fsd_cedNum') || '',
+    cedTipo: cedM ? cedM[1].toUpperCase() : 'V',
+    cedNum: cedM ? cedM[2] : '',
     phonePrefix: hasPrefix ? digits.slice(0, 3) : '412',
     phoneNum: hasPrefix ? digits.slice(3) : '',
     direccion: localStorage.getItem('fsd_direccion') || '',
@@ -58,13 +60,15 @@ export default function Solicitud() {
         model: f.servicio,
         btuCapacity: eq?.btu || null,
         priceUsd: priceUsd(f.equipo, f.servicio),
+        cedula: `${f.cedTipo}-${f.cedNum}`,
         failureDescription: f.descripcion || 'Sin descripción adicional',
         notes: `Cédula: ${f.cedTipo}-${f.cedNum}\nWhatsApp: +58 ${f.phonePrefix}-${f.phoneNum}\nDirección: ${f.direccion}\nHorario: ${f.horario}`,
       };
       const data = await api.createAppointment(payload);
-      // Recordar datos personales para la próxima solicitud (no re-escribir)
-      localStorage.setItem('fsd_cedTipo', f.cedTipo);
-      localStorage.setItem('fsd_cedNum', f.cedNum);
+      // Recordar datos para la próxima solicitud (cuenta + respaldo local)
+      const ced = `${f.cedTipo}-${f.cedNum}`;
+      patchUser({ cedula: ced }); // queda guardada en la cuenta (backend) y en memoria
+      localStorage.setItem('fsd_cedula', ced);
       localStorage.setItem('fsd_direccion', f.direccion);
       setRef(data.id.substring(0, 8).toUpperCase());
       window.scrollTo({ top: 0, behavior: 'smooth' });
