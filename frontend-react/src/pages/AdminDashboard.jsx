@@ -73,6 +73,19 @@ function KPI({ icon: Icon, value, label, color, accent, onClick }) {
   );
 }
 
+/* Filtro compacto para meter DENTRO del encabezado de la tabla (fila de filtros) */
+function ColFilter({ id, value, onChange, options, align }) {
+  return (
+    <div className={`flex items-center gap-1.5 rounded-lg bg-white px-2 py-1.5 ring-1 ring-slate-200 transition focus-within:ring-brand-400 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
+      <Search size={12} className="shrink-0 text-ink-400" />
+      <input list={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Filtrar…"
+        className={`w-full min-w-0 bg-transparent text-xs font-normal normal-case tracking-normal text-ink-800 outline-none ${align === 'right' ? 'text-right' : ''}`} />
+      {value && <button type="button" onClick={() => onChange('')} className="shrink-0 text-ink-400 hover:text-ink-700"><X size={12} /></button>}
+      <datalist id={id}>{options.map((o) => <option key={o} value={o} />)}</datalist>
+    </div>
+  );
+}
+
 /* Filtro inteligente por columna: escribir (búsqueda) + elegir del desplegable (datalist) */
 function FilterInput({ label, value, onChange, options, placeholder }) {
   const id = `flt-${label}`;
@@ -116,6 +129,7 @@ export default function AdminDashboard() {
   const [fiCliente, setFiCliente] = useState('');
   const [fiServicio, setFiServicio] = useState('');
   const [fiTecnico, setFiTecnico] = useState('');
+  const [fiMonto, setFiMonto] = useState('');
   const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
   const [savingUser, setSavingUser] = useState(false);
   const [userMsg, setUserMsg] = useState('');
@@ -354,15 +368,17 @@ export default function AdminDashboard() {
       (!fiFecha || fmtDate(a.scheduledAt).toLowerCase().includes(fiFecha.toLowerCase())) &&
       (!fiCliente || cli.includes(fiCliente.toLowerCase())) &&
       (!fiServicio || servTxt(a).toLowerCase().includes(fiServicio.toLowerCase())) &&
-      (!fiTecnico || techName(a).toLowerCase().includes(fiTecnico.toLowerCase()))
+      (!fiTecnico || techName(a).toLowerCase().includes(fiTecnico.toLowerCase())) &&
+      (!fiMonto || formatUsd(priceOf(a)).toLowerCase().includes(fiMonto.toLowerCase()) || money(priceOf(a)).toLowerCase().includes(fiMonto.toLowerCase()))
     );
   });
   const optIFecha = uniq(completedAppts.map((a) => fmtDate(a.scheduledAt)));
   const optICliente = uniq(completedAppts.map((a) => `${a.client.firstName} ${a.client.lastName}`));
   const optIServicio = uniq(completedAppts.map(servTxt));
   const optITecnico = uniq(completedAppts.map(techName));
-  const hayFiltrosI = fiFecha || fiCliente || fiServicio || fiTecnico || ingPeriodo;
-  const limpiarFiltrosI = () => { setFiFecha(''); setFiCliente(''); setFiServicio(''); setFiTecnico(''); setIngPeriodo(null); };
+  const optIMonto = uniq(completedAppts.map((a) => formatUsd(priceOf(a))));
+  const hayFiltrosI = fiFecha || fiCliente || fiServicio || fiTecnico || fiMonto || ingPeriodo;
+  const limpiarFiltrosI = () => { setFiFecha(''); setFiCliente(''); setFiServicio(''); setFiTecnico(''); setFiMonto(''); setIngPeriodo(null); };
 
   function exportEarnings(period) {
     const label = { day: 'diario', week: 'semanal', month: 'mensual', year: 'anual' }[period];
@@ -668,17 +684,24 @@ export default function AdminDashboard() {
                       <span className="text-xs text-ink-500">Total: <strong className="text-ink-900">{money(completedFiltered.reduce((s, a) => s + priceOf(a), 0))}</strong></span>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <FilterInput label="Fecha" value={fiFecha} onChange={setFiFecha} options={optIFecha} placeholder="Fecha…" />
-                    <FilterInput label="Cliente" value={fiCliente} onChange={setFiCliente} options={optICliente} placeholder="Cliente…" />
-                    <FilterInput label="Servicio" value={fiServicio} onChange={setFiServicio} options={optIServicio} placeholder="Servicio…" />
-                    <FilterInput label="Técnico" value={fiTecnico} onChange={setFiTecnico} options={optITecnico} placeholder="Técnico…" />
-                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
-                      <tr><th className="px-5 py-3">Fecha</th><th className="px-3 py-3">Cliente</th><th className="px-3 py-3">Servicio</th><th className="px-3 py-3">Técnico</th><th className="px-5 py-3 text-right">Monto</th></tr>
+                      <tr>
+                        <th className="px-5 pt-3">Fecha</th>
+                        <th className="px-3 pt-3">Cliente</th>
+                        <th className="px-3 pt-3">Servicio</th>
+                        <th className="px-3 pt-3">Técnico</th>
+                        <th className="px-5 pt-3 text-right">Monto</th>
+                      </tr>
+                      <tr>
+                        <th className="px-5 pb-3 pt-2 font-normal"><ColFilter id="if-fecha" value={fiFecha} onChange={setFiFecha} options={optIFecha} /></th>
+                        <th className="px-3 pb-3 pt-2 font-normal"><ColFilter id="if-cli" value={fiCliente} onChange={setFiCliente} options={optICliente} /></th>
+                        <th className="px-3 pb-3 pt-2 font-normal"><ColFilter id="if-serv" value={fiServicio} onChange={setFiServicio} options={optIServicio} /></th>
+                        <th className="px-3 pb-3 pt-2 font-normal"><ColFilter id="if-tec" value={fiTecnico} onChange={setFiTecnico} options={optITecnico} /></th>
+                        <th className="px-5 pb-3 pt-2 font-normal"><ColFilter id="if-monto" value={fiMonto} onChange={setFiMonto} options={optIMonto} align="right" /></th>
+                      </tr>
                     </thead>
                     <tbody>
                       {completedFiltered.length === 0 ? (
