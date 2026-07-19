@@ -49,16 +49,16 @@ export default function AuthShell({ title, subtitle, children, perks }) {
       {/* Right form */}
       <div className="flex items-center justify-center bg-brand-50 px-5 py-10 sm:px-8">
         <div className="w-full max-w-md">
-          <Link to="/" onClick={handleBack} className="mb-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:hidden">
-            <ArrowLeft size={16} /> Volver
+          <Link to="/" onClick={handleBack} className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink-600 ring-1 ring-slate-200 transition hover:bg-brand-50 hover:text-brand-700 hover:ring-brand-200 lg:hidden">
+            <ArrowLeft size={16} /> Volver al inicio
           </Link>
           <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100 sm:p-9">
             <h1 className="font-display text-2xl font-extrabold text-ink-900">{title}</h1>
             {subtitle && <p className="mt-1.5 text-sm text-ink-500">{subtitle}</p>}
             <div className="mt-6">{children}</div>
           </div>
-          <Link to="/" onClick={handleBack} className="mt-6 hidden items-center justify-center gap-1.5 text-sm font-semibold text-ink-500 transition hover:text-brand-600 lg:flex">
-            <ArrowLeft size={16} /> Volver
+          <Link to="/" onClick={handleBack} className="mx-auto mt-6 hidden w-fit items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-ink-600 shadow-sm ring-1 ring-slate-200 transition hover:bg-brand-50 hover:text-brand-700 hover:ring-brand-200 lg:flex">
+            <ArrowLeft size={16} /> Volver al inicio
           </Link>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
-  ArrowRight, Download, ChevronUp, ChevronDown, ChevronsUpDown, Sparkles,
+  ArrowRight, Download, Sparkles,
   TrendingUp, Calendar, Pencil, Trash2, X,
 } from 'lucide-react';
 import { api } from '../lib/api';
@@ -72,16 +72,19 @@ function KPI({ icon: Icon, value, label, color, accent, onClick }) {
   );
 }
 
-/* Encabezado de columna ordenable */
-function ThSort({ label, k, sort, onSort, className }) {
-  const active = sort.key === k;
+/* Filtro inteligente por columna: escribir (búsqueda) + elegir del desplegable (datalist) */
+function FilterInput({ label, value, onChange, options, placeholder }) {
+  const id = `flt-${label}`;
   return (
-    <th className={className}>
-      <button onClick={() => onSort(k)} className="inline-flex items-center gap-1 uppercase tracking-wide transition hover:text-brand-600">
-        {label}
-        {active ? (sort.dir === 'asc' ? <ChevronUp size={13} /> : <ChevronDown size={13} />) : <ChevronsUpDown size={13} className="opacity-40" />}
-      </button>
-    </th>
+    <div>
+      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-ink-400">{label}</span>
+      <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 transition focus-within:bg-white focus-within:ring-brand-400">
+        <Search size={14} className="shrink-0 text-ink-400" />
+        <input list={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm outline-none" />
+        {value && <button type="button" onClick={() => onChange('')} className="shrink-0 text-ink-400 hover:text-ink-700"><X size={14} /></button>}
+        <datalist id={id}>{options.map((o) => <option key={o} value={o} />)}</datalist>
+      </div>
+    </div>
   );
 }
 
@@ -94,10 +97,11 @@ export default function AdminDashboard() {
   const [clients, setClients] = useState([]);
   const [techs, setTechs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [q, setQ] = useState('');            // filtro Cliente
+  const [fServicio, setFServicio] = useState(''); // filtro Servicio
+  const [fFecha, setFFecha] = useState('');       // filtro Fecha
+  const [fEstado, setFEstado] = useState('');     // filtro Estado
   const [cq, setCq] = useState('');
-  const [sort, setSort] = useState({ key: 'fecha', dir: 'desc' });
   const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
   const [savingUser, setSavingUser] = useState(false);
   const [userMsg, setUserMsg] = useState('');
@@ -179,32 +183,30 @@ export default function AdminDashboard() {
     }
   }
 
-  const filteredAppts = appts.filter((a) => {
-    const name = `${a.client.firstName} ${a.client.lastName}`.toLowerCase();
-    const okQ = name.includes(q.toLowerCase()) || a.client.email.toLowerCase().includes(q.toLowerCase());
-    const okS =
-      statusFilter === 'ALL' ? true
-      : statusFilter === 'PROGRESS' ? ['ASSIGNED', 'IN_PROGRESS'].includes(a.status)
-      : a.status === statusFilter;
-    return okQ && okS;
-  });
+  // Texto "servicio" y "estado" de una cita (para filtrar)
+  const servTxt = (a) => { const e = a.equipment?.[0]; return e ? `${e.brand} · ${e.model}` : (a.notes || ''); };
+  const estadoTxt = (a) => STATUS[a.status]?.label || a.status;
 
-  const STATUS_ORDER = ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-  const sortedAppts = [...filteredAppts].sort((a, b) => {
-    const dir = sort.dir === 'asc' ? 1 : -1;
-    let av, bv;
-    if (sort.key === 'cliente') {
-      av = `${a.client.firstName} ${a.client.lastName}`.toLowerCase();
-      bv = `${b.client.firstName} ${b.client.lastName}`.toLowerCase();
-    } else if (sort.key === 'estado') {
-      av = STATUS_ORDER.indexOf(a.status); bv = STATUS_ORDER.indexOf(b.status);
-    } else { // fecha
-      av = new Date(a.scheduledAt).getTime(); bv = new Date(b.scheduledAt).getTime();
-    }
-    return av < bv ? -1 * dir : av > bv ? 1 * dir : 0;
+  const filteredAppts = appts.filter((a) => {
+    const cli = `${a.client.firstName} ${a.client.lastName} ${a.client.email}`.toLowerCase();
+    return (
+      (!q || cli.includes(q.toLowerCase())) &&
+      (!fServicio || servTxt(a).toLowerCase().includes(fServicio.toLowerCase())) &&
+      (!fFecha || fmtDate(a.scheduledAt).toLowerCase().includes(fFecha.toLowerCase())) &&
+      (!fEstado || estadoTxt(a).toLowerCase().includes(fEstado.toLowerCase()))
+    );
   });
-  const toggleSort = (key) =>
-    setSort((s) => ({ key, dir: s.key === key && s.dir === 'asc' ? 'desc' : 'asc' }));
+  // Orden por defecto: más reciente primero
+  const sortedAppts = [...filteredAppts].sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt));
+
+  // Opciones para los desplegables (datalist) de cada filtro
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+  const optClientes = uniq(appts.map((a) => `${a.client.firstName} ${a.client.lastName}`));
+  const optServicios = uniq(appts.map(servTxt));
+  const optFechas = uniq(appts.map((a) => fmtDate(a.scheduledAt)));
+  const optEstados = uniq(appts.map(estadoTxt));
+  const hayFiltros = q || fServicio || fFecha || fEstado;
+  const limpiarFiltros = () => { setQ(''); setFServicio(''); setFFecha(''); setFEstado(''); };
 
   // Sugerir técnico según el tipo de aire (ventana/split/toneladas)
   function suggestTech(a) {
@@ -218,9 +220,11 @@ export default function AdminDashboard() {
     return techs.find((t) => `${t.firstName} ${t.lastName}`.toLowerCase().includes(key)) || null;
   }
 
-  // Ir a la lista de solicitudes con un filtro puesto (desde las tarjetas del dashboard)
+  // Ir a la lista de solicitudes con un filtro de estado puesto (desde las tarjetas del dashboard)
   function goToSolicitudes(filter) {
-    setStatusFilter(filter);
+    limpiarFiltros();
+    if (filter === 'PENDING') setFEstado('Pendiente');
+    else if (filter === 'PROGRESS') setFEstado('proceso');
     setView('solicitudes');
   }
 
@@ -462,32 +466,35 @@ export default function AdminDashboard() {
             </div>
           ) : view === 'solicitudes' ? (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5">
-                <div>
-                  <h3 className="font-display font-bold text-ink-900">Solicitudes en vivo</h3>
-                  <p className="text-xs text-ink-500">{filteredAppts.length} de {appts.length} solicitudes</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">
-                    <Search size={15} className="text-ink-500" />
-                    <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar cliente…" className="w-36 bg-transparent text-sm outline-none" />
+              <div className="border-b border-slate-100 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-display font-bold text-ink-900">Solicitudes en vivo</h3>
+                    <p className="text-xs text-ink-500">{sortedAppts.length} de {appts.length} solicitudes</p>
                   </div>
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-full bg-slate-50 px-3 py-1.5 text-sm ring-1 ring-slate-200 outline-none">
-                    <option value="ALL">Todos</option>
-                    <option value="PROGRESS">En proceso (asignadas + en curso)</option>
-                    {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  {hayFiltros && (
+                    <button onClick={limpiarFiltros} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200">
+                      <X size={13} /> Limpiar filtros
+                    </button>
+                  )}
+                </div>
+                {/* Filtros inteligentes por columna (escribir o elegir del desplegable) */}
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <FilterInput label="Cliente" value={q} onChange={setQ} options={optClientes} placeholder="Nombre o correo…" />
+                  <FilterInput label="Servicio" value={fServicio} onChange={setFServicio} options={optServicios} placeholder="Tipo de servicio…" />
+                  <FilterInput label="Fecha" value={fFecha} onChange={setFFecha} options={optFechas} placeholder="Fecha…" />
+                  <FilterInput label="Estado" value={fEstado} onChange={setFEstado} options={optEstados} placeholder="Estado…" />
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
                     <tr>
-                      <ThSort label="Cliente" k="cliente" sort={sort} onSort={toggleSort} className="px-5 py-3" />
+                      <th className="px-5 py-3">Cliente</th>
                       <th className="px-3 py-3">Servicio</th>
-                      <ThSort label="Fecha" k="fecha" sort={sort} onSort={toggleSort} className="px-3 py-3" />
+                      <th className="px-3 py-3">Fecha</th>
                       <th className="px-3 py-3">Técnico</th>
-                      <ThSort label="Estado" k="estado" sort={sort} onSort={toggleSort} className="px-3 py-3" />
+                      <th className="px-3 py-3">Estado</th>
                       <th className="px-5 py-3"></th>
                     </tr>
                   </thead>

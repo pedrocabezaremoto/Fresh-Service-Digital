@@ -99,6 +99,12 @@ export default function Login() {
           </div>
         </Field>
 
+        <div className="text-right">
+          <a href="https://wa.me/584120000000?text=Hola,%20olvid%C3%A9%20mi%20contrase%C3%B1a%20de%20Fresh%20Service%20Digital" target="_blank" rel="noreferrer" className="text-xs font-semibold text-brand-600 hover:underline">
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+
         <Button type="submit" variant="primary" className="w-full" disabled={loading}>
           {loading ? 'Ingresando…' : <>Ingresar a mi cuenta <ArrowRight size={18} /></>}
         </Button>
