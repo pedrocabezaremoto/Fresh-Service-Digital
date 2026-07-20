@@ -680,3 +680,24 @@ y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se
 ### Commits
 `012f1cb1` (ingresos+tema), `9388ac53` (filtros encabezado + guía docker + dump),
 `7c6366bd` (archivos docker), `186026c6` (README docker --build online).
+
+---
+
+## 🧑‍🔧 Fase 16 — Panel del Técnico completo (datos del cliente para la visita)
+
+**Fecha:** 2026-07-20
+
+- El panel del técnico (`/tecnico`, `TecnicoDashboard.jsx`) ya existía (ve sus trabajos
+  asignados por pestañas: Por realizar / En ejecución / Finalizados). **Mejora:** ahora cada
+  tarjeta muestra los datos que el técnico necesita para ir a atender: **cédula, dirección**
+  (extraída de las notas) y el **detalle/falla descrita** por el cliente, además de nombre,
+  correo y WhatsApp, el equipo (marca/modelo/BTU) y el estado.
+- Backend: `findAll` incluye `cedula` en el `select` del cliente.
+- **Hecho por un LLM secundario con prompt detallado y SUPERVISADO** (solo 2 archivos tocados,
+  builds OK, sin romper la lógica existente de estados/filtros).
+- **Fix de credenciales demo:** el login mostraba `tecnico@freshservice.com` que no existe en
+  la DB actual. Corregido a **`carlos.tecnico@freshservice.com` / `Tecnico1234`** (5 trabajos
+  asignados). Otros técnicos: juan./jorge.tecnico@freshservice.com (misma clave).
+
+### Commits
+`72e53585` (foto split + estilos), `602c34ec` (fix hint login), `8c51bd83` (panel técnico).

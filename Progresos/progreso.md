@@ -395,3 +395,27 @@ Cambiar un precio = editar ahí y push.
 ### Pendiente (mañana / v1.1)
 - [ ] Más detalles de la sección Ingresos y detalles sueltos de frontend.
 - [ ] v1.1: dominio anti-spam, chat cliente↔taller, Google Maps.
+
+---
+
+## 🧑‍🔧 2026-07-20 — Panel del Técnico completo (listo para la defensa)
+
+| Cambio | Estado |
+|---|---|
+| Panel técnico muestra cédula, dirección y detalle del servicio del cliente | ✅ |
+| Fix credenciales demo del login (carlos.tecnico@freshservice.com / Tecnico1234) | ✅ |
+| Foto del Aire Split reencuadrada + mejoras de estilos | ✅ |
+
+### Logins para la defensa
+- **Admin/Taller:** `admin@freshservice.com` / `Admin1234`
+- **Técnico (con trabajos):** `carlos.tecnico@freshservice.com` / `Tecnico1234`
+- **Cliente:** su correo / `Demo1234` (ej. `pedrocabezasocial@gmail.com`)
+
+### Flujo completo demostrable
+Cliente pide servicio → Taller asigna técnico (llega correo al cliente) → **el técnico ve al
+cliente con nombre, cédula, dirección, WhatsApp y el detalle** para atenderlo → marca completado
+→ cuenta en Ingresos.
+
+### Pendiente (después de la defensa)
+- [ ] Más mejoras al panel del técnico y a Ingresos.
+- [ ] v1.1: dominio anti-spam, chat cliente↔taller, Google Maps.
