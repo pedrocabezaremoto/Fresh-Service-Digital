@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Wrench, ClipboardList, LogOut, Globe, RefreshCw,
-  Clock, Play, CheckCircle2, Loader2, Search, MessageCircle, Snowflake,
+  Clock, Play, CheckCircle2, Loader2, Search, MessageCircle,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -123,12 +123,12 @@ export default function TecnicoDashboard() {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand-950 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-6 py-5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-gradient-bright text-white shadow-glow sheen">
-            <Snowflake size={20} />
-          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white p-1 shadow-sm">
+            <img src="/logo.png" alt="Fresh Service" className="h-full w-full object-contain" />
+          </span>
           <div>
             <div className="font-display text-sm font-extrabold text-white leading-none">
-              Fresh Service
+              Fresh<span className="text-brand-500"> Service</span>
             </div>
             <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-400">
               Panel Técnico
@@ -293,6 +293,9 @@ export default function TecnicoDashboard() {
                       {filteredAppts.map((a) => {
                         const eq = a.equipment?.[0];
                         const wa = a.client.phone ? a.client.phone.replace(/\D/g, '') : '';
+                        const cedula = a.client.cedula || '—';
+                        const direccion = a.notes?.match(/Direcci[oó]n:\s*(.+)/i)?.[1]?.trim() || '—';
+                        const detalle = eq?.failureDescription || '—';
                         return (
                           <div
                             key={a.id}
@@ -333,6 +336,22 @@ export default function TecnicoDashboard() {
                                 <div>
                                   <span className="block text-xs text-ink-500 uppercase font-semibold">Hora</span>
                                   <span className="font-semibold">{fmtTime(a.scheduledAt)}</span>
+                                </div>
+                              </div>
+
+                              {/* Cédula / Dirección / Detalle del cliente */}
+                              <div className="space-y-2.5 text-sm text-ink-700">
+                                <div>
+                                  <span className="block text-xs text-ink-500 uppercase font-semibold">Cédula</span>
+                                  <span className="font-semibold">{cedula}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-xs text-ink-500 uppercase font-semibold">Dirección</span>
+                                  <span className="font-semibold">{direccion}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-xs text-ink-500 uppercase font-semibold">Detalle</span>
+                                  <span className="font-semibold">{detalle}</span>
                                 </div>
                               </div>
 

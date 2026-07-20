@@ -76,6 +76,7 @@ export class AppointmentsService {
             firstName: true,
             lastName: true,
             phone: true,
+            cedula: true,
             role: true,
           },
         },
