@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
-import { IMG } from '../lib/images';
+import { IMG, imgObjectClass } from '../lib/images';
 
 function Stat({ value, label }) {
   return (
@@ -135,7 +135,7 @@ export default function Home() {
             {services.map((s) => (
               <div key={s.title} className="group overflow-hidden rounded-3xl bg-white ring-1 ring-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow">
                 <div className="relative h-48 overflow-hidden">
-                  <img src={s.img} alt={s.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                  <img src={s.img} alt={s.title} loading="lazy" className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imgObjectClass(s.img)}`} />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-brand-950/10 to-transparent" />
                   <h3 className="absolute bottom-3 left-4 font-display text-xl font-bold text-white">{s.title}</h3>
                 </div>

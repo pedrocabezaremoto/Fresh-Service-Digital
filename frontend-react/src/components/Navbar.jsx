@@ -53,10 +53,10 @@ export default function Navbar() {
             {isDark ? <Sun size={18} className="text-amber-500" /> : <Moon size={18} className="text-brand-700" />}
           </button>
           {isAuthenticated ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <Link
                 to={panelLink}
-                className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen"
               >
                 <LayoutDashboard size={16} />
                 {isAdmin ? 'Panel Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
@@ -64,9 +64,10 @@ export default function Navbar() {
               <button
                 onClick={handleLogout}
                 title="Cerrar sesión"
-                className="grid h-9 w-9 place-items-center rounded-full text-ink-500 transition hover:bg-rose-50 hover:text-rose-600"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen cursor-pointer"
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
+                Salir
               </button>
             </div>
           ) : (
@@ -123,24 +124,26 @@ export default function Navbar() {
                   <Link
                     to={panelLink}
                     onClick={() => setOpen(false)}
-                    className="rounded-full bg-brand-50 px-4 py-3 text-center text-sm font-bold text-brand-700"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen"
                   >
+                    <LayoutDashboard size={16} />
                     {isAdmin ? 'Panel del Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="rounded-full bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen cursor-pointer"
                   >
-                    Cerrar sesión
+                    <LogOut size={16} />
+                    Salir
                   </button>
                 </>
               ) : (
                 <Link
                   to="/login"
                   onClick={() => setOpen(false)}
-                  className="rounded-full bg-brand-gradient px-4 py-3 text-center text-sm font-bold text-white"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen"
                 >
-                  Iniciar sesión
+                  Iniciar sesión <ArrowRight size={16} />
                 </Link>
               )}
             </div>

@@ -145,16 +145,17 @@ export default function TecnicoDashboard() {
         <div className="space-y-2 border-t border-white/10 p-4">
           <Link
             to="/"
-            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-brand-100/70 transition hover:bg-white/5 hover:text-white"
+            target="_blank"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen"
           >
-            <Globe size={17} /> Ver sitio web
+            <Globe size={16} /> Ver sitio web
           </Link>
           <button
             onClick={() => {
               logout();
               navigate('/');
             }}
-            className="flex w-full items-center gap-2 rounded-xl bg-rose-500/15 px-4 py-2.5 text-sm font-semibold text-rose-300 transition hover:bg-rose-500/25"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 px-4 py-2.5 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 hover:ring-rose-300/50 cursor-pointer"
           >
             <LogOut size={17} /> Cerrar sesión
           </button>

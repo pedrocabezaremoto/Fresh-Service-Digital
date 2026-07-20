@@ -14,3 +14,13 @@ export const IMG = {
   heroTech: '/img-tech-ac.png',
 };
 
+/* object-position por imagen: el split mural está arriba (~20%) de la foto;
+   con object-cover centrado en banners anchos queda pared vacía. */
+export const IMG_OBJECT_POSITION = {
+  [IMG.install]: 'object-[center_22%]',
+};
+
+export function imgObjectClass(src) {
+  return IMG_OBJECT_POSITION[src] || '';
+}
+

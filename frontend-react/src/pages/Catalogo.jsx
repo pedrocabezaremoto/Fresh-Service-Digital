@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Wind, ThermometerSnowflake, Wrench, CheckCircle2, Snowflake, ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
-import { IMG } from '../lib/images';
+import { IMG, imgObjectClass } from '../lib/images';
 
 const groups = [
   {
@@ -62,7 +62,7 @@ export default function Catalogo() {
               {g.cards.map((c) => (
                 <div key={c.name} className={`group relative flex flex-col overflow-hidden rounded-3xl bg-white ring-1 transition hover:-translate-y-1 hover:shadow-glow ${c.popular ? 'ring-2 ring-brand-400 shadow-glow' : 'ring-slate-100 shadow-sm'}`}>
                   <div className="relative h-40 overflow-hidden">
-                    <img src={g.img} alt={g.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img src={g.img} alt={g.title} loading="lazy" className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imgObjectClass(g.img)}`} />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 via-brand-950/10 to-transparent" />
                     {c.popular && (
                       <div className="absolute right-3 top-3 rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-glow">★ Más solicitado</div>
