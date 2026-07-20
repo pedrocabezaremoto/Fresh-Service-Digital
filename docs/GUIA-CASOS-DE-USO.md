@@ -1,6 +1,6 @@
 # 🧭 Guía de Casos de Uso y Arquitectura — Fresh Service Digital
 
-> **Versión 1.0** · Última actualización: 2026-07-19
+> **Versión 1.0** · Última actualización: 2026-07-20
 
 Documento técnico-funcional para entender **cómo funciona** la plataforma: actores,
 casos de uso, flujos y arquitectura. Pensado para un programador que se integra al
@@ -22,7 +22,7 @@ al dólar (tasa BCV).
 | Actor | Descripción |
 |---|---|
 | **Cliente** (`CLIENT`) | Solicita servicios, ve su estado, descarga proformas. |
-| **Técnico** (`TECHNICIAN`) | Especialista asignado a una solicitud (Juan/Carlos/Jorge). |
+| **Técnico** (`TECHNICIAN`) | Especialista con panel propio (`/tecnico`): ve trabajos, cédula/dirección/detalle del cliente, cambia estados y puede auto-asignarse. Demo: Juan/Carlos/Jorge. |
 | **Administrador / Taller** (`ADMIN`) | Gestiona solicitudes, técnicos, ingresos y clientes. |
 
 ---
@@ -105,6 +105,23 @@ Navegador  ──HTTPS──►  fresh.pedroservicios.xyz   (Frontend: React 19 
 1. Directorio con filtros. Editar (`PATCH /users/:id`) o eliminar (`DELETE /users/:id`)
    usuarios (solo ADMIN). Eliminar borra en cascada sus solicitudes.
 
+### CU-09 · Panel del técnico (gestión de trabajos en campo)
+1. El técnico inicia sesión y es redirigido a **`/tecnico`** (rol `TECHNICIAN`).
+2. El backend lista citas con `GET /appointments` filtradas: las **asignadas a él** o las
+   **PENDING sin técnico** (puede “tomar” un trabajo). En `include.client.select` se
+   expone también **`cedula`**.
+3. Cada tarjeta del panel muestra, además de nombre/correo/teléfono/estado/servicio:
+   - **Cédula** → `client.cedula` (si es null → `—`)
+   - **Dirección** → extraída de `notes` con regex `Direcci[oó]n:\s*(.+)` (si no hay → `—`)
+   - **Detalle** → `equipment[0].failureDescription` (si no hay → `—`)
+4. Acciones disponibles en la tarjeta:
+   - **Tomar servicio** → `PATCH /appointments/:id/assign` (auto-asignación al técnico logueado)
+   - **Iniciar servicio** → `PATCH /appointments/:id/status` → `IN_PROGRESS`
+   - **Marcar terminado** → status → `COMPLETED`
+   - **WhatsApp** → abre `wa.me/<teléfono del cliente>`
+5. Pestañas: Por realizar / En ejecución / Finalizados + buscador por cliente o equipo.
+- **UI:** el sidebar usa el **logo oficial** (`/logo.png`), igual que el sitio público y el panel taller.
+
 ---
 
 ## 6. Endpoints principales (API)
@@ -121,10 +138,10 @@ Navegador  ──HTTPS──►  fresh.pedroservicios.xyz   (Frontend: React 19 
 | PATCH | `/users/:id` | ADMIN | Editar usuario |
 | DELETE | `/users/:id` | ADMIN | Eliminar usuario |
 | POST | `/appointments` | auth | Crear solicitud |
-| GET | `/appointments` | ADMIN | Todas las solicitudes |
+| GET | `/appointments` | ADMIN, TECHNICIAN | Listar citas (técnico: solo las suyas + PENDING libres); incluye `client.cedula` |
 | GET | `/appointments/client/:id` | auth | Solicitudes de un cliente |
-| PATCH | `/appointments/:id/status` | ADMIN | Cambiar estado |
-| PATCH | `/appointments/:id/assign` | ADMIN | Asignar técnico |
+| PATCH | `/appointments/:id/status` | ADMIN, TECHNICIAN | Cambiar estado |
+| PATCH | `/appointments/:id/assign` | ADMIN, TECHNICIAN | Asignar técnico (técnico se auto-asigna) |
 | GET | `/rate` | público | Tasa BCV actual |
 
 ---
@@ -149,18 +166,21 @@ Navegador  ──HTTPS──►  fresh.pedroservicios.xyz   (Frontend: React 19 
 
 ---
 
-## 9. Diagrama de flujo (cliente → taller)
+## 9. Diagrama de flujo (cliente → taller → técnico)
 
 ```
-Cliente                         Sistema/Taller
-  │ registra + verifica correo
+Cliente                         Taller (Admin)              Técnico (/tecnico)
+  │ registra + verifica
   │ inicia sesión
-  │ solicita servicio ─────────► queda PENDING en el panel del taller
-  │                              admin asigna técnico ──► ASSIGNED
-  │ ◄──── correo con proforma ───┘
-  │ ve estado + total, descarga proforma
-  │                              taller marca COMPLETED
-  │                              ingreso cuenta en "Ingresos"
+  │ solicita servicio ─────────► queda PENDING
+  │                              asigna técnico ──► ASSIGNED ──► ve tarjeta con:
+  │ ◄──── correo (proforma) ───┘                               cédula, dirección,
+  │ ve técnico + WhatsApp                                       detalle del problema
+  │                              (o el técnico “toma” el servicio)
+  │                                                    inicia ──► IN_PROGRESS
+  │                                                    termina ─► COMPLETED
+  │                              ingreso en "Ingresos" ◄─────────┘
+  │ descarga proforma
 ```
 
 ---
@@ -185,6 +205,7 @@ empaqueta con Docker (Postgres + backend + frontend).
 ## 11. Estado y roadmap
 
 - **Versión 1.0** (defensa): completa y funcional. Incluye modo claro/oscuro, filtros
-  inteligentes en todas las tablas del taller, gestión de usuarios y control de ingresos.
+  inteligentes en todas las tablas del taller, gestión de usuarios, control de ingresos y
+  **panel del técnico** con cédula, dirección y detalle del servicio en cada tarjeta.
 - **v1.1:** deliverability con dominio propio (SPF/DKIM/DMARC), chat cliente↔taller en
   tiempo real, ubicación con Google Maps, más mejoras de la sección Ingresos.

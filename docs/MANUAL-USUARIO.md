@@ -3,7 +3,7 @@
 Plataforma web para solicitar y gestionar servicios de refrigeración a domicilio en
 San Juan de los Morros, Venezuela.
 
-> **Versión 1.0** · Última actualización: 2026-07-19
+> **Versión 1.0** · Última actualización: 2026-07-20
 
 - **Sitio (clientes):** https://fresh.pedroservicios.xyz
 - **API (backend):** https://api.pedroservicios.xyz
@@ -101,12 +101,55 @@ Ingresa con la cuenta de administrador. Menú lateral: **Dashboard, Solicitudes,
 
 ---
 
-## 🧑‍🔧 Parte 3 — Técnicos
+## 🧑‍🔧 Parte 3 — Técnicos (Panel Técnico)
 
-- Técnicos ficticios de demo: **Juan** (Aires de Ventana), **Carlos** (Split), **Jorge** (Toneladas).
-- Cuando el taller les asigna un servicio, el cliente ve su **nombre y WhatsApp** en el panel.
+Los técnicos entran con su cuenta y van a **`/tecnico`**. El sidebar muestra el **logo oficial**
+de Fresh Service, el menú **Mis Trabajos**, botones **Ver sitio web** / **Cerrar sesión**, y el
+nombre del técnico logueado.
+
+### 3.1 Cuentas de demo
+
+| Técnico | Especialidad | Correo | Contraseña |
+|---|---|---|---|
+| Juan | Aires de Ventana | `juan.tecnico@freshservice.com` | `Tecnico1234` |
+| Carlos | Aires Split | `carlos.tecnico@freshservice.com` | `Tecnico1234` |
+| Jorge | Aires por Toneladas | `jorge.tecnico@freshservice.com` | `Tecnico1234` |
+
+> Para la demo con varios trabajos ya asignados, usa **Carlos**.
+
+### 3.2 Qué ve el técnico
+
+En la parte superior hay **3 indicadores**:
+- Trabajos por realizar (Pendiente / Asignada)
+- En ejecución
+- Completados
+
+Abajo, pestañas **Por realizar · En ejecución · Finalizados** y un buscador por cliente o equipo.
+
+### 3.3 Cada tarjeta de trabajo muestra
+
+Además del nombre, correo, teléfono/WhatsApp, servicio y estado, cada tarjeta incluye:
+
+| Dato | De dónde sale | Si falta |
+|---|---|---|
+| **Cédula** | Cuenta del cliente (`cedula`) | Se muestra `—` |
+| **Dirección** | Extraída de las notas de la cita (`Dirección: …`) | Se muestra `—` |
+| **Detalle** | Descripción del problema (`failureDescription` del equipo) | Se muestra `—` |
+
+También ves fecha/hora, tipo de equipo, capacidad BTU (si aplica) y la falla descrita.
+
+### 3.4 Acciones del técnico
+
+1. **Tomar servicio** — si la solicitud está pendiente sin técnico, puede asignársela.
+2. **Iniciar servicio** — pasa el estado a *En progreso*.
+3. **Marcar como terminado** — pasa a *Completada* (cuenta en Ingresos del taller).
+4. **WhatsApp** — botón verde para contactar al cliente con el número registrado.
+
+Cuando el taller (o el propio técnico) tiene el trabajo asignado, el **cliente** ve en su panel
+el **nombre y WhatsApp** del técnico.
 
 ---
+
 
 ## 💵 Precios (referencia)
 
