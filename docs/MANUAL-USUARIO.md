@@ -3,10 +3,15 @@
 Plataforma web para solicitar y gestionar servicios de refrigeración a domicilio en
 San Juan de los Morros, Venezuela.
 
+> **Versión 1.0** · Última actualización: 2026-07-19
+
 - **Sitio (clientes):** https://fresh.pedroservicios.xyz
 - **API (backend):** https://api.pedroservicios.xyz
 
 Hay **tres tipos de usuario**: **Cliente**, **Técnico** y **Administrador (Taller)**.
+
+> 💡 **Modo claro / oscuro:** en la barra superior hay un botón (🌙 / ☀️) para cambiar
+> el tema en todo el sitio y en el panel del taller.
 
 ---
 
@@ -36,8 +41,13 @@ Hay **tres tipos de usuario**: **Cliente**, **Técnico** y **Administrador (Tall
 
 ### 1.3 Iniciar sesión
 - Entra con tu correo y contraseña en **Iniciar sesión**.
-- ¿Olvidaste la contraseña? → **"¿Olvidaste tu contraseña?"** → escribe tu correo →
-  te llega un enlace (vence en 1 hora) → creas una nueva.
+
+### 1.3.1 Recuperar contraseña (si la olvidaste)
+1. En el login, pulsa **"¿Olvidaste tu contraseña?"**.
+2. Escribe tu correo y pulsa **Enviar enlace**.
+3. Te llega un correo con un enlace (revisa **spam**). El enlace **vence en 1 hora**.
+4. Ábrelo → escribe tu **nueva contraseña** → **Cambiar contraseña**.
+5. Vuelves al login y entras con la nueva clave.
 
 ### 1.4 Solicitar un servicio
 1. Pulsa **"Solicitar servicio"**.
@@ -76,8 +86,11 @@ Ingresa con la cuenta de administrador. Menú lateral: **Dashboard, Solicitudes,
 
 ### 2.3 Ingresos (Control de Servicios Realizados)
 - Ganancias de servicios **completados** por período: Hoy, Semana, Mes, Año.
-- Cada período se puede **descargar en CSV**.
-- Tabla con todos los servicios completados y su monto.
+- Las **tarjetas de período son clickeables**: al pulsar una, la tabla de abajo se **filtra**
+  por ese período (púlsala de nuevo para quitar el filtro).
+- Cada período tiene su botón **CSV** para descargar el reporte.
+- La tabla de servicios completados tiene **filtros por columna** (Fecha, Cliente, Servicio,
+  Técnico, Monto) y el **total** se recalcula según lo filtrado.
 
 ### 2.4 Clientes
 - Directorio de clientes con **filtros inteligentes** (Cliente, Correo, Teléfono, Registrado).
@@ -107,3 +120,12 @@ Reparación e instalación cuestan más. El total exacto aparece siempre en la w
 - **No puedo iniciar sesión:** confirma que verificaste tu correo (revisa spam).
 - **Olvidé mi contraseña:** usa **"¿Olvidaste tu contraseña?"** en el login.
 - **El precio en Bs cambió:** es normal — se calcula a la tasa oficial del BCV del día.
+
+---
+
+## 🖥️ Correr la plataforma sin internet (demostración local)
+
+El proyecto se puede levantar **100% local con Docker** (sin depender del servidor). Útil para
+demostrarlo aunque falle el internet. Instrucciones: ver **`README-DOCKER.md`** en la raíz.
+Resumen: construir una vez con internet (`docker compose up --build`) y luego correr offline
+(`docker compose up`), abriendo `http://localhost:8080`.

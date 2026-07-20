@@ -1,5 +1,7 @@
 # 🧭 Guía de Casos de Uso y Arquitectura — Fresh Service Digital
 
+> **Versión 1.0** · Última actualización: 2026-07-19
+
 Documento técnico-funcional para entender **cómo funciona** la plataforma: actores,
 casos de uso, flujos y arquitectura. Pensado para un programador que se integra al
 proyecto y para explicar el sistema en la defensa.
@@ -163,8 +165,26 @@ Cliente                         Sistema/Taller
 
 ---
 
-## 10. Estado y roadmap
+## 10. Correr offline con Docker (demostración local)
 
-- **Versión 1.0** (defensa): completa y funcional.
+Para presentar el proyecto **sin depender del servidor ni de internet**, todo el stack se
+empaqueta con Docker (Postgres + backend + frontend).
+
+- **`docker-compose.yml`** (raíz): 3 servicios. Postgres carga el respaldo
+  **`docker/seed-data.sql`** (esquema + datos reales) en su primer arranque.
+- **`README-DOCKER.md`**: cómo levantarlo. Regla: `docker compose up --build` **una vez con
+  internet** (construye/cachea) y luego `docker compose up` **offline**. Abre `http://localhost:8080`.
+- **`docs/crear-docker.md`**: guía detallada de cómo se dockerizó (por si hay que rehacerlo).
+- **Detalle técnico:** el backend expone el puerto **4000** y el frontend detecta `localhost`
+  para llamarlo (`api.js`). El CORS del backend está abierto (`app.enableCors()`), por eso el
+  frontend en `localhost:8080` habla con el backend en `localhost:4000` sin bloqueo.
+- **Offline:** los correos se simulan en consola (sin SMTP) y la tasa BCV usa la última cacheada.
+
+---
+
+## 11. Estado y roadmap
+
+- **Versión 1.0** (defensa): completa y funcional. Incluye modo claro/oscuro, filtros
+  inteligentes en todas las tablas del taller, gestión de usuarios y control de ingresos.
 - **v1.1:** deliverability con dominio propio (SPF/DKIM/DMARC), chat cliente↔taller en
-  tiempo real, ubicación con Google Maps, mejoras de la sección Ingresos.
+  tiempo real, ubicación con Google Maps, más mejoras de la sección Ingresos.
