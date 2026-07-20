@@ -111,7 +111,7 @@ export default function Login() {
       </form>
 
       <p className="mt-5 text-center text-xs text-ink-500">
-        Demos: <span className="font-semibold text-ink-700">admin@freshservice.com</span> (Admin1234) · <span className="font-semibold text-ink-700">tecnico@freshservice.com</span> (Demo1234)
+        Demos: <span className="font-semibold text-ink-700">admin@freshservice.com</span> (Admin1234) · <span className="font-semibold text-ink-700">carlos.tecnico@freshservice.com</span> (Tecnico1234)
       </p>
     </AuthShell>
   );

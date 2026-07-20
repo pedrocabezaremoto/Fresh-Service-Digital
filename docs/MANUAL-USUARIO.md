@@ -20,8 +20,10 @@ Hay **tres tipos de usuario**: **Cliente**, **Técnico** y **Administrador (Tall
 | Rol | Correo | Contraseña |
 |---|---|---|
 | Administrador (Taller) | `admin@freshservice.com` | `Admin1234` |
-| Técnico | `tecnico@freshservice.com` | `Demo1234` |
+| Técnico (con trabajos asignados) | `carlos.tecnico@freshservice.com` | `Tecnico1234` |
 | Cliente (ejemplo) | su correo registrado | `Demo1234` |
+
+> Otros técnicos: `juan.tecnico@freshservice.com` y `jorge.tecnico@freshservice.com` (misma clave `Tecnico1234`).
 
 ---
 
