@@ -701,3 +701,34 @@ y se muestran en **Bs** a la tasa oficial del día. Si la tasa cambia, los Bs se
 
 ### Commits
 `72e53585` (foto split + estilos), `602c34ec` (fix hint login), `8c51bd83` (panel técnico).
+
+---
+
+## 🏆 Fase 17 — DEFENSA EXITOSA (2026-07-20)
+
+**Resultado: ÉXITO TOTAL.** La plataforma se presentó y funcionó perfectamente.
+
+- **En producción (VPS):** el sitio (`fresh.pedroservicios.xyz`) + API (`api.pedroservicios.xyz`)
+  respondieron sin fallas. Traefik, pm2, la DB PostgreSQL, los correos y la tasa BCV — todo
+  funcionó como se esperaba. El VPS hizo su trabajo impecable con internet.
+- **Plan B offline (Docker):** además, se levantó el stack completo en la laptop con
+  `docker compose up` (db + backend + frontend, con los datos del respaldo) y funcionó **al 100%**.
+  Estar preparado en ambos entornos dio total tranquilidad.
+- **Ambos entornos verificados en vivo** el día de la defensa.
+
+### Estado final de la Versión 1.0 (entregada y defendida)
+- Sitio cliente: registro con verificación por correo, login, recuperación de contraseña,
+  catálogo con precios BCV (USD→Bs), solicitud con precio congelado, panel del cliente,
+  proforma PDF, correos reales.
+- Panel del Taller (ADMIN): dashboard con KPIs y gráficos reales, gestión de solicitudes con
+  filtros inteligentes y asignación de técnico (con sugerencia + correo al cliente), control de
+  ingresos con reportes CSV, gestión de usuarios (editar/eliminar), modo claro/oscuro.
+- Panel del Técnico: trabajos asignados con cédula, dirección y detalle del cliente.
+- Infra/DevOps: deploy automático por webhook, repo de respaldo espejo, y paquete Docker offline.
+- Documentación completa: manual de usuario, guía de casos de uso, guía Docker.
+
+### Próximo: v1.1 (post-defensa)
+- Deliverability con dominio propio (SPF/DKIM/DMARC), chat cliente↔taller en tiempo real,
+  ubicación con Google Maps, y más mejoras de UX/Ingresos.
+
+🎉 ¡Felicitaciones al equipo!
