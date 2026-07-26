@@ -2,6 +2,7 @@
   "name": "fresh-service-frontend",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "pnpm@11.5.2",
   "type": "module",
   "description": "Frontend React + Vite + Tailwind para Fresh Service Digital",
   "scripts": {

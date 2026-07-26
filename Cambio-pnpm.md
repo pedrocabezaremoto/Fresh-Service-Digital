@@ -188,18 +188,24 @@ rm -f package-lock.json pnpm-lock.yaml
 rm -rf node_modules
 ```
 
-**4.1 Arreglar `frontend-react/pnpm-workspace.yaml`.** Reemplazar **TODO** su contenido por
-(borrar cualquier bloque `allowBuilds:` con placeholders):
+**4.1 Arreglar `frontend-react/pnpm-workspace.yaml`.** Reemplazar **TODO** su contenido por esto
+(borrar cualquier placeholder `set this to true or false`):
 
 ```yaml
-# esbuild (usado por Vite) necesita compilar su binario nativo. Único build aprobado aquí.
+# esbuild (usado por Vite) necesita compilar/descargar su binario nativo → se APRUEBA (true).
 onlyBuiltDependencies:
   - esbuild
+# OBLIGATORIO en pnpm 11.5.2: el mapa de aprobación con BOOLEANOS.
+allowBuilds:
+  esbuild: true
 ```
 
-> ⚠️ Igual que en el backend: valida con `pnpm install --frozen-lockfile` (exit 0) y `pnpm run build`.
-> Si `pnpm install --frozen-lockfile` da `[ERR_PNPM_IGNORED_BUILDS] ... <paquete>`, agrega ese
-> `<paquete>` a un bloque `ignoredBuiltDependencies:` (mismo formato que el backend) y reintenta.
+> ⚠️ **CRÍTICO — igual que en el backend:**
+> - `esbuild` va en `true` (**aprobado**), NO ignorado: su script instala el binario que Vite
+>   necesita. Si lo pones en `false`/lo ignoras, `pnpm run build` FALLA (Vite no encuentra esbuild).
+> - Valida con los comandos REALES, ambos **exit 0**: `pnpm install --frozen-lockfile` y `pnpm run build`.
+> - Si `pnpm install --frozen-lockfile` reporta `[ERR_PNPM_IGNORED_BUILDS] ... <otro-paquete>`,
+>   agrégalo al mapa `allowBuilds` con `true` si necesita compilar, o `false` si es seguro ignorarlo.
 
 **4.2 Añadir a `frontend-react/package.json`** (nivel superior):
 
