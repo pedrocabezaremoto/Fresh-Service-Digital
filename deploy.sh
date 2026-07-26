@@ -51,40 +51,40 @@ fi
 # ---------- 2. Migraciones de base de datos ----------
 step "2/6  Aplicando migraciones de base de datos (backend)"
 cd "$BACK_DIR" || die "No existe $BACK_DIR"
-npm install --no-audit --no-fund 2>&1 | tail -2 || die "npm install (backend) falló"
+pnpm install --frozen-lockfile 2>&1 | tail -2 || die "pnpm install (backend) falló"
 
 # Aplica migraciones ya commiteadas
-npx prisma migrate deploy 2>&1 | tail -8 || die "prisma migrate deploy falló — revisa la migración"
+pnpm exec prisma migrate deploy 2>&1 | tail -8 || die "prisma migrate deploy falló — revisa la migración"
 
 # DETECTOR DE TRAMPA: ¿alguien cambió el schema.prisma pero falta la migración?
 # (justo el error que cometió María: cambió el schema sin crear migración)
-STATUS=$(npx prisma migrate status 2>&1 || true)
+STATUS=$(pnpm exec prisma migrate status 2>&1 || true)
 if echo "$STATUS" | grep -qiE "have not yet been applied|following migration|not yet been applied"; then
   warn "Hay migraciones sin aplicar. Intentando de nuevo con migrate deploy..."
-  npx prisma migrate deploy 2>&1 | tail -6 || die "No se pudieron aplicar migraciones pendientes."
+  pnpm exec prisma migrate deploy 2>&1 | tail -6 || die "No se pudieron aplicar migraciones pendientes."
 fi
 if echo "$STATUS" | grep -qiE "drift|not in sync|schema is not in sync|prisma migrate dev"; then
   warn "OJO: el schema.prisma podría estar cambiado SIN migración."
-  warn "Esto rompe funciones nuevas. Pídele a quien lo cambió que corra 'npx prisma migrate dev --name loquesea' y suba prisma/migrations/."
-  warn "Verifica manualmente:  cd backend && npx prisma migrate status"
+  warn "Esto rompe funciones nuevas. Pídele a quien lo cambió que corra 'pnpm exec prisma migrate dev --name loquesea' y suba prisma/migrations/."
+  warn "Verifica manualmente:  cd backend && pnpm exec prisma migrate status"
 else
   ok "Migraciones en sincronía con la base de datos."
 fi
 
-npx prisma generate 2>&1 | tail -2 || die "prisma generate falló"
+pnpm exec prisma generate 2>&1 | tail -2 || die "prisma generate falló"
 ok "Base de datos y cliente Prisma listos."
 
 # ---------- 3. Build frontend ----------
 step "3/6  Construyendo frontend (React + Vite)"
 cd "$FRONT_DIR" || die "No existe $FRONT_DIR"
-npm install --no-audit --no-fund 2>&1 | tail -2 || die "npm install (frontend) falló"
-npm run build 2>&1 | tail -8 || die "Build del FRONTEND falló — no se reinició nada, el sitio viejo sigue en vivo."
+pnpm install --frozen-lockfile 2>&1 | tail -2 || die "pnpm install (frontend) falló"
+pnpm run build 2>&1 | tail -8 || die "Build del FRONTEND falló — no se reinició nada, el sitio viejo sigue en vivo."
 ok "Frontend construido."
 
 # ---------- 4. Build backend ----------
 step "4/6  Construyendo backend (NestJS)"
 cd "$BACK_DIR" || die "No existe $BACK_DIR"
-npm run build 2>&1 | tail -8 || die "Build del BACKEND falló — no se reinició nada, la API vieja sigue en vivo."
+pnpm run build 2>&1 | tail -8 || die "Build del BACKEND falló — no se reinició nada, la API vieja sigue en vivo."
 ok "Backend construido."
 
 # ---------- 5. Restart pm2 ----------

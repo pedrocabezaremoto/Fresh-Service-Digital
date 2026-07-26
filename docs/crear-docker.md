@@ -36,7 +36,7 @@ Navegador ─► Frontend (React 19 + Vite + Tailwind, carpeta frontend-react/)
   pequeño servidor Node ya incluido: `frontend-react/serve.mjs` (sirve la carpeta `dist/` en el
   puerto de la variable `PORT`, por defecto 4100).
 - **Backend** (`backend/`): API NestJS. Usa Prisma para PostgreSQL. Arranca con `node dist/main`
-  tras `npm run build`. Lee configuración de variables de entorno (ver `backend/.env`).
+  tras `pnpm run build`. Lee configuración de variables de entorno (ver `backend/.env`).
 - **Base de datos**: PostgreSQL. **Ya tienes un respaldo completo** en
   **`docker/seed-data.sql`** (esquema + datos reales: clientes, solicitudes, técnicos,
   ingresos, tasa BCV cacheada). Debes cargarlo en el contenedor de Postgres al iniciar.
@@ -85,11 +85,12 @@ FROM node:22-slim AS build
 WORKDIR /app
 # openssl es requerido por Prisma
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-COPY package*.json ./
-RUN npm ci
+RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npx prisma generate
-RUN npm run build
+RUN pnpm exec prisma generate
+RUN pnpm run build
 
 # ---- run ----
 FROM node:22-slim AS run
@@ -99,10 +100,10 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/package*.json ./
+COPY --from=build /app/package.json ./
 EXPOSE 4000
 # migrate deploy es no-op porque el dump ya trae el esquema; sirve de seguro
-CMD npx prisma migrate deploy; node dist/main
+CMD ./node_modules/.bin/prisma migrate deploy; node dist/main
 ```
 
 ### Paso 2 — `backend/.dockerignore`
@@ -119,10 +120,11 @@ Compila con Vite y sirve `dist/` con el `serve.mjs` que ya existe.
 # ---- build ----
 FROM node:22-slim AS build
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # ---- run ----
 FROM node:22-slim AS run

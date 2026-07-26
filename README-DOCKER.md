@@ -8,7 +8,7 @@ en tu laptop **sin depender del VPS**. Ideal como plan B para la presentación.
 ## ⚠️ IMPORTANTÍSIMO — hazlo ANTES (con internet)
 
 **Construir la imagen la primera vez SÍ necesita internet** (descarga las imágenes base de
-Docker y los paquetes de npm). Por eso:
+Docker y los paquetes con pnpm). Por eso:
 
 1. **Hoy / antes de la defensa, CON internet**, construye todo una vez:
    ```bash

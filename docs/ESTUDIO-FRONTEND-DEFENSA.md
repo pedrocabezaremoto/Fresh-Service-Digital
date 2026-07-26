@@ -181,10 +181,10 @@ producción            → https://api.pedroservicios.xyz
 
 ```bash
 cd frontend-react
-npm install
-npm run dev      # http://localhost:5174
-npm run build    # dist/
-npm run preview
+pnpm install
+pnpm run dev      # http://localhost:5174
+pnpm run build    # dist/
+pnpm run preview
 ```
 
 ---
