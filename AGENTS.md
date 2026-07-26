@@ -18,6 +18,16 @@
 
 **Fase histórica:** 1 (Prototipo visual estático en HTML/CSS — superada).
 
+> [!WARNING]
+> **2026-07-26 — Migración npm → pnpm EN CURSO (seguridad supply-chain).**
+> El gestor de paquetes del proyecto pasa de **npm a pnpm** (npm tuvo un incidente de paquetes
+> comprometidos; pnpm bloquea los scripts `postinstall` por defecto).
+> - **Guía obligatoria:** ver **`Cambio-pnpm.md`** en la raíz. Cualquier agente que instale o
+>   construya el proyecto debe usar **`pnpm`**, NO `npm`/`npx`.
+> - Comandos: `pnpm install --frozen-lockfile`, `pnpm run build`, `pnpm exec prisma ...`.
+> - **No** volver a generar `package-lock.json`. El lockfile válido es `pnpm-lock.yaml`.
+> - La ejecución de esta migración la hace un LLM externo; Claude es el revisor.
+
 ---
 
 ## 🚫 REGLAS ESTRICTAS — Lee esto primero

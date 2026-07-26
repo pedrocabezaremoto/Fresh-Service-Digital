@@ -439,3 +439,22 @@ cliente con nombre, cédula, dirección, WhatsApp y el detalle** para atenderlo 
 - [ ] Más mejoras de la sección Ingresos y detalles de frontend.
 
 🎉 ¡Gran trabajo, Pedro!
+
+---
+
+## 🔒 2026-07-26 — Migración npm → pnpm (seguridad supply-chain) — EN CURSO
+
+**Motivo:** npm sufrió un incidente de paquetes hackeados. Se migra todo el proyecto a **pnpm**
+(bloquea scripts `postinstall` por defecto = la puerta de entrada de esos ataques).
+
+| Punto | Detalle |
+|---|---|
+| **Quién ejecuta** | Un **LLM externo** hace el cambio. Claude es solo **REVISOR** (no toca código). |
+| **Guía completa** | Paso a paso detallado en **`Cambio-pnpm.md`** (raíz del repo). |
+| **Alcance real** | Solo instalar+build: `deploy.sh`, `backend/Dockerfile`, `frontend-react/Dockerfile` + limpiar lockfiles y `pnpm-workspace.yaml`. |
+| **Intocable** | `pm2` (corre `node` directo), `webhook.mjs`, `serve.mjs`, `schema.prisma`, migraciones. |
+| **Regla crítica** | Todo en branch `migracion-pnpm` con webhook **pausado** (`pm2 stop fresh-webhook`); main = auto-deploy. |
+| **Estado detectado** | Lockfiles mezclados (npm + pnpm viejo) en ambos subproyectos; `pnpm-workspace.yaml` con placeholders inválidos. |
+
+**Flujo:** ejecutor sigue `Cambio-pnpm.md` → verifica builds + Docker → merge local + `./deploy.sh` a mano
+→ reactivar webhook + push. Al terminar, Claude revisa contra el checklist §12 de esa guía.
