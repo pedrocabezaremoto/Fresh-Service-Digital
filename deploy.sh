@@ -96,13 +96,31 @@ ok "Servicios reiniciados."
 
 # ---------- 6. Health check ----------
 step "6/6  Verificando que todo responde"
-sleep 3
+# espera hasta ~30s a que el servicio responda (vivo = 2xx/3xx/4xx)
+wait_http() {
+  local url="$1" code=""
+  for i in $(seq 1 15); do
+    code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 3 "$url" 2>/dev/null)
+    case "$code" in
+      2*|3*|4*) echo "$code"; return 0 ;;   # vivo
+      *)        sleep 2 ;;                    # 000/""/5xx: sigue esperando
+    esac
+  done
+  echo "${code:-000}"; return 1
+}
 FAIL=0
-BC=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$BACK_PORT" 2>/dev/null || echo "000")
-FC=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$FRONT_PORT" 2>/dev/null || echo "000")
-# 200/301/302/401/404 = el proceso está vivo respondiendo. 000/5xx = caído.
-case "$BC" in 000|5*) echo -e "${RED}Backend  (:$BACK_PORT)  -> $BC  CAÍDO${RST}"; FAIL=1;; *) ok "Backend  (:$BACK_PORT)  -> $BC  OK";; esac
-case "$FC" in 000|5*) echo -e "${RED}Frontend (:$FRONT_PORT) -> $FC  CAÍDO${RST}"; FAIL=1;; *) ok "Frontend (:$FRONT_PORT) -> $FC  OK";; esac
+if BC=$(wait_http "http://localhost:$BACK_PORT"); then
+  ok "Backend  (:$BACK_PORT)  -> $BC  OK"
+else
+  echo -e "${RED}Backend  (:$BACK_PORT)  -> $BC  CAÍDO${RST}"
+  FAIL=1
+fi
+if FC=$(wait_http "http://localhost:$FRONT_PORT"); then
+  ok "Frontend (:$FRONT_PORT) -> $FC  OK"
+else
+  echo -e "${RED}Frontend (:$FRONT_PORT) -> $FC  CAÍDO${RST}"
+  FAIL=1
+fi
 
 if [ "$FAIL" -ne 0 ]; then
   echo -e "\n${RED}${BLD}Algún servicio no responde. Revisa los logs:${RST}"

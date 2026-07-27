@@ -442,19 +442,38 @@ cliente con nombre, cédula, dirección, WhatsApp y el detalle** para atenderlo 
 
 ---
 
-## 🔒 2026-07-26 — Migración npm → pnpm (seguridad supply-chain) — EN CURSO
+## 🔒 2026-07-26/27 — Migración npm → pnpm (seguridad supply-chain) — ✅ COMPLETADA
 
-**Motivo:** npm sufrió un incidente de paquetes hackeados. Se migra todo el proyecto a **pnpm**
+**Motivo:** npm sufrió un incidente de paquetes hackeados. Se migró todo el proyecto a **pnpm**
 (bloquea scripts `postinstall` por defecto = la puerta de entrada de esos ataques).
 
-| Punto | Detalle |
-|---|---|
-| **Quién ejecuta** | Un **LLM externo** hace el cambio. Claude es solo **REVISOR** (no toca código). |
-| **Guía completa** | Paso a paso detallado en **`Cambio-pnpm.md`** (raíz del repo). |
-| **Alcance real** | Solo instalar+build: `deploy.sh`, `backend/Dockerfile`, `frontend-react/Dockerfile` + limpiar lockfiles y `pnpm-workspace.yaml`. |
-| **Intocable** | `pm2` (corre `node` directo), `webhook.mjs`, `serve.mjs`, `schema.prisma`, migraciones. |
-| **Regla crítica** | Todo en branch `migracion-pnpm` con webhook **pausado** (`pm2 stop fresh-webhook`); main = auto-deploy. |
-| **Estado detectado** | Lockfiles mezclados (npm + pnpm viejo) en ambos subproyectos; `pnpm-workspace.yaml` con placeholders inválidos. |
+**Estado: EN PRODUCCIÓN y verificado en vivo** (`fresh.pedroservicios.xyz` 200, `api…/rate` 200).
+Guía completa reutilizable en **`Cambio-pnpm.md`** (raíz).
 
-**Flujo:** ejecutor sigue `Cambio-pnpm.md` → verifica builds + Docker → merge local + `./deploy.sh` a mano
-→ reactivar webhook + push. Al terminar, Claude revisa contra el checklist §12 de esa guía.
+### Cómo se hizo (modelo ejecutor + revisor)
+- LLMs externos ejecutaron por fases (Kimi K2.5 fases 1-2, Grok 4.5 fase 3 + fix); **Claude revisó
+  cada fase EN el VPS con los comandos reales y controló todo el git** (commits/push al repo de
+  respaldo entre fases). Los ejecutores NO tocaron git.
+
+### Resultado por fase
+| Fase | Qué | Estado |
+|---|---|---|
+| 1 | Backend a pnpm (borrado `package-lock.json`, `pnpm-lock.yaml` limpio) | ✅ |
+| 2 | Frontend a pnpm (esbuild aprobado a compilar) | ✅ |
+| 3 | Pipeline: `deploy.sh` + ambos `Dockerfile` + docs, npm→pnpm | ✅ |
+| 4 | Build Docker + verificación aislada + deploy a producción | ✅ |
+| Extra | Fix del health check de `deploy.sh` (reintento; ya no da falso OK) | ✅ |
+
+### Claves técnicas aprendidas
+- **pnpm 11.5.2 exige el mapa `allowBuilds` con booleanos**; `onlyBuiltDependencies` solo NO basta
+  (aborta con `ERR_PNPM_IGNORED_BUILDS`). Backend: Prisma `true`, `@nestjs/core` `false`. Frontend:
+  `esbuild: true`.
+- **Intactos** (no usan el gestor): `pm2` (corre `node` directo), `webhook.mjs`, `serve.mjs`,
+  `schema.prisma`, migraciones.
+- Validar builds SIEMPRE con los comandos reales (`pnpm install --frozen-lockfile` + `pnpm run
+  build`), nunca con `nest build`/`vite build` directo.
+- Commit final en producción: `202d9ba6` (main = origin = backup).
+
+### Pendiente opcional
+- [ ] Borrar el branch `migracion-pnpm` (ya mergeado a main).
+- [ ] Endurecimiento extra opcional de `Cambio-pnpm.md` §11 (`minimumReleaseAge`).
