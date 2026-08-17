@@ -45,6 +45,33 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   return data;
 }
 
+async function uploadFile(path, file) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const body = new FormData();
+  body.append('file', file);
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body });
+  let data = null;
+  const text = await res.text();
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  if (!res.ok) {
+    const message =
+      (data && data.message) ||
+      (Array.isArray(data?.message) ? data.message.join(', ') : null) ||
+      'Ocurrió un error en el servidor';
+    const err = new Error(Array.isArray(message) ? message.join(', ') : message);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
 export const api = {
   // Auth
   register: (payload) => request('/users/register', { method: 'POST', body: payload }),
@@ -65,6 +92,11 @@ export const api = {
   createService: (payload) => request('/services', { method: 'POST', body: payload, auth: true }),
   updateService: (id, data) => request(`/services/${id}`, { method: 'PATCH', body: data, auth: true }),
   deleteService: (id) => request(`/services/${id}`, { method: 'DELETE', auth: true }),
+
+  // Imágenes del sitio
+  getSiteImages: () => request('/site-images'),
+  uploadSiteImage: (slot, file) => uploadFile(`/site-images/${slot}`, file),
+  deleteSiteImage: (slot) => request(`/site-images/${slot}`, { method: 'DELETE', auth: true }),
 
   // Citas
   createAppointment: (payload) =>

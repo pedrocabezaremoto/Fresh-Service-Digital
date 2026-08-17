@@ -7,6 +7,7 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { RateProvider } from './context/RateContext.jsx';
+import { SiteImagesProvider } from './context/SiteImagesContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <RateProvider>
-            <App />
+            <SiteImagesProvider>
+              <App />
+            </SiteImagesProvider>
           </RateProvider>
         </AuthProvider>
       </ThemeProvider>

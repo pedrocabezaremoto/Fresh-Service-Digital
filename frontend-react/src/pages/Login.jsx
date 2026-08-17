@@ -13,7 +13,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const verified = searchParams.get('verified') === 'true';
   const urlError = searchParams.get('error');
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
@@ -24,7 +24,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      const user = await login(email.trim(), password);
+      const user = await login(identifier.trim(), password);
       if (user.role === 'ADMIN') {
         navigate('/admin');
       } else if (user.role === 'TECHNICIAN') {
@@ -78,11 +78,12 @@ export default function Login() {
           </div>
         )}
 
-        <Field label="Correo electrónico">
+        <Field label="Correo o nombre de usuario">
           <input
-            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            placeholder="tucorreo@ejemplo.com" className={inputClass}
+            type="text" autoComplete="username" required value={identifier} onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="tu@email.com o tu.usuario" className={inputClass}
           />
+          <p className="mt-1.5 text-xs text-ink-400">Técnicos y administradores pueden usar su nombre de usuario</p>
         </Field>
 
         <Field label="Contraseña">

@@ -8,6 +8,9 @@ yarn-error.log*
 /backend/dist/
 /backend/dist-server/
 
+# Imágenes subidas desde el panel admin (no van al repo)
+/backend/uploads/
+
 # Entorno y Datos Sensibles
 .env
 .env.local

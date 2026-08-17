@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
-import { IMG, imgObjectClass } from '../lib/images';
+import { imgObjectClass } from '../lib/images';
+import { useSiteImages } from '../context/SiteImagesContext';
 
 function Stat({ value, label }) {
   return (
@@ -16,23 +17,25 @@ function Stat({ value, label }) {
   );
 }
 
-const services = [
-  {
-    icon: Wind, title: 'Aires de Ventana', img: IMG.maintenance, priceFrom: 25,
-    desc: 'Reparación, mantenimiento e instalación de unidades de ventana de todas las marcas.',
-    points: ['Diagnóstico incluido', 'Recarga de gas', 'Limpieza profunda'],
-  },
-  {
-    icon: ThermometerSnowflake, title: 'Aires Split', img: IMG.install, priceFrom: 35,
-    desc: 'Servicio integral para sistemas Split mini y maxi: unidad interna y externa.',
-    points: ['Lavado a presión', 'Revisión de plaquetas', 'Recarga y hermeticidad'],
-  },
-  {
-    icon: Wrench, title: 'Aires por Toneladas', img: IMG.repair, priceFrom: 50,
-    desc: 'Equipos de 1 a 3 toneladas para locales y espacios grandes. Servicio especializado.',
-    points: ['Hasta 80 m²', 'Línea trifásica', 'Diagnóstico de compresor'],
-  },
-];
+function serviceCards(images) {
+  return [
+    {
+      icon: Wind, title: 'Aires de Ventana', img: images.maintenance, priceFrom: 25,
+      desc: 'Reparación, mantenimiento e instalación de unidades de ventana de todas las marcas.',
+      points: ['Diagnóstico incluido', 'Recarga de gas', 'Limpieza profunda'],
+    },
+    {
+      icon: ThermometerSnowflake, title: 'Aires Split', img: images.install, priceFrom: 35,
+      desc: 'Servicio integral para sistemas Split mini y maxi: unidad interna y externa.',
+      points: ['Lavado a presión', 'Revisión de plaquetas', 'Recarga y hermeticidad'],
+    },
+    {
+      icon: Wrench, title: 'Aires por Toneladas', img: images.repair, priceFrom: 50,
+      desc: 'Equipos de 1 a 3 toneladas para locales y espacios grandes. Servicio especializado.',
+      points: ['Hasta 80 m²', 'Línea trifásica', 'Diagnóstico de compresor'],
+    },
+  ];
+}
 
 const features = [
   { icon: Zap, title: 'Respuesta el mismo día', desc: 'Agendas tu cita en minutos por la plataforma. El técnico llega en el horario que elijas.' },
@@ -55,6 +58,9 @@ const testimonials = [
 ];
 
 export default function Home() {
+  const { images } = useSiteImages();
+  const services = serviceCards(images);
+
   return (
     <div className="overflow-hidden">
       {/* ===== HERO ===== */}
@@ -98,7 +104,7 @@ export default function Home() {
           <div className="relative">
             <div className="group relative overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg transition duration-300 ease-out hover:-translate-y-2 hover:shadow-glow-lg hover:ring-frost-300/40 will-change-transform">
               <img
-                src={IMG.heroTech}
+                src={images.heroTech}
                 alt="Técnico de refrigeración trabajando"
                 className="h-[420px] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] sm:h-[480px]"
                 loading="eager"
@@ -169,7 +175,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <div className="grid items-center gap-14 lg:grid-cols-2">
             <div className="relative">
-              <img src={IMG.technician} alt="Técnico certificado" loading="lazy" className="rounded-3xl object-cover shadow-xl ring-1 ring-white" />
+              <img src={images.technician} alt="Técnico certificado" loading="lazy" className="rounded-3xl object-cover shadow-xl ring-1 ring-white" />
               <div className="absolute -bottom-6 -right-4 hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-glow-lg sm:block">
                 <Award size={26} />
                 <div className="mt-2 font-display text-lg font-extrabold leading-none">8 años</div>

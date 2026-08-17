@@ -3,36 +3,40 @@ import { Link } from 'react-router-dom';
 import { Wind, ThermometerSnowflake, Wrench, CheckCircle2, Snowflake, ArrowRight, Loader2 } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
-import { IMG, imgObjectClass } from '../lib/images';
+import { imgObjectClass } from '../lib/images';
+import { useSiteImages } from '../context/SiteImagesContext';
 import { api } from '../lib/api';
 import { CATEGORY_LABELS, EQUIPMENT_LABELS } from '../lib/services';
 
-const EQUIPMENT_META = {
-  VENTANA: { tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: IMG.maintenance },
-  SPLIT: { tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: IMG.install },
-  TONELADA_1: { tag: 'Tipo 3', title: 'Aire 1 Tonelada', icon: Wrench, img: IMG.repair },
-  TONELADA_2: { tag: 'Tipo 4', title: 'Aire 2 Toneladas', icon: Wrench, img: IMG.repair },
-  TONELADA_3: { tag: 'Tipo 5', title: 'Aire 3 Toneladas', icon: Wrench, img: IMG.repair },
-  GENERAL: { tag: 'General', title: 'Servicios generales', icon: Wrench, img: IMG.repair },
-};
+function equipmentMeta(images) {
+  return {
+    VENTANA: { tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: images.maintenance },
+    SPLIT: { tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: images.install },
+    TONELADA_1: { tag: 'Tipo 3', title: 'Aire 1 Tonelada', icon: Wrench, img: images.repair },
+    TONELADA_2: { tag: 'Tipo 4', title: 'Aire 2 Toneladas', icon: Wrench, img: images.repair },
+    TONELADA_3: { tag: 'Tipo 5', title: 'Aire 3 Toneladas', icon: Wrench, img: images.repair },
+    GENERAL: { tag: 'General', title: 'Servicios generales', icon: Wrench, img: images.repair },
+  };
+}
 
-const fallbackGroups = [
+function fallbackGroups(images) {
+  return [
   {
-    tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: IMG.maintenance,
+    tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: images.maintenance,
     cards: [
       { name: 'Reparación', sub: 'Diagnóstico + Reparación', price: 40, points: ['Diagnóstico completo', 'Revisión eléctrica y mecánica', 'Prueba de funcionamiento', 'Informe técnico'] },
       { name: 'Mantenimiento', sub: 'Limpieza + Revisión', price: 25, points: ['Lavado de filtros y tinas', 'Limpieza de serpentines', 'Revisión del compresor', 'Recarga de gas (si aplica)'] },
     ],
   },
   {
-    tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: IMG.install,
+    tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: images.install,
     cards: [
       { name: 'Reparación', sub: 'Mini + Maxi Split', price: 55, points: ['Diagnóstico interior y exterior', 'Revisión de plaquetas', 'Verificación de tuberías', 'Recarga y verificación de gas'] },
       { name: 'Mantenimiento', sub: 'Preventivo + Correctivo', price: 35, points: ['Desmontaje y lavado a presión', 'Limpieza de drenaje', 'Revisión del condensador', 'Control de temperatura'] },
     ],
   },
   {
-    tag: 'Tipo 3', title: 'Aires por Toneladas', icon: Wrench, img: IMG.repair,
+    tag: 'Tipo 3', title: 'Aires por Toneladas', icon: Wrench, img: images.repair,
     cards: [
       { name: '1 Tonelada', sub: 'Hasta 30 m²', price: 50, points: ['Cuartos y oficinas pequeñas', 'Recarga R-22 / R-410A', 'Instalación de soportes', 'Mantenimiento preventivo'] },
       { name: '2 Toneladas', sub: 'Hasta 55 m²', price: 75, popular: true, points: ['Salas y oficinas medianas', 'Revisión completa del sistema', 'Recarga y hermeticidad', 'Limpieza profunda'] },
@@ -40,6 +44,7 @@ const fallbackGroups = [
     ],
   },
 ];
+}
 
 function CatalogCard({ name, sub, price, points, popular, img, title }) {
   return (
@@ -73,6 +78,7 @@ function CatalogCard({ name, sub, price, points, popular, img, title }) {
 }
 
 export default function Catalogo() {
+  const { images } = useSiteImages();
   const [apiServices, setApiServices] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +104,7 @@ export default function Catalogo() {
     return order
       .filter((eq) => byEq[eq]?.length)
       .map((eq, i) => {
-        const meta = EQUIPMENT_META[eq] || { tag: `Tipo ${i + 1}`, title: EQUIPMENT_LABELS[eq] || eq, icon: Wrench, img: IMG.repair };
+        const meta = equipmentMeta(images)[eq] || { tag: `Tipo ${i + 1}`, title: EQUIPMENT_LABELS[eq] || eq, icon: Wrench, img: images.repair };
         return {
           key: eq,
           ...meta,
@@ -110,9 +116,9 @@ export default function Catalogo() {
           })),
         };
       });
-  }, [apiServices]);
+  }, [apiServices, images]);
 
-  const groups = apiGroups || fallbackGroups;
+  const groups = apiGroups || fallbackGroups(images);
 
   return (
     <div className="bg-white">
@@ -158,7 +164,7 @@ export default function Catalogo() {
               <h2 className="mt-4 font-display text-2xl font-extrabold text-ink-900">Neveras & Refrigeradores</h2>
               <p className="mt-3 text-ink-500">Servicio técnico especializado para neveras domésticas y comerciales. Estamos preparando este módulo para ti.</p>
             </div>
-            <img src={IMG.appliance} alt="Electrodomésticos" className="h-full max-h-72 w-full object-cover" />
+            <img src={images.appliance} alt="Electrodomésticos" className="h-full max-h-72 w-full object-cover" />
           </div>
         </section>
 

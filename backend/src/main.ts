@@ -1,18 +1,25 @@
 import 'dotenv/config'; // Carga las variables del .env en process.env ANTES de todo
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { mkdirSync } from 'fs';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  const uploadsDir = join(process.cwd(), 'uploads');
+  mkdirSync(join(uploadsDir, 'site'), { recursive: true });
+  app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
+
   // Habilitar validación global de datos (DTOs)
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
   }));
-  
-  // Habilitar CORS para poder comunicarnos con el Front-end
+
+  // CORS: el frontend (otro origen) puede llamar la API y cargar /uploads/
   app.enableCors();
 
   const port = process.env.PORT ?? 3001;

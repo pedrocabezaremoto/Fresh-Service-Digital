@@ -42,6 +42,7 @@ enum EquipmentType {
 model User {
   id               String        @id @default(uuid())
   email            String        @unique
+  username         String?       @unique
   password         String
   firstName        String
   lastName         String
@@ -116,6 +117,19 @@ model Equipment {
   failureDescription String // Motivo del mantenimiento o reporte de falla
 
   @@map("equipments")
+}
+
+model SiteImage {
+  id        String   @id @default(uuid())
+  slot      String   @unique
+  filename  String
+  mimeType  String
+  width     Int?
+  height    Int?
+  sizeBytes Int?
+  updatedAt DateTime @updatedAt
+
+  @@map("site_images")
 }
 
 // Cache de configuraciones simples (clave/valor). Usado para la tasa BCV.

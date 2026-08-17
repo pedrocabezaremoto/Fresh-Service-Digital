@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
-  ArrowRight, Download, Sparkles, UserCog, Power, PowerOff,
-  TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings,
+  Download, Sparkles, UserCog, Power, PowerOff,
+  TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,8 @@ import { priceUsd } from '../lib/prices';
 import { formatBs, formatUsd } from '../lib/money';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
 import ServiceMap from '../components/maps/ServiceMap';
+import SiteImagesSection from '../components/admin/SiteImagesSection';
+import { Donut, KPI, MonthBars } from '../components/admin/DashboardVisuals';
 import Price from '../components/Price';
 import {
   CATEGORY_LABELS, CATEGORY_STYLE, EQUIPMENT_LABELS, EQUIPMENT_STYLE,
@@ -40,6 +42,8 @@ const SPECIALTY_STYLE = {
   General: 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
+const USERNAME_RE = /^[a-z0-9._]{4,30}$/;
+
 const emptyTechForm = () => ({
   firstName: '',
   lastName: '',
@@ -47,6 +51,7 @@ const emptyTechForm = () => ({
   phone: '',
   password: '',
   specialty: 'General',
+  username: '',
 });
 
 const emptySvcForm = () => ({
@@ -57,70 +62,6 @@ const emptySvcForm = () => ({
   description: '',
   isActive: true,
 });
-
-/* ---- Donut SVG ---- */
-function Donut({ data, total }) {
-  const R = 70, C = 2 * Math.PI * R;
-  let offset = 0;
-  return (
-    <div className="flex flex-wrap items-center gap-4 sm:gap-8">
-      <svg viewBox="0 0 180 180" className="h-44 w-44 -rotate-90">
-        <circle cx="90" cy="90" r={R} fill="none" stroke="#eef2f6" strokeWidth="22" />
-        {data.map((d) => {
-          if (d.value === 0) return null;
-          const len = (d.value / total) * C;
-          const seg = (
-            <circle key={d.key} cx="90" cy="90" r={R} fill="none" stroke={d.color}
-              strokeWidth="22" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-offset} />
-          );
-          offset += len;
-          return seg;
-        })}
-        <text x="90" y="86" transform="rotate(90 90 90)" textAnchor="middle" className="fill-ink-900 font-display text-2xl font-extrabold">{total}</text>
-        <text x="90" y="104" transform="rotate(90 90 90)" textAnchor="middle" className="fill-ink-500 text-[10px]">citas</text>
-      </svg>
-      <div className="space-y-2">
-        {data.map((d) => (
-          <div key={d.key} className="flex items-center gap-2 text-sm font-medium text-ink-700">
-            <span className="h-3 w-3 rounded" style={{ background: d.color }} /> {d.label} ({d.value})
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function KPI({ icon: Icon, value, label, color, accent, onClick, active, hint }) {
-  const Tag = onClick ? 'button' : 'div';
-  return (
-    <Tag
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
-      style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
-      className={`group relative w-full min-h-11 overflow-hidden rounded-2xl p-4 text-left shadow-sm backdrop-blur transition duration-300 sm:p-5 touch-manipulation ${
-        onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-glow-lg active:scale-[0.99] active:shadow-glow' : ''
-      } ${
-        active
-          ? 'ring-2 ring-brand-500 shadow-glow'
-          : 'ring-1 ring-white/60 hover:ring-brand-200 active:ring-brand-200'
-      }`}
-    >
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
-      {/* marca de agua translúcida */}
-      <Icon size={104} className="pointer-events-none absolute -bottom-5 -right-4 opacity-[0.08] transition duration-300 group-hover:scale-110 group-hover:opacity-[0.12]" style={{ color: accent }} />
-      <div className="relative">
-        <div className={`grid h-11 w-11 place-items-center rounded-xl ${color} shadow-sm ring-1 ring-white/40`}><Icon size={21} /></div>
-        <div className="mt-4 font-display text-3xl font-extrabold text-ink-900">{value}</div>
-        <div className="text-sm font-medium text-ink-500">{label}</div>
-        {onClick && (
-          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600">
-            {hint || (active ? 'Filtro activo' : 'Filtrar mapa')} <ArrowRight size={12} />
-          </span>
-        )}
-      </div>
-    </Tag>
-  );
-}
 
 /* Filtro compacto para meter DENTRO del encabezado de la tabla (fila de filtros) */
 function ColFilter({ id, value, onChange, options, align }) {
@@ -265,13 +206,36 @@ export default function AdminDashboard() {
   })), [appts]);
 
   const months = useMemo(() => {
-    const now = new Date(), keys = [], labels = [];
-    for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); keys.push(`${d.getFullYear()}-${d.getMonth()}`); labels.push(MES[d.getMonth()]); }
+    const now = new Date(), keys = [], labels = [], years = [], monthIdx = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      keys.push(`${d.getFullYear()}-${d.getMonth()}`);
+      labels.push(MES[d.getMonth()]);
+      years.push(d.getFullYear());
+      monthIdx.push(d.getMonth());
+    }
     const counts = keys.map(() => 0);
     appts.forEach((a) => { const d = new Date(a.createdAt); const k = `${d.getFullYear()}-${d.getMonth()}`; const i = keys.indexOf(k); if (i >= 0) counts[i]++; });
     const max = Math.max(...counts, 1);
-    return labels.map((l, i) => ({ l, v: counts[i], pct: (counts[i] / max) * 100 }));
+    return labels.map((l, i) => ({ l, v: counts[i], pct: (counts[i] / max) * 100, year: years[i], month: monthIdx[i] }));
   }, [appts]);
+
+  const clientMonths = useMemo(() => {
+    const now = new Date(), keys = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      keys.push(`${d.getFullYear()}-${d.getMonth()}`);
+    }
+    const counts = keys.map(() => 0);
+    clients.forEach((c) => {
+      if (!c.createdAt) return;
+      const d = new Date(c.createdAt);
+      const k = `${d.getFullYear()}-${d.getMonth()}`;
+      const i = keys.indexOf(k);
+      if (i >= 0) counts[i]++;
+    });
+    return counts;
+  }, [clients]);
 
   const brands = useMemo(() => {
     const c = {};
@@ -467,6 +431,7 @@ export default function AdminDashboard() {
       phone: t.phone || '',
       password: '',
       specialty: t.specialty || 'General',
+      username: t.username || '',
     });
   }
   async function saveNewTech(e) {
@@ -475,10 +440,18 @@ export default function AdminDashboard() {
       setTechMsg('Nombre, correo y contraseña son obligatorios');
       return;
     }
+    const uname = createTech.username.trim().toLowerCase();
+    if (uname && !USERNAME_RE.test(uname)) {
+      setTechMsg('El usuario solo puede tener letras minúsculas, números, puntos y guiones bajos (4 a 30 caracteres)');
+      return;
+    }
     setSavingTech(true);
     setTechMsg('');
     try {
-      await api.createTechnician(createTech);
+      const payload = { ...createTech };
+      if (uname) payload.username = uname;
+      else delete payload.username;
+      await api.createTechnician(payload);
       setCreateTech(null);
       setTechFlash('Técnico creado correctamente');
       await load();
@@ -493,9 +466,16 @@ export default function AdminDashboard() {
     setSavingTech(true);
     setTechMsg('');
     try {
-      const { id, password, ...rest } = editTech;
+      const { id, password, username, ...rest } = editTech;
       const payload = { ...rest };
       if (password) payload.password = password;
+      const uname = (username || '').trim().toLowerCase();
+      if (uname && !USERNAME_RE.test(uname)) {
+        setTechMsg('El usuario solo puede tener letras minúsculas, números, puntos y guiones bajos (4 a 30 caracteres)');
+        setSavingTech(false);
+        return;
+      }
+      payload.username = uname;
       const updated = await api.updateUser(id, payload);
       setTechs((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
       setEditTech(null);
@@ -737,6 +717,7 @@ export default function AdminDashboard() {
     { id: 'servicios', label: 'Servicios', icon: Settings, badge: services.length },
     { id: 'clientes', label: 'Clientes', icon: Users, badge: stats.clients },
     { id: 'tecnicos', label: 'Técnicos', icon: UserCog, badge: techs.length },
+    { id: 'configuracion', label: 'Configuración', icon: Settings2 },
   ];
 
   return (
@@ -778,14 +759,14 @@ export default function AdminDashboard() {
         <header className="sticky top-0 z-30 flex min-h-16 flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-8">
           <div className="min-w-0">
             <div className="truncate font-display font-bold text-ink-900">
-              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : 'Clientes del Taller'}
+              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : view === 'configuracion' ? 'Configuración del sitio' : 'Clientes del Taller'}
             </div>
             <div className="hidden text-xs text-ink-500 sm:block">Fresh Service Digital · Taller de Refrigeración</div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
             {/* Mobile nav — alternativa a los KPIs para ir a Solicitudes / Ingresos / Clientes */}
             <select value={view} onChange={(e) => setView(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm touch-manipulation sm:flex-none lg:hidden">
-              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option>
+              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Configuración</option>
             </select>
             <button type="button" onClick={toggleTheme} title="Cambiar tema" className="grid h-11 w-11 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
               {isDark ? <Sun size={17} className="text-amber-500" /> : <Moon size={17} className="text-brand-700" />}
@@ -802,7 +783,9 @@ export default function AdminDashboard() {
         <div className="overflow-x-clip p-4 sm:p-5 lg:p-8">
           {loading ? (
             <div className="grid place-items-center py-32 text-brand-400"><Loader2 className="animate-spin" size={36} /></div>
-          ) : view === 'dashboard' ? (
+          ) : (
+          <div key={view} className="admin-view-fade">
+          {view === 'dashboard' ? (
             <div className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -827,6 +810,7 @@ export default function AdminDashboard() {
                   label="Solicitudes registradas"
                   color="bg-brand-100 text-brand-600"
                   accent="#0ea5e9"
+                  sparkline={months.map((m) => m.v)}
                   active={mapFilter === null}
                   hint={mapFilter === null ? 'Mostrando todos' : 'Ver todos en el mapa'}
                   onClick={() => toggleMapFilter(null)}
@@ -855,6 +839,7 @@ export default function AdminDashboard() {
                   label="Clientes registrados"
                   color="bg-emerald-100 text-emerald-600"
                   accent="#10b981"
+                  sparkline={clientMonths}
                   hint="Ir a clientes"
                   onClick={() => setView('clientes')}
                 />
@@ -863,28 +848,12 @@ export default function AdminDashboard() {
                 <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
                   <h3 className="font-display font-bold text-ink-900">Citas por estado</h3>
                   <p className="mb-5 text-xs text-ink-500">Distribución del flujo de trabajo</p>
-                  <Donut data={donut} total={stats.total || 1} />
+                  <Donut data={donut} total={stats.total} />
                 </div>
                 <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
                   <h3 className="font-display font-bold text-ink-900">Citas por mes</h3>
                   <p className="mb-6 text-xs text-ink-500">Solicitudes recibidas (últimos 6 meses)</p>
-                  <div className="flex h-44 items-end justify-between gap-3">
-                    {months.map((m) => (
-                      <div key={m.l} className="group flex flex-1 flex-col items-center gap-2">
-                        <div className="text-xs font-bold text-brand-700 opacity-70 transition group-hover:opacity-100">{m.v || ''}</div>
-                        <div className="flex w-full items-end" style={{ height: '120px' }}>
-                          <div
-                            className="w-full rounded-t-lg shadow-[inset_0_2px_4px_rgba(255,255,255,0.45),0_6px_14px_-3px_rgba(2,132,199,0.5)] ring-1 ring-inset ring-white/25 transition-all duration-300 ease-out group-hover:-translate-y-1 group-hover:brightness-110"
-                            style={{
-                              height: `${Math.max(m.pct, 3)}%`,
-                              background: 'linear-gradient(180deg, #7dd3fc 0%, #0ea5e9 55%, #0284c7 100%)',
-                            }}
-                          />
-                        </div>
-                        <div className="text-xs font-medium text-ink-500 transition group-hover:font-bold group-hover:text-brand-700">{m.l}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <MonthBars months={months} />
                 </div>
               </div>
 
@@ -1300,6 +1269,7 @@ export default function AdminDashboard() {
                               </span>
                             </div>
                             <div className="mt-2 break-words text-xs text-ink-500">{t.email}</div>
+                            {t.username && <div className="text-xs font-semibold text-ink-600">@{t.username}</div>}
                             {t.phone && <div className="text-xs text-ink-500">{t.phone}</div>}
                             <div className="mt-1 text-xs text-ink-400">{techJobCount(t)} servicio{techJobCount(t) === 1 ? '' : 's'}</div>
                           </div>
@@ -1327,6 +1297,7 @@ export default function AdminDashboard() {
                         <tr>
                           <th className="px-5 py-3">Nombre completo</th>
                           <th className="px-3 py-3">Email</th>
+                          <th className="px-3 py-3">Usuario</th>
                           <th className="px-3 py-3">Teléfono</th>
                           <th className="px-3 py-3">Especialidad</th>
                           <th className="px-3 py-3">Estado</th>
@@ -1346,6 +1317,7 @@ export default function AdminDashboard() {
                               </div>
                             </td>
                             <td className="px-3 py-3 text-ink-700">{t.email}</td>
+                            <td className="px-3 py-3 font-medium text-ink-700">{t.username ? `@${t.username}` : '—'}</td>
                             <td className="px-3 py-3 text-ink-700">{t.phone || 'N/A'}</td>
                             <td className="px-3 py-3">
                               <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${SPECIALTY_STYLE[t.specialty] || SPECIALTY_STYLE.General}`}>
@@ -1380,6 +1352,8 @@ export default function AdminDashboard() {
                 </>
               )}
             </div>
+          ) : view === 'configuracion' ? (
+            <SiteImagesSection />
           ) : (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
               <div className="border-b border-slate-100 p-4 sm:p-5">
@@ -1445,6 +1419,8 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
+          )}
+          </div>
           )}
         </div>
       </div>
@@ -1524,6 +1500,9 @@ export default function AdminDashboard() {
             </div>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Correo</span>
               <input required type="email" value={createTech.email} onChange={(e) => setCreateTech({ ...createTech, email: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre de usuario <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
+              <input value={createTech.username} onChange={(e) => setCreateTech({ ...createTech, username: e.target.value })} placeholder="ejemplo: carlos.split" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+              <span className="mt-1 block text-[11px] text-ink-400">Solo letras minúsculas, números, puntos y guiones bajos (mín. 4 caracteres)</span></label>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Teléfono</span>
               <input value={createTech.phone} onChange={(e) => setCreateTech({ ...createTech, phone: e.target.value })} placeholder="+58 412-0000000" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Contraseña</span>
@@ -1558,6 +1537,9 @@ export default function AdminDashboard() {
             </div>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Correo</span>
               <input required type="email" value={editTech.email} onChange={(e) => setEditTech({ ...editTech, email: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre de usuario</span>
+              <input value={editTech.username} onChange={(e) => setEditTech({ ...editTech, username: e.target.value })} placeholder="ejemplo: carlos.split" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+              <span className="mt-1 block text-[11px] text-ink-400">Vacío para quitarlo. Solo minúsculas, números, puntos y _ (4–30)</span></label>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Teléfono</span>
               <input value={editTech.phone} onChange={(e) => setEditTech({ ...editTech, phone: e.target.value })} placeholder="+58 412-0000000" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Especialidad</span>

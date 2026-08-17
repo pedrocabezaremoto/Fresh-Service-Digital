@@ -8,6 +8,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
+import { assertUsernameFormat, normalizeUsername } from './username';
 
 @Injectable()
 export class UsersService {
@@ -54,6 +55,7 @@ export class UsersService {
         phone: true,
         role: true,
         specialty: true,
+        username: true,
         isActive: true,
         isVerified: true,
         createdAt: true,
@@ -75,33 +77,48 @@ export class UsersService {
       throw new ConflictException('Ya existe un usuario con ese correo electrónico');
     }
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: await this.hashPassword(dto.password),
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        specialty: dto.specialty ?? null,
-        role: 'TECHNICIAN',
-        isVerified: true,
-        isActive: true,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        specialty: true,
-        isActive: true,
-        isVerified: true,
-        createdAt: true,
-      },
-    });
+    const username = normalizeUsername(dto.username);
+    if (username) {
+      const formatErr = assertUsernameFormat(username);
+      if (formatErr) throw new BadRequestException(formatErr);
+      const taken = await this.prisma.user.findUnique({ where: { username } });
+      if (taken) throw new ConflictException('Ese nombre de usuario ya está en uso');
+    }
 
-    return user;
+    try {
+      return await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          username: username ?? null,
+          password: await this.hashPassword(dto.password),
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          phone: dto.phone,
+          specialty: dto.specialty ?? null,
+          role: 'TECHNICIAN',
+          isVerified: true,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          specialty: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+        },
+      });
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        throw new ConflictException(this.uniqueConflictMessage(e));
+      }
+      throw e;
+    }
   }
 
   /**
@@ -114,6 +131,14 @@ export class UsersService {
     }
     if (dto.isActive !== undefined) data.isActive = dto.isActive;
     if (dto.password) data.password = await this.hashPassword(dto.password);
+    if (dto.username !== undefined) {
+      const username = normalizeUsername(dto.username);
+      if (username) {
+        const formatErr = assertUsernameFormat(username);
+        if (formatErr) throw new BadRequestException(formatErr);
+      }
+      data.username = username;
+    }
     try {
       return await this.prisma.user.update({
         where: { id },
@@ -121,6 +146,7 @@ export class UsersService {
         select: {
           id: true,
           email: true,
+          username: true,
           firstName: true,
           lastName: true,
           phone: true,
@@ -131,10 +157,19 @@ export class UsersService {
         },
       });
     } catch (e: any) {
-      if (e.code === 'P2002') throw new ConflictException('Ese correo ya está registrado en otra cuenta');
+      if (e.code === 'P2002') throw new ConflictException(this.uniqueConflictMessage(e));
       if (e.code === 'P2025') throw new NotFoundException('Usuario no encontrado');
       throw e;
     }
+  }
+
+  private uniqueConflictMessage(e: any): string {
+    const target = e?.meta?.target;
+    const fields = Array.isArray(target) ? target : typeof target === 'string' ? [target] : [];
+    if (fields.some((f: string) => String(f).includes('username'))) {
+      return 'Ese nombre de usuario ya está en uso';
+    }
+    return 'Ese correo ya está registrado en otra cuenta';
   }
 
   /**
@@ -296,19 +331,24 @@ export class UsersService {
    * Inicia sesión validando credenciales y estado de verificación.
    */
   async login(dto: LoginUserDto) {
-    const { email, password } = dto;
+    const { password } = dto;
+    const identifier = (dto.identifier || dto.email || '').trim();
 
-    // 1. Buscar usuario
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    // 1. Buscar por email (si tiene @) o por username. No revelar cuál falló.
+    const user = identifier.includes('@')
+      ? await this.prisma.user.findFirst({
+          where: { email: { equals: identifier, mode: 'insensitive' } },
+        })
+      : await this.prisma.user.findUnique({
+          where: { username: identifier.toLowerCase() },
+        });
 
     // 2. Validar usuario y contraseña (bcrypt)
     const passwordOk = user
       ? await this.comparePassword(password, user.password)
       : false;
     if (!user || !passwordOk) {
-      throw new UnauthorizedException('El correo o la contraseña son incorrectos');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     // 3. Validar si está verificado

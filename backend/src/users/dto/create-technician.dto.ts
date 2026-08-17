@@ -1,4 +1,5 @@
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, Matches, MinLength, ValidateIf } from 'class-validator';
+import { USERNAME_MESSAGE, USERNAME_REGEX } from '../username';
 
 export const TECH_SPECIALTIES = [
   'Aires de Ventana',
@@ -34,4 +35,10 @@ export class CreateTechnicianDto {
   @IsOptional()
   @IsIn([...TECH_SPECIALTIES], { message: 'Especialidad no válida' })
   specialty?: string;
+
+  @IsOptional()
+  @IsString({ message: 'El nombre de usuario debe ser texto' })
+  @ValidateIf((_, v) => typeof v === 'string' && v.trim() !== '')
+  @Matches(USERNAME_REGEX, { message: USERNAME_MESSAGE })
+  username?: string;
 }

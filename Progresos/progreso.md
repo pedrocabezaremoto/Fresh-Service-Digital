@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-17  
+**Última actualización:** 2026-08-17 (tarde)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -685,3 +685,37 @@ Fecha inicio: 2026-08-14
 - TecnicoDashboard.jsx
 - Componentes de mapas
 - Citas existentes (backward compatible)
+
+---
+
+## Imágenes del sitio desde el panel admin — 2026-08-17
+
+### Backend
+- Modelo `SiteImage` (slot único, filename, mime, width/height, sizeBytes)
+- Migración `20260817192000_add_site_image_table`
+- GET `/site-images` público · POST/DELETE `/site-images/:slot` ADMIN
+- Upload: JPG/PNG/WebP, máx 2MB, magic bytes, `{slot}-{timestamp}.{ext}`
+- Estáticos: `backend/uploads/` → `/uploads/` (carpeta en `.gitignore`)
+
+### Frontend
+- 7ª vista admin **Configuración** (Settings2, después de Técnicos)
+- Grid de 5 slots: preview, medidas, cambiar, subir (tras preview local), restaurar
+- `SiteImagesProvider` + `images.js` merge custom/default
+- Home.jsx y Catalogo.jsx consumen el provider. PNGs de `public/` no se borraron
+
+### Deploy
+- migrate + build + pm2 OK
+- GET /site-images = `[]` · POST/DELETE sin token = 401
+- Landing 200; `img-tech-ac.png` / window / split / tonnage = 200
+- Bundle `index-h1Ts_Mvr.js`
+
+---
+
+## Login por username (ADMIN / TECHNICIAN) — 2026-08-17
+
+- `User.username` String? @unique. Migración `20260817195000_add_username_to_user`. Admin: `admin`.
+- Login: `{ identifier, password }` — si tiene `@` busca email; si no, username. Campo `email` sigue funcionando.
+- 401 genérico: "Credenciales inválidas"
+- Crear/editar técnico: username opcional, regex `^[a-z0-9._]{4,30}$`
+- Login.jsx + columna Usuario en Equipo Técnico
+- Tests OK: email, `admin`, compat `email`, técnico `uat.user`

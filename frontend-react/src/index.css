@@ -122,9 +122,22 @@
   }
 }
 
+.admin-view-fade {
+  animation: adminFadeIn 200ms ease-out;
+}
+@keyframes adminFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Respeta a quien prefiere menos movimiento */
 @media (prefers-reduced-motion: reduce) {
   .animate-logo-float { animation: none; }
+  .admin-view-fade { animation: none; }
+  .admin-donut-seg,
+  .admin-bar-grow {
+    transition: none !important;
+  }
 }
 
 /* =====================================================
