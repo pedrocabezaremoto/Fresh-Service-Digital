@@ -1,149 +1,133 @@
 # AGENTS.md — Guía para Agentes de IA
 
-> Contexto técnico estricto para cualquier agente (Claude, Copilot, Cursor, etc.) que trabaje sobre este repositorio.
+> Contexto técnico estricto para cualquier agente que trabaje sobre este repositorio.
 
 ---
 
-## 🧠 ¿Qué es este proyecto?
+## ¿Qué es este proyecto?
 
-**Fresh Service Digital** — Plataforma de servicios de refrigeración a domicilio.  
-**Zona piloto:** San Juan de los Morros, Venezuela.
+**Fresh Service Digital** — Plataforma de servicios de refrigeración/AC a domicilio.  
+**Zona:** San Juan de los Morros, Venezuela.  
+**Estado:** **Versión 1.0 en producción** (defensa exitosa 2026-07-20). Roadmap abierto: v1.1.
 
-> [!IMPORTANT]
-> **ACTUALIZADO 2026-06-24 — Fase 2 (producción real).** Las reglas de "solo HTML/CSS, prohibido React/Vite/Tailwind" de abajo eran de la **Fase 1 (mockup)** y **ya NO aplican**. El proyecto migró:
-> - **Frontend nuevo:** React 19 + Vite 6 + Tailwind v4 en `frontend-react/` → EN VIVO en **https://fresh.pedroservicios.xyz**. Es el frontend oficial. El HTML/CSS viejo (`index.html`, `views/`) queda como referencia histórica.
-> - **Backend:** NestJS + Prisma + PostgreSQL con JWT/bcrypt → **https://api.pedroservicios.xyz** (pm2 `fresh-service`, puerto 4000).
-> - **Deploy:** VPS Contabo, Traefik (configs en `/etc/easypanel/traefik/config/`), pm2, ufw para abrir puertos a Docker. NO correr nginx (ocupa el puerto 80 de Traefik).
-> - Stack y comandos: ver `History/historial.md` (Fase 8) y la memoria del proyecto.
-
-**Fase histórica:** 1 (Prototipo visual estático en HTML/CSS — superada).
-
-> [!WARNING]
-> **2026-07-26 — Migración npm → pnpm EN CURSO (seguridad supply-chain).**
-> El gestor de paquetes del proyecto pasa de **npm a pnpm** (npm tuvo un incidente de paquetes
-> comprometidos; pnpm bloquea los scripts `postinstall` por defecto).
-> - **Guía obligatoria:** ver **`Cambio-pnpm.md`** en la raíz. Cualquier agente que instale o
->   construya el proyecto debe usar **`pnpm`**, NO `npm`/`npx`.
-> - Comandos: `pnpm install --frozen-lockfile`, `pnpm run build`, `pnpm exec prisma ...`.
-> - **No** volver a generar `package-lock.json`. El lockfile válido es `pnpm-lock.yaml`.
-> - La ejecución de esta migración la hace un LLM externo; Claude es el revisor.
+| Entorno | URL |
+|---|---|
+| Frontend | https://fresh.pedroservicios.xyz |
+| API | https://api.pedroservicios.xyz |
+| Repo | monorepo `frontend-react/` + `backend/` |
 
 ---
 
-## 🚫 REGLAS ESTRICTAS — Lee esto primero
+## Stack actual (OBLIGATORIO)
 
-> [!IMPORTANT]
-> **Nota sobre la Arquitectura:** El uso de React, frameworks y herramientas avanzadas está planificado para una **fase posterior** del proyecto. En este momento, se trabaja **estrictamente en HTML5 y CSS puro** con el único objetivo de presentar un bosquejo (mockup) visual y funcional rápido a los clientes.
+- **Frontend oficial:** React 19 + Vite 6 + Tailwind v4 + react-router 7 en `frontend-react/`
+- **Backend:** NestJS 10 + Prisma 6 + PostgreSQL + JWT + bcrypt + nodemailer en `backend/`
+- **Paquetes:** **pnpm** únicamente (`pnpm install --frozen-lockfile`, `pnpm run build`, `pnpm exec prisma …`). Ver `Cambio-pnpm.md`. **Prohibido npm/npx** y regenerar `package-lock.json`.
+- **Procesos (pm2):** `fresh-frontend` (:4100), `fresh-service` (:4000), `fresh-webhook` (:4200)
+- **Proxy:** Traefik (configs en `/etc/easypanel/traefik/config/`). **No** arrancar nginx (ocupa 80/443).
+- **Deploy:** push a `main` → webhook HMAC → `./deploy.sh` (build antes de reiniciar; `prisma migrate deploy`).
 
-### Lo que NO debes hacer en esta fase:
-
-1. **NO introducir frameworks.** Este proyecto es HTML5 + CSS puro deliberadamente. Prohibido sugerir o agregar React, Vue, Vite, TypeScript, Tailwind o cualquier bundler.
-2. **NO conectar a Supabase ni ningún backend.** Toda la data es hardcoded. Eso es intencional para la Fase 1.
-3. **NO cambiar la paleta de colores.** La paleta azul hielo fue diseñada específicamente. Los tokens CSS en `styles.css` son la fuente de verdad. No los "modernices" con temas oscuros genéricos.
-4. **NO romper la navegación HTML.** La navegación entre vistas usa `<a href="">` tradicional. No convertir a SPA ni routing dinámico.
-5. **NO agregar dependencias externas** (npm, CDN de componentes, etc.) sin aprobación explícita del autor.
-6. **NO tocar `styles.css` de forma destructiva.** Es el sistema de diseño global compartido. Cambios aquí afectan todas las vistas.
+El HTML/CSS en la raíz y `views/` es **legacy**. No es el producto. No “arreglar” el mockup antiguo como si fuera el sitio vivo.
 
 ---
 
-## ✅ Qué SÍ puedes hacer
+## Reglas estrictas
 
-- Corregir bugs de HTML/CSS puntuales
-- Mejorar accesibilidad (aria-labels, roles semánticos)
-- Agregar mejoras de UX en formularios (validación visual JS mínimo)
-- Optimizar el CSS sin romper los tokens existentes
-- Documentar
+1. **Usar pnpm**, no npm.
+2. **No cambiar el schema Prisma sin migración** en `backend/prisma/migrations/`. Si tocas `schema.prisma`, corre `pnpm exec prisma migrate dev --name descripcion` y sube la carpeta de migración.
+3. **No romper** auth JWT, roles (`CLIENT` / `TECHNICIAN` / `ADMIN`), ni el flujo de citas.
+4. **No tocar secretos** (`backend/.env`, `/root/.fresh-webhook-secret`) ni subirlos a git.
+5. **Precios:** fuente única `frontend-react/src/lib/prices.js` y espejo `backend/src/common/prices.ts`. Cambiar ambos si ajustas tarifas.
+6. **Paleta / marca:** identidad “frost” (azul hielo). No imponer temas purple/dark genéricos en el sitio público sin pedirlo.
+7. **Contexto Venezuela:** cédula V/E, WhatsApp `+58`, precios USD→Bs vía tasa BCV (`GET /rate`), UI en español.
+8. **Frontend y backend son independientes en deploys de feature:** si el prompt dice “no tocar frontend”, no lo toques.
+9. **Puertos a Docker:** abrir siempre con `ufw`, no iptables suelto.
+10. **Commits:** solo si el humano lo pide. Deploy automático ocurre al pushear `main`.
 
 ---
 
-## 📂 Estructura del Proyecto
+## Estructura
 
 ```
 Fresh-Service-Digital/
-├── index.html        # Landing Page — Hero carrusel, features, CTA
-├── styles.css        # Sistema de diseño global — NO modificar sin análisis
-└── views/            # Vistas/Páginas secundarias de la plataforma
-    ├── catalogo.html     # Catálogo de Servicios AC (Ventana, Split, Toneladas)
-    ├── login.html        # Inicio de sesión
-    ├── recuperar.html    # Recuperación de contraseña
-    ├── registro.html     # Registro de usuario nuevo
-    ├── solicitud.html    # Formulario de solicitud a domicilio
-    └── dashboard.html    # Panel admin (datos hardcoded simulados)
+├── frontend-react/          # SPA oficial
+│   ├── src/pages/           # Home, Catalogo, Solicitud, paneles, auth…
+│   ├── src/lib/api.js       # API_BASE + clientes HTTP
+│   ├── src/lib/prices.js    # precios USD
+│   └── serve.mjs            # static SPA en prod (:4100)
+├── backend/
+│   ├── prisma/schema.prisma
+│   ├── prisma/migrations/
+│   └── src/
+│       ├── users/           # auth, CRUD usuarios (admin)
+│       ├── appointments/    # citas + equipos
+│       ├── rate/            # tasa BCV
+│       ├── mail/            # SMTP
+│       └── auth/            # JWT + Roles guards
+├── deploy.sh / webhook.mjs
+├── docker-compose.yml
+├── docs/
+├── Progresos/progreso.md    # estado HOY
+└── History/historial.md     # historial por fases
 ```
 
 ---
 
-## 🎨 Sistema de Diseño
+## Modelo de datos (resumen)
 
-### Tokens principales (en `styles.css`)
+- **User** — roles, cédula, verificación, reset token
+- **Appointment** — estado, técnico, `priceUsd` congelado, notas; ubicación por cita (`latitude` / `longitude` / `address`) cuando exista
+- **Equipment** — marca/modelo/BTU/falla ligados a la cita
+- **Setting** — cache key/value (tasa BCV)
 
-```css
---white:        #FFFFFF;       /* Fondos */
---ice-50:       #F0F9FF;       /* Fondo global */
---ice-100:      #E0F2FE;       /* Fondos secundarios */
---ice-200:      #BAE6FD;       /* Bordes */
---blue-400:     #38BDF8;       /* Acentos claros */
---blue-600:     #0284C7;       /* Color primario / CTAs */
---blue-800:     #075985;       /* Textos oscuros / encabezados */
---blue-950:     #082F49;       /* Footer */
---text-900:     #0C1A26;       /* Texto principal */
---text-500:     #4A7A9B;       /* Texto secundario */
-```
-
-### Tipografía
-
-- **Display:** `Exo 2` — Headings, brand, títulos de sección
-- **Body:** `Nunito` — Párrafos, labels, botones
-
-### Cargada desde Google Fonts en `styles.css` línea 7.
+Un cliente puede tener **varias direcciones** → la ubicación geográfica va en **Appointment**, no en User.
 
 ---
 
-## 🔗 Mapa de Navegación
+## API (núcleo)
 
-```
-index.html (Landing)
-  ├── → views/catalogo.html     (Servicios)
-  ├── → views/login.html        (Autenticación)
-  │       └── → views/registro.html   (Registro)
-  │       └── → views/recuperar.html  (Recuperar clave)
-  ├── → views/solicitud.html    (Solicitar Servicio — requiere cuenta)
-  └── → views/dashboard.html    (Admin — acceso desde footer)
-```
+| Área | Endpoints clave |
+|---|---|
+| Auth | `POST /users/register`, `login`, `forgot-password`, `reset-password`, `GET /users/verify-link` |
+| Users (ADMIN) | `GET /users`, `GET /users/technicians`, `PATCH/DELETE /users/:id` |
+| Citas | `POST/GET /appointments`, `GET /appointments/client/:id`, `PATCH …/status|complete|assign` |
+| Tasa | `GET /rate` (público) |
 
----
-
-## 🇻🇪 Contexto Local (Venezuela)
-
-- **Cédula:** Formato selector `V` / `E` + número. No cambiar este patrón.
-- **Teléfono:** Prefijo fijo `+58` + operadora (412, 414, 424, 416, 426). Campo WhatsApp.
-- **Dirección:** Campo de texto libre (integración de mapas es Fase futura).
-- **Idioma:** Español venezolano en toda la UI. No traducir al español neutro ni al inglés.
+Guards: JWT Bearer; rutas admin/técnico con `@Roles`.
 
 ---
 
-## 📍 Estado de Fases
+## Flujo de negocio
 
-| Fase | Estado | Descripción |
+Cliente solicita servicio → `PENDING` + `priceUsd` → taller asigna técnico (`ASSIGNED` + correo) → técnico atiende → `COMPLETED` → suma en Ingresos del panel taller.
+
+---
+
+## Credenciales demo
+
+| Rol | Usuario | Clave |
 |---|---|---|
-| **Fase 1** | ✅ Completa | Prototipo UI — HTML5 + CSS puro |
-| **Fase 2** | 🔜 Pendiente | Backend real + Supabase + Auth |
-| **Fase 3** | 🔜 Pendiente | Módulo Neveras y Refrigeradores |
-| **Fase 4** | 🔜 Pendiente | Geolocalización / mapas |
+| Admin | `admin@freshservice.com` | `Admin1234` |
+| Técnico | `carlos.tecnico@freshservice.com` | `Tecnico1234` |
+| Cliente | su email | `Demo1234` |
 
 ---
 
-## ⚙️ Deploy
+## Fases
 
-- **Plataforma:** GitHub Pages (deploy estático)
-- **URL:** `https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html`
-- **Rama:** `main` (directamente, sin build step)
-- No hay proceso de build. Los archivos HTML/CSS se sirven tal cual.
+| Fase | Estado |
+|---|---|
+| 1 — Prototipo HTML/CSS | ✅ Superada (legacy) |
+| 2 — Backend + React + producción | ✅ v1.0 defendida |
+| v1.1 — Maps, chat, mail dominio, UX | 🔜 En curso |
 
 ---
 
-## 🤝 Filosofía de esta Fase
+## Qué consultar antes de cambiar código
 
-> "Primero el bosquejo visual funcional. La lógica viene en Fase 2."
+1. `Progresos/progreso.md` — pendientes reales  
+2. `History/historial.md` — decisiones ya tomadas  
+3. Este `AGENTS.md` — reglas  
+4. `Cambio-pnpm.md` — si instalas o buildeas  
 
-El objetivo de esta fase es demostrar el flujo completo del usuario de forma visual y navegable, sin preocupación por persistencia de datos ni autenticación real. Cualquier agente debe respetar esta filosofía y **no over-engineerear** la solución.
+Documentación pública del repo: `README.md` (debe reflejar este stack; no el mockup HTML).

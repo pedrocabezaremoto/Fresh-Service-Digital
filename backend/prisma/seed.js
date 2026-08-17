@@ -100,10 +100,12 @@ async function main() {
       email: 'tecnico@freshservice.com',
       password: PASS,
       firstName: 'Carlos',
-      lastName: 'Técnico',
+      lastName: 'Aires Split',
       phone: '+584121234567',
       role: 'TECHNICIAN',
       isVerified: true,
+      specialty: 'Aires Split',
+      isActive: true,
     },
   });
   console.log('   🔧 Técnico creado: tecnico@freshservice.com / Demo1234');

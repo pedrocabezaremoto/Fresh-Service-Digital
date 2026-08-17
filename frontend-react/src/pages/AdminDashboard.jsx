@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
-  ArrowRight, Download, Sparkles,
-  TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon,
+  ArrowRight, Download, Sparkles, UserCog, Power, PowerOff,
+  TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,15 +13,57 @@ import { useRate } from '../context/RateContext';
 import { priceUsd } from '../lib/prices';
 import { formatBs, formatUsd } from '../lib/money';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
+import ServiceMap from '../components/maps/ServiceMap';
+import Price from '../components/Price';
+import {
+  CATEGORY_LABELS, CATEGORY_STYLE, EQUIPMENT_LABELS, EQUIPMENT_STYLE,
+  SERVICE_CATEGORIES, EQUIPMENT_TYPES,
+} from '../lib/services';
 
 const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+const SPECIALTIES = [
+  'Aires de Ventana',
+  'Aires Split',
+  'Aires de 1 Tonelada',
+  'Aires de 2 Toneladas',
+  'Aires de 3 Toneladas',
+  'General',
+];
+
+const SPECIALTY_STYLE = {
+  'Aires de Ventana': 'bg-amber-100 text-amber-700 ring-amber-200',
+  'Aires Split': 'bg-sky-100 text-sky-700 ring-sky-200',
+  'Aires de 1 Tonelada': 'bg-violet-100 text-violet-700 ring-violet-200',
+  'Aires de 2 Toneladas': 'bg-indigo-100 text-indigo-700 ring-indigo-200',
+  'Aires de 3 Toneladas': 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200',
+  General: 'bg-slate-100 text-slate-700 ring-slate-200',
+};
+
+const emptyTechForm = () => ({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  password: '',
+  specialty: 'General',
+});
+
+const emptySvcForm = () => ({
+  name: '',
+  category: 'REPARACION',
+  equipmentType: 'VENTANA',
+  priceUsd: '',
+  description: '',
+  isActive: true,
+});
 
 /* ---- Donut SVG ---- */
 function Donut({ data, total }) {
   const R = 70, C = 2 * Math.PI * R;
   let offset = 0;
   return (
-    <div className="flex flex-wrap items-center gap-8">
+    <div className="flex flex-wrap items-center gap-4 sm:gap-8">
       <svg viewBox="0 0 180 180" className="h-44 w-44 -rotate-90">
         <circle cx="90" cy="90" r={R} fill="none" stroke="#eef2f6" strokeWidth="22" />
         {data.map((d) => {
@@ -48,13 +90,20 @@ function Donut({ data, total }) {
   );
 }
 
-function KPI({ icon: Icon, value, label, color, accent, onClick }) {
+function KPI({ icon: Icon, value, label, color, accent, onClick, active, hint }) {
   const Tag = onClick ? 'button' : 'div';
   return (
     <Tag
+      type={onClick ? 'button' : undefined}
       onClick={onClick}
       style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
-      className={`group relative w-full overflow-hidden rounded-2xl p-5 text-left shadow-sm ring-1 ring-white/60 backdrop-blur transition duration-300 ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-glow-lg hover:ring-brand-200' : ''}`}
+      className={`group relative w-full min-h-11 overflow-hidden rounded-2xl p-4 text-left shadow-sm backdrop-blur transition duration-300 sm:p-5 touch-manipulation ${
+        onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-glow-lg active:scale-[0.99] active:shadow-glow' : ''
+      } ${
+        active
+          ? 'ring-2 ring-brand-500 shadow-glow'
+          : 'ring-1 ring-white/60 hover:ring-brand-200 active:ring-brand-200'
+      }`}
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
       {/* marca de agua translúcida */}
@@ -64,8 +113,8 @@ function KPI({ icon: Icon, value, label, color, accent, onClick }) {
         <div className="mt-4 font-display text-3xl font-extrabold text-ink-900">{value}</div>
         <div className="text-sm font-medium text-ink-500">{label}</div>
         {onClick && (
-          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600 opacity-0 transition group-hover:opacity-100">
-            Ver <ArrowRight size={12} />
+          <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600">
+            {hint || (active ? 'Filtro activo' : 'Filtrar mapa')} <ArrowRight size={12} />
           </span>
         )}
       </div>
@@ -80,7 +129,7 @@ function ColFilter({ id, value, onChange, options, align }) {
       <Search size={12} className="shrink-0 text-ink-400" />
       <input list={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Filtrar…"
         className={`w-full min-w-0 bg-transparent text-xs font-normal normal-case tracking-normal text-ink-800 outline-none ${align === 'right' ? 'text-right' : ''}`} />
-      {value && <button type="button" onClick={() => onChange('')} className="shrink-0 text-ink-400 hover:text-ink-700"><X size={12} /></button>}
+      {value && <button type="button" onClick={() => onChange('')} className="grid h-11 w-11 shrink-0 place-items-center text-ink-400 hover:text-ink-700 active:text-ink-700 touch-manipulation"><X size={12} /></button>}
       <datalist id={id}>{options.map((o) => <option key={o} value={o} />)}</datalist>
     </div>
   );
@@ -95,7 +144,7 @@ function FilterInput({ label, value, onChange, options, placeholder }) {
       <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 transition focus-within:bg-white focus-within:ring-brand-400">
         <Search size={14} className="shrink-0 text-ink-400" />
         <input list={id} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm outline-none" />
-        {value && <button type="button" onClick={() => onChange('')} className="shrink-0 text-ink-400 hover:text-ink-700"><X size={14} /></button>}
+        {value && <button type="button" onClick={() => onChange('')} className="grid h-11 w-11 shrink-0 place-items-center text-ink-400 hover:text-ink-700 active:text-ink-700 touch-manipulation"><X size={14} /></button>}
         <datalist id={id}>{options.map((o) => <option key={o} value={o} />)}</datalist>
       </div>
     </div>
@@ -133,6 +182,30 @@ export default function AdminDashboard() {
   const [editUser, setEditUser] = useState(null); // cliente en edición (null = cerrado)
   const [savingUser, setSavingUser] = useState(false);
   const [userMsg, setUserMsg] = useState('');
+  const [createTech, setCreateTech] = useState(null); // form nuevo técnico (null = cerrado)
+  const [editTech, setEditTech] = useState(null);
+  const [deleteTech, setDeleteTech] = useState(null);
+  const [savingTech, setSavingTech] = useState(false);
+  const [techMsg, setTechMsg] = useState('');
+  const [techFlash, setTechFlash] = useState('');
+  const [services, setServices] = useState([]);
+  const [svcCategory, setSvcCategory] = useState('');
+  const [svcEquipment, setSvcEquipment] = useState('');
+  const [createSvc, setCreateSvc] = useState(null);
+  const [editSvc, setEditSvc] = useState(null);
+  const [deleteSvc, setDeleteSvc] = useState(null);
+  const [savingSvc, setSavingSvc] = useState(false);
+  const [svcMsg, setSvcMsg] = useState('');
+  const [svcFlash, setSvcFlash] = useState('');
+  const [deleteSvcError, setDeleteSvcError] = useState('');
+  // Filtro del mapa de servicios (null = todos). Solo afecta el Dashboard.
+  const [mapFilter, setMapFilter] = useState(null);
+  // Altura del mapa: 280px en móvil (<640px), 400px en desktop
+  const [mapHeight, setMapHeight] = useState(
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
+      ? '280px'
+      : '400px',
+  );
 
   async function load() {
     setLoading(true);
@@ -140,16 +213,42 @@ export default function AdminDashboard() {
       const [a, c, t] = await Promise.all([
         api.getAllAppointments(),
         api.getClients(),
-        api.getTechnicians()
+        api.getTechnicians(),
       ]);
       setAppts(a);
       setClients(c);
       setTechs(t || []);
+      try {
+        const s = await api.getAllServices();
+        setServices(s || []);
+      } catch {
+        setServices([]);
+      }
     } catch (err) {
       if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  useEffect(() => {
+    if (!techFlash) return undefined;
+    const timer = setTimeout(() => setTechFlash(''), 4000);
+    return () => clearTimeout(timer);
+  }, [techFlash]);
+
+  useEffect(() => {
+    if (!svcFlash) return undefined;
+    const timer = setTimeout(() => setSvcFlash(''), 4000);
+    return () => clearTimeout(timer);
+  }, [svcFlash]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const apply = () => setMapHeight(mq.matches ? '280px' : '400px');
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   const stats = useMemo(() => {
     const by = (s) => appts.filter((a) => a.status === s).length;
@@ -208,6 +307,7 @@ export default function AdminDashboard() {
       );
     } catch (err) {
       if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
+      else alert(err.message || 'No se pudo asignar el técnico');
     }
   }
 
@@ -236,16 +336,22 @@ export default function AdminDashboard() {
   const hayFiltros = q || fServicio || fFecha || fEstado;
   const limpiarFiltros = () => { setQ(''); setFServicio(''); setFFecha(''); setFEstado(''); };
 
-  // Sugerir técnico según el tipo de aire (ventana/split/toneladas)
+  // Sugerir técnico activo según specialty (ya no se parsea lastName)
   function suggestTech(a) {
+    const active = techs.filter((t) => t.isActive !== false);
     const eq = a.equipment?.[0];
-    const text = `${eq?.brand || ''} ${eq?.model || ''} ${a.notes || ''}`.toLowerCase();
-    const key = text.includes('ventana') ? 'ventana'
-      : text.includes('split') ? 'split'
-      : (text.includes('tonelada') || text.includes('toneladas')) ? 'tonelada'
-      : null;
-    if (!key) return null;
-    return techs.find((t) => `${t.firstName} ${t.lastName}`.toLowerCase().includes(key)) || null;
+    const text = `${eq?.brand || ''} ${eq?.model || ''} ${eq?.failureDescription || ''} ${a.notes || ''}`.toLowerCase();
+    const spec = (t) => (t.specialty || '').toLowerCase();
+    const by = (...keys) => active.find((t) => keys.some((k) => spec(t).includes(k)));
+    if (text.includes('ventana')) return by('ventana') || null;
+    if (text.includes('split')) return by('split') || null;
+    if (text.includes('tonelada')) {
+      if (text.includes('3')) return by('3 tonelada') || by('general') || null;
+      if (text.includes('2')) return by('2 tonelada') || by('general') || null;
+      if (text.includes('1')) return by('1 tonelada') || by('general') || null;
+      return by('tonelada', 'general') || null;
+    }
+    return null;
   }
 
   // Ir a la lista de solicitudes con un filtro de estado puesto (desde las tarjetas del dashboard)
@@ -254,6 +360,15 @@ export default function AdminDashboard() {
     if (filter === 'PENDING') setFEstado('Pendiente');
     else if (filter === 'PROGRESS') setFEstado('proceso');
     setView('solicitudes');
+  }
+
+  /** Toggle filtro del mapa: mismo KPI otra vez → quita filtro (todos). */
+  function toggleMapFilter(status) {
+    if (status === null) {
+      setMapFilter(null);
+      return;
+    }
+    setMapFilter((prev) => (prev === status ? null : status));
   }
 
   // Exportar reporte real de solicitudes (CSV, abre en Excel)
@@ -338,6 +453,218 @@ export default function AdminDashboard() {
     }
   }
 
+  function openCreateTech() {
+    setTechMsg('');
+    setCreateTech(emptyTechForm());
+  }
+  function openEditTech(t) {
+    setTechMsg('');
+    setEditTech({
+      id: t.id,
+      firstName: t.firstName,
+      lastName: t.lastName,
+      email: t.email,
+      phone: t.phone || '',
+      password: '',
+      specialty: t.specialty || 'General',
+    });
+  }
+  async function saveNewTech(e) {
+    e.preventDefault();
+    if (!createTech.firstName.trim() || !createTech.email.trim() || !createTech.password) {
+      setTechMsg('Nombre, correo y contraseña son obligatorios');
+      return;
+    }
+    setSavingTech(true);
+    setTechMsg('');
+    try {
+      await api.createTechnician(createTech);
+      setCreateTech(null);
+      setTechFlash('Técnico creado correctamente');
+      await load();
+    } catch (err) {
+      setTechMsg(err.message || 'No se pudo crear el técnico');
+    } finally {
+      setSavingTech(false);
+    }
+  }
+  async function saveEditTech(e) {
+    e.preventDefault();
+    setSavingTech(true);
+    setTechMsg('');
+    try {
+      const { id, password, ...rest } = editTech;
+      const payload = { ...rest };
+      if (password) payload.password = password;
+      const updated = await api.updateUser(id, payload);
+      setTechs((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
+      setEditTech(null);
+      setTechFlash('Técnico actualizado');
+    } catch (err) {
+      setTechMsg(err.message || 'No se pudo guardar');
+    } finally {
+      setSavingTech(false);
+    }
+  }
+  async function confirmDeleteTech() {
+    if (!deleteTech) return;
+    setDeleting(true);
+    try {
+      await api.deleteUser(deleteTech.id);
+      setTechs((prev) => prev.filter((x) => x.id !== deleteTech.id));
+      setAppts((prev) => prev.map((a) => (
+        a.technicianId === deleteTech.id
+          ? { ...a, technicianId: null, technician: null }
+          : a
+      )));
+      setDeleteTech(null);
+      setTechFlash('Técnico eliminado');
+    } catch (err) {
+      alert(err.message || 'No se pudo eliminar');
+    } finally {
+      setDeleting(false);
+    }
+  }
+  async function toggleTechActive(t) {
+    try {
+      const updated = await api.updateUser(t.id, { isActive: !t.isActive });
+      setTechs((prev) => prev.map((x) => (x.id === t.id ? { ...x, ...updated } : x)));
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
+      else alert(err.message || 'No se pudo cambiar el estado');
+    }
+  }
+  function techJobCount(t) {
+    return t._count?.assignedServices ?? appts.filter((a) => a.technicianId === t.id).length;
+  }
+  function techActiveJobs(t) {
+    return appts.filter((a) => a.technicianId === t.id && (a.status === 'ASSIGNED' || a.status === 'IN_PROGRESS')).length;
+  }
+
+  function svcApptCount(s) {
+    return s._count?.appointments ?? appts.filter((a) => a.serviceId === s.id).length;
+  }
+  const activeSvcCount = services.filter((s) => s.isActive !== false).length;
+  const filteredServices = services.filter((s) => (
+    (!svcCategory || s.category === svcCategory) &&
+    (!svcEquipment || s.equipmentType === svcEquipment)
+  ));
+
+  function openCreateSvc() {
+    setSvcMsg('');
+    setCreateSvc(emptySvcForm());
+  }
+  function openEditSvc(s) {
+    setSvcMsg('');
+    setEditSvc({
+      id: s.id,
+      name: s.name,
+      category: s.category,
+      equipmentType: s.equipmentType,
+      priceUsd: String(s.priceUsd),
+      description: s.description || '',
+      isActive: s.isActive !== false,
+    });
+  }
+  function validateSvcForm(form) {
+    if (!form.name.trim()) return 'El nombre es obligatorio';
+    if (!form.category) return 'La categoría es obligatoria';
+    if (!form.equipmentType) return 'El tipo de equipo es obligatorio';
+    const price = Number(form.priceUsd);
+    if (!Number.isFinite(price) || price <= 0) return 'El precio debe ser mayor a 0';
+    return '';
+  }
+  async function saveNewSvc(e) {
+    e.preventDefault();
+    const err = validateSvcForm(createSvc);
+    if (err) { setSvcMsg(err); return; }
+    setSavingSvc(true);
+    setSvcMsg('');
+    try {
+      await api.createService({
+        name: createSvc.name.trim(),
+        category: createSvc.category,
+        equipmentType: createSvc.equipmentType,
+        priceUsd: Number(createSvc.priceUsd),
+        description: createSvc.description.trim() || undefined,
+      });
+      setCreateSvc(null);
+      setSvcFlash('Servicio creado correctamente');
+      await load();
+    } catch (err) {
+      setSvcMsg(err.message || 'No se pudo crear el servicio');
+    } finally {
+      setSavingSvc(false);
+    }
+  }
+  async function saveEditSvc(e) {
+    e.preventDefault();
+    const err = validateSvcForm(editSvc);
+    if (err) { setSvcMsg(err); return; }
+    setSavingSvc(true);
+    setSvcMsg('');
+    try {
+      const updated = await api.updateService(editSvc.id, {
+        name: editSvc.name.trim(),
+        category: editSvc.category,
+        equipmentType: editSvc.equipmentType,
+        priceUsd: Number(editSvc.priceUsd),
+        description: editSvc.description.trim() || null,
+        isActive: editSvc.isActive,
+      });
+      setServices((prev) => prev.map((s) => (s.id === editSvc.id ? { ...s, ...updated } : s)));
+      setEditSvc(null);
+      setSvcFlash('Servicio actualizado');
+    } catch (err) {
+      setSvcMsg(err.message || 'No se pudo guardar');
+    } finally {
+      setSavingSvc(false);
+    }
+  }
+  async function confirmDeleteSvc() {
+    if (!deleteSvc) return;
+    setDeleting(true);
+    setDeleteSvcError('');
+    try {
+      await api.deleteService(deleteSvc.id);
+      setServices((prev) => prev.filter((x) => x.id !== deleteSvc.id));
+      setDeleteSvc(null);
+      setSvcFlash('Servicio eliminado');
+    } catch (err) {
+      if (err.status === 409) {
+        setDeleteSvcError(err.message || 'Este servicio tiene citas asociadas. Desactívalo en lugar de borrarlo.');
+      } else {
+        setDeleteSvcError(err.message || 'No se pudo eliminar');
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+  async function deactivateFromDelete() {
+    if (!deleteSvc) return;
+    setDeleting(true);
+    try {
+      const updated = await api.updateService(deleteSvc.id, { isActive: false });
+      setServices((prev) => prev.map((s) => (s.id === deleteSvc.id ? { ...s, ...updated } : s)));
+      setDeleteSvc(null);
+      setDeleteSvcError('');
+      setSvcFlash('Servicio desactivado');
+    } catch (err) {
+      setDeleteSvcError(err.message || 'No se pudo desactivar');
+    } finally {
+      setDeleting(false);
+    }
+  }
+  async function toggleSvcActive(s) {
+    try {
+      const updated = await api.updateService(s.id, { isActive: !s.isActive });
+      setServices((prev) => prev.map((x) => (x.id === s.id ? { ...x, ...updated } : x)));
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
+      else alert(err.message || 'No se pudo cambiar el estado');
+    }
+  }
+
   // ---- Ingresos: servicios COMPLETADOS (ganancias reales) ----
   const priceOf = (a) => a.priceUsd ?? priceUsd(a.equipment?.[0]?.brand, a.equipment?.[0]?.model);
   const techName = (a) => {
@@ -407,11 +734,13 @@ export default function AdminDashboard() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'solicitudes', label: 'Solicitudes', icon: ClipboardList, badge: stats.pending },
     { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
+    { id: 'servicios', label: 'Servicios', icon: Settings, badge: services.length },
     { id: 'clientes', label: 'Clientes', icon: Users, badge: stats.clients },
+    { id: 'tecnicos', label: 'Técnicos', icon: UserCog, badge: techs.length },
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen overflow-x-clip bg-slate-50">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand-950 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-6 py-5">
@@ -423,16 +752,16 @@ export default function AdminDashboard() {
         </div>
         <nav className="flex-1 space-y-1 p-4">
           {nav.map((n) => (
-            <button key={n.id} onClick={() => setView(n.id)}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${view === n.id ? 'bg-white/10 text-white ring-1 ring-white/10' : 'text-brand-100/70 hover:bg-white/5 hover:text-white'}`}>
+            <button key={n.id} type="button" onClick={() => setView(n.id)}
+              className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition touch-manipulation ${view === n.id ? 'bg-white/10 text-white ring-1 ring-white/10' : 'text-brand-100/70 hover:bg-white/5 hover:text-white active:bg-white/5 active:text-white'}`}>
               <n.icon size={18} /> {n.label}
               {n.badge > 0 && <span className="ml-auto rounded-full bg-brand-500 px-2 py-0.5 text-xs font-bold text-white">{n.badge}</span>}
             </button>
           ))}
         </nav>
         <div className="space-y-2 border-t border-white/10 p-4">
-          <Link to="/" target="_blank" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen"><Globe size={16} /> Ver sitio web</Link>
-          <button onClick={() => { logout(); navigate('/'); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 px-4 py-2.5 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 hover:ring-rose-300/50 cursor-pointer"><LogOut size={17} /> Cerrar sesión</button>
+          <Link to="/" target="_blank" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 active:brightness-95 sheen touch-manipulation"><Globe size={16} /> Ver sitio web</Link>
+          <button type="button" onClick={() => { logout(); navigate('/'); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 px-4 py-2.5 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 hover:ring-rose-300/50 active:bg-rose-500/40 cursor-pointer touch-manipulation"><LogOut size={17} /> Cerrar sesión</button>
           <div className="flex items-center gap-2.5 pt-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>
             <div className="min-w-0">
@@ -446,55 +775,97 @@ export default function AdminDashboard() {
       {/* Main */}
       <div className="flex-1 lg:ml-64">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-5 backdrop-blur lg:px-8">
-          <div>
-            <div className="font-display font-bold text-ink-900">
-              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : 'Clientes del Taller'}
+        <header className="sticky top-0 z-30 flex min-h-16 flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-8">
+          <div className="min-w-0">
+            <div className="truncate font-display font-bold text-ink-900">
+              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : 'Clientes del Taller'}
             </div>
-            <div className="text-xs text-ink-500">Fresh Service Digital · Taller de Refrigeración</div>
+            <div className="hidden text-xs text-ink-500 sm:block">Fresh Service Digital · Taller de Refrigeración</div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Mobile nav */}
-            <select value={view} onChange={(e) => setView(e.target.value)} className="rounded-full border border-slate-200 px-3 py-1.5 text-sm lg:hidden">
-              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="clientes">Clientes</option>
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            {/* Mobile nav — alternativa a los KPIs para ir a Solicitudes / Ingresos / Clientes */}
+            <select value={view} onChange={(e) => setView(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm touch-manipulation sm:flex-none lg:hidden">
+              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option>
             </select>
-            <button onClick={toggleTheme} title="Cambiar tema" className="grid h-9 w-9 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100">
+            <button type="button" onClick={toggleTheme} title="Cambiar tema" className="grid h-11 w-11 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
               {isDark ? <Sun size={17} className="text-amber-500" /> : <Moon size={17} className="text-brand-700" />}
             </button>
-            <button onClick={load} className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100">
+            <button type="button" onClick={load} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-50 px-3 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100 active:bg-brand-100 cursor-pointer touch-manipulation sm:px-4">
               <RefreshCw size={15} /> <span className="hidden sm:inline">Actualizar</span>
+            </button>
+            <button type="button" onClick={() => { logout(); navigate('/'); }} title="Cerrar sesión" className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-100 transition hover:bg-rose-100 active:bg-rose-100 cursor-pointer touch-manipulation lg:hidden">
+              <LogOut size={17} />
             </button>
           </div>
         </header>
 
-        <div className="p-5 lg:p-8">
+        <div className="overflow-x-clip p-4 sm:p-5 lg:p-8">
           {loading ? (
             <div className="grid place-items-center py-32 text-brand-400"><Loader2 className="animate-spin" size={36} /></div>
           ) : view === 'dashboard' ? (
             <div className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-display text-2xl font-extrabold text-ink-900">Resumen del Taller</h2>
                   <p className="text-sm text-ink-500">Estadísticas en vivo desde la base de datos</p>
                 </div>
-                <button onClick={exportReport} disabled={!appts.length}
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-50">
-                  <Download size={15} /> Exportar Excel
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => goToSolicitudes()}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100 active:bg-brand-100 cursor-pointer touch-manipulation">
+                    <ClipboardList size={15} /> Ver solicitudes
+                  </button>
+                  <button type="button" onClick={exportReport} disabled={!appts.length}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 active:bg-emerald-100 disabled:opacity-50 touch-manipulation">
+                    <Download size={15} /> Exportar Excel
+                  </button>
+                </div>
               </div>
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                <KPI icon={ClipboardCheck} value={stats.total} label="Solicitudes registradas" color="bg-brand-100 text-brand-600" accent="#0ea5e9" onClick={() => goToSolicitudes('ALL')} />
-                <KPI icon={Clock3} value={stats.pending} label="Pendientes de atender" color="bg-amber-100 text-amber-600" accent="#f59e0b" onClick={() => goToSolicitudes('PENDING')} />
-                <KPI icon={Wrench} value={stats.progress} label="En proceso" color="bg-violet-100 text-violet-600" accent="#8b5cf6" onClick={() => goToSolicitudes('PROGRESS')} />
-                <KPI icon={Users} value={stats.clients} label="Clientes registrados" color="bg-emerald-100 text-emerald-600" accent="#10b981" onClick={() => setView('clientes')} />
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
+                <KPI
+                  icon={ClipboardCheck}
+                  value={stats.total}
+                  label="Solicitudes registradas"
+                  color="bg-brand-100 text-brand-600"
+                  accent="#0ea5e9"
+                  active={mapFilter === null}
+                  hint={mapFilter === null ? 'Mostrando todos' : 'Ver todos en el mapa'}
+                  onClick={() => toggleMapFilter(null)}
+                />
+                <KPI
+                  icon={Clock3}
+                  value={stats.pending}
+                  label="Pendientes de atender"
+                  color="bg-amber-100 text-amber-600"
+                  accent="#f59e0b"
+                  active={mapFilter === 'PENDING'}
+                  onClick={() => toggleMapFilter('PENDING')}
+                />
+                <KPI
+                  icon={Wrench}
+                  value={stats.progress}
+                  label="En proceso"
+                  color="bg-violet-100 text-violet-600"
+                  accent="#8b5cf6"
+                  active={mapFilter === 'IN_PROGRESS'}
+                  onClick={() => toggleMapFilter('IN_PROGRESS')}
+                />
+                <KPI
+                  icon={Users}
+                  value={stats.clients}
+                  label="Clientes registrados"
+                  color="bg-emerald-100 text-emerald-600"
+                  accent="#10b981"
+                  hint="Ir a clientes"
+                  onClick={() => setView('clientes')}
+                />
               </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm">
+              <div className="grid gap-3 lg:grid-cols-2 sm:gap-6">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
                   <h3 className="font-display font-bold text-ink-900">Citas por estado</h3>
                   <p className="mb-5 text-xs text-ink-500">Distribución del flujo de trabajo</p>
                   <Donut data={donut} total={stats.total || 1} />
                 </div>
-                <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm">
+                <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
                   <h3 className="font-display font-bold text-ink-900">Citas por mes</h3>
                   <p className="mb-6 text-xs text-ink-500">Solicitudes recibidas (últimos 6 meses)</p>
                   <div className="flex h-44 items-end justify-between gap-3">
@@ -515,13 +886,41 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl bg-white p-6 ring-1 ring-slate-100 shadow-sm lg:col-span-2">
+              </div>
+
+              {/* Mapa de servicios (full width) */}
+              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+                  <div className="min-w-0">
+                    <h3 className="font-display font-bold text-ink-900">Mapa de servicios</h3>
+                    <p className="text-xs text-ink-500">Ubicación de las solicitudes registradas</p>
+                  </div>
+                  {mapFilter && (
+                    <button
+                      type="button"
+                      onClick={() => setMapFilter(null)}
+                      className="inline-flex min-h-11 w-fit shrink-0 items-center self-start rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation sm:self-auto"
+                    >
+                      Quitar filtro · {STATUS[mapFilter]?.label || mapFilter}
+                    </button>
+                  )}
+                </div>
+                <div className="w-full min-w-0 overflow-hidden">
+                  <ServiceMap
+                    appointments={appts}
+                    filterStatus={mapFilter}
+                    height={mapHeight}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
                   <h3 className="font-display font-bold text-ink-900">Marcas de equipos más atendidas</h3>
                   <p className="mb-5 text-xs text-ink-500">Ranking de marcas en servicio</p>
                   <div className="space-y-3">
                     {brands.map((b) => (
-                      <div key={b.brand} className="flex items-center gap-3">
-                        <div className="w-24 shrink-0 text-right text-sm font-semibold text-ink-700">{b.brand}</div>
+                      <div key={b.brand} className="flex min-w-0 items-center gap-3">
+                        <div className="w-20 shrink-0 truncate text-right text-sm font-semibold text-ink-700 sm:w-24">{b.brand}</div>
                         <div className="h-5 flex-1 overflow-hidden rounded-full bg-slate-100">
                           <div className="h-full rounded-full bg-brand-gradient" style={{ width: `${b.pct}%` }} />
                         </div>
@@ -529,19 +928,18 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
-                </div>
               </div>
             </div>
           ) : view === 'solicitudes' ? (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-              <div className="border-b border-slate-100 p-5">
-                <div className="flex items-center justify-between">
-                  <div>
+              <div className="border-b border-slate-100 p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <h3 className="font-display font-bold text-ink-900">Solicitudes en vivo</h3>
                     <p className="text-xs text-ink-500">{sortedAppts.length} de {appts.length} solicitudes</p>
                   </div>
                   {hayFiltros && (
-                    <button onClick={limpiarFiltros} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200">
+                    <button type="button" onClick={limpiarFiltros} className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation">
                       <X size={13} /> Limpiar filtros
                     </button>
                   )}
@@ -596,17 +994,17 @@ export default function AdminDashboard() {
                             >
                               <option value="">Sin asignar</option>
                               {techs.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                  {t.firstName} {t.lastName}
+                                <option key={t.id} value={t.id} disabled={t.isActive === false && a.technicianId !== t.id}>
+                                  {t.firstName} {t.lastName}{t.specialty ? ` · ${t.specialty}` : ''}{t.isActive === false ? ' (Inactivo)' : ''}
                                 </option>
                               ))}
                             </select>
                             {!a.technicianId && (() => {
                               const sug = suggestTech(a);
                               return sug ? (
-                                <button onClick={() => handleAssign(a.id, sug.id)}
+                                <button type="button" onClick={() => handleAssign(a.id, sug.id)}
                                   title={`Asignar a ${sug.firstName} ${sug.lastName}`}
-                                  className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-brand-600 transition hover:text-brand-700">
+                                  className="mt-1 inline-flex min-h-11 items-center gap-1 text-[11px] font-semibold text-brand-600 transition hover:text-brand-700 active:text-brand-700 touch-manipulation">
                                   <Sparkles size={11} /> Sugerido: {sug.firstName}
                                 </button>
                               ) : null;
@@ -619,7 +1017,7 @@ export default function AdminDashboard() {
                             </select>
                           </td>
                           <td className="px-5 py-3">
-                            {wa && <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:ring-1 dark:ring-emerald-500/20"><MessageCircle size={16} /></a>}
+                            {wa && <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="grid h-11 w-11 place-items-center rounded-lg bg-emerald-50 text-emerald-600 transition hover:bg-emerald-100 active:bg-emerald-100 touch-manipulation dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:active:bg-emerald-950/40 dark:ring-1 dark:ring-emerald-500/20"><MessageCircle size={16} /></a>}
                           </td>
                         </tr>
                       );
@@ -636,7 +1034,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Tarjetas por período — CLICK filtra la tabla; el botón CSV descarga */}
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
                 {[
                   { p: 'day', label: 'Hoy', accent: '#0ea5e9', icon: Calendar },
                   { p: 'week', label: 'Esta semana', accent: '#8b5cf6', icon: Calendar },
@@ -648,7 +1046,7 @@ export default function AdminDashboard() {
                     <button key={p} type="button" onClick={() => setIngPeriodo(active ? null : p)}
                       title="Filtrar la tabla por este período"
                       style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
-                      className={`group relative overflow-hidden rounded-2xl p-5 text-left shadow-sm transition ${active ? 'shadow-glow ring-2 ring-brand-500' : 'ring-1 ring-white/60 hover:-translate-y-0.5 hover:shadow-glow-lg'}`}>
+                      className={`group relative min-h-11 overflow-hidden rounded-2xl p-4 text-left shadow-sm transition touch-manipulation sm:p-5 ${active ? 'shadow-glow ring-2 ring-brand-500' : 'ring-1 ring-white/60 hover:-translate-y-0.5 hover:shadow-glow-lg active:ring-brand-200'}`}>
                       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
                       <Icon size={104} className="pointer-events-none absolute -bottom-5 -right-4 opacity-[0.08]" style={{ color: accent }} />
                       <div className="relative">
@@ -659,7 +1057,7 @@ export default function AdminDashboard() {
                         <div className="mt-3 font-display text-2xl font-extrabold text-ink-900">{money(earnings(p))}</div>
                         <div className="text-xs text-ink-400">Ref. {formatUsd(earnings(p))}</div>
                         <span onClick={(e) => { e.stopPropagation(); exportEarnings(p); }}
-                          className="mt-3 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100">
+                          className="mt-3 inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 active:bg-emerald-100 touch-manipulation">
                           <Download size={13} /> CSV
                         </span>
                         {active && <span className="mt-2 block text-[11px] font-bold text-brand-600">● Filtrando la tabla ↓ (clic para quitar)</span>}
@@ -671,15 +1069,15 @@ export default function AdminDashboard() {
 
               {/* Tabla de servicios completados con filtros por columna */}
               <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-                <div className="border-b border-slate-100 p-5">
+                <div className="border-b border-slate-100 p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-display font-bold text-ink-900">Servicios completados</h3>
                       <p className="text-xs text-ink-500">{completedFiltered.length} de {completedAppts.length}{ingPeriodo ? ' · período seleccionado' : ''}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       {hayFiltrosI && (
-                        <button onClick={limpiarFiltrosI} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200"><X size={13} /> Limpiar</button>
+                        <button type="button" onClick={limpiarFiltrosI} className="inline-flex min-h-11 items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation"><X size={13} /> Limpiar</button>
                       )}
                       <span className="text-xs text-ink-500">Total: <strong className="text-ink-900">{money(completedFiltered.reduce((s, a) => s + priceOf(a), 0))}</strong></span>
                     </div>
@@ -725,16 +1123,273 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          ) : view === 'servicios' ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="font-display text-2xl font-extrabold text-ink-900">Catálogo de Servicios</h2>
+                  <p className="text-sm text-ink-500">{activeSvcCount} servicio{activeSvcCount === 1 ? '' : 's'} activo{activeSvcCount === 1 ? '' : 's'}</p>
+                </div>
+                <button type="button" onClick={openCreateSvc}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 sheen touch-manipulation">
+                  <Settings size={16} /> Nuevo servicio
+                </button>
+              </div>
+              {svcFlash && (
+                <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-100">{svcFlash}</div>
+              )}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => setSvcCategory('')}
+                    className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-bold transition touch-manipulation ${!svcCategory ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
+                    Todas
+                  </button>
+                  {SERVICE_CATEGORIES.map((c) => (
+                    <button key={c} type="button" onClick={() => setSvcCategory(c)}
+                      className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-bold transition touch-manipulation ${svcCategory === c ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
+                      {CATEGORY_LABELS[c]}
+                    </button>
+                  ))}
+                </div>
+                <select value={svcEquipment} onChange={(e) => setSvcEquipment(e.target.value)}
+                  className="min-h-11 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-ink-700 touch-manipulation">
+                  <option value="">Todos los equipos</option>
+                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                </select>
+              </div>
+
+              {filteredServices.length === 0 ? (
+                <div className="rounded-2xl bg-white p-10 text-center ring-1 ring-slate-100 shadow-sm">
+                  <p className="text-sm text-ink-500">No hay servicios con esos filtros. Crea uno con «Nuevo servicio».</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3 lg:hidden">
+                    {filteredServices.map((s) => (
+                      <div key={s.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-ink-900">{s.name}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${CATEGORY_STYLE[s.category] || CATEGORY_STYLE.OTRO}`}>
+                                {CATEGORY_LABELS[s.category] || s.category}
+                              </span>
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${EQUIPMENT_STYLE[s.equipmentType] || EQUIPMENT_STYLE.GENERAL}`}>
+                                {EQUIPMENT_LABELS[s.equipmentType] || s.equipmentType}
+                              </span>
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${s.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                {s.isActive !== false ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+                            <div className="mt-3">
+                              <Price usd={s.priceUsd} />
+                            </div>
+                            <div className="mt-1 text-xs text-ink-400">{svcApptCount(s)} cita{svcApptCount(s) === 1 ? '' : 's'}</div>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => openEditSvc(s)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 px-3 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100 active:bg-brand-100 touch-manipulation">
+                            <Pencil size={14} /> Editar
+                          </button>
+                          <button type="button" onClick={() => toggleSvcActive(s)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation">
+                            {s.isActive !== false ? <PowerOff size={14} /> : <Power size={14} />}
+                            {s.isActive !== false ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <button type="button" onClick={() => { setDeleteSvcError(''); setDeleteSvc(s); }} className="grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:bg-rose-100 touch-manipulation">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm lg:block">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
+                        <tr>
+                          <th className="px-5 py-3">Nombre</th>
+                          <th className="px-3 py-3">Categoría</th>
+                          <th className="px-3 py-3">Equipo</th>
+                          <th className="px-3 py-3">Precio USD</th>
+                          <th className="px-3 py-3">Precio Bs</th>
+                          <th className="px-3 py-3">Estado</th>
+                          <th className="px-3 py-3">Citas</th>
+                          <th className="px-5 py-3 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredServices.map((s) => (
+                          <tr key={s.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                            <td className="px-5 py-3 font-semibold text-ink-900">{s.name}</td>
+                            <td className="px-3 py-3">
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${CATEGORY_STYLE[s.category] || CATEGORY_STYLE.OTRO}`}>
+                                {CATEGORY_LABELS[s.category] || s.category}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${EQUIPMENT_STYLE[s.equipmentType] || EQUIPMENT_STYLE.GENERAL}`}>
+                                {EQUIPMENT_LABELS[s.equipmentType] || s.equipmentType}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 font-semibold text-ink-900">{formatUsd(s.priceUsd)}</td>
+                            <td className="px-3 py-3 text-ink-700">{formatBs(s.priceUsd, rate) || '—'}</td>
+                            <td className="px-3 py-3">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${s.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                {s.isActive !== false ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 ring-1 ring-brand-100">{svcApptCount(s)}</span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button type="button" onClick={() => openEditSvc(s)} title="Editar"
+                                  className="grid h-11 w-11 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100 active:bg-brand-100 touch-manipulation"><Pencil size={15} /></button>
+                                <button type="button" onClick={() => toggleSvcActive(s)} title={s.isActive !== false ? 'Desactivar' : 'Activar'}
+                                  className={`grid h-11 w-11 place-items-center rounded-lg transition touch-manipulation ${s.isActive !== false ? 'bg-slate-100 text-ink-600 hover:bg-slate-200 active:bg-slate-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-100'}`}>
+                                  {s.isActive !== false ? <PowerOff size={15} /> : <Power size={15} />}
+                                </button>
+                                <button type="button" onClick={() => { setDeleteSvcError(''); setDeleteSvc(s); }} title="Eliminar"
+                                  className="grid h-11 w-11 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:bg-rose-100 touch-manipulation"><Trash2 size={15} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : view === 'tecnicos' ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="font-display text-2xl font-extrabold text-ink-900">Equipo Técnico</h2>
+                  <p className="text-sm text-ink-500">{techs.length} técnico{techs.length === 1 ? '' : 's'} registrado{techs.length === 1 ? '' : 's'}</p>
+                </div>
+                <button type="button" onClick={openCreateTech}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 sheen touch-manipulation">
+                  <UserCog size={16} /> Nuevo técnico
+                </button>
+              </div>
+              {techFlash && (
+                <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-100">{techFlash}</div>
+              )}
+
+              {techs.length === 0 ? (
+                <div className="rounded-2xl bg-white p-10 text-center ring-1 ring-slate-100 shadow-sm">
+                  <p className="text-sm text-ink-500">Aún no hay técnicos. Crea el primero con «Nuevo técnico».</p>
+                </div>
+              ) : (
+                <>
+                  {/* Mobile: tarjetas */}
+                  <div className="space-y-3 lg:hidden">
+                    {techs.map((t) => (
+                      <div key={t.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold text-ink-900">{t.firstName} {t.lastName}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${SPECIALTY_STYLE[t.specialty] || SPECIALTY_STYLE.General}`}>
+                                {t.specialty || 'Sin especialidad'}
+                              </span>
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${t.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                {t.isActive !== false ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </div>
+                            <div className="mt-2 break-words text-xs text-ink-500">{t.email}</div>
+                            {t.phone && <div className="text-xs text-ink-500">{t.phone}</div>}
+                            <div className="mt-1 text-xs text-ink-400">{techJobCount(t)} servicio{techJobCount(t) === 1 ? '' : 's'}</div>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => openEditTech(t)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 px-3 text-sm font-bold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100 active:bg-brand-100 touch-manipulation">
+                            <Pencil size={14} /> Editar
+                          </button>
+                          <button type="button" onClick={() => toggleTechActive(t)} className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation">
+                            {t.isActive !== false ? <PowerOff size={14} /> : <Power size={14} />}
+                            {t.isActive !== false ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <button type="button" onClick={() => setDeleteTech(t)} className="grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:bg-rose-100 touch-manipulation">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop: tabla */}
+                  <div className="hidden overflow-x-auto rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm lg:block">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-ink-500">
+                        <tr>
+                          <th className="px-5 py-3">Nombre completo</th>
+                          <th className="px-3 py-3">Email</th>
+                          <th className="px-3 py-3">Teléfono</th>
+                          <th className="px-3 py-3">Especialidad</th>
+                          <th className="px-3 py-3">Estado</th>
+                          <th className="px-3 py-3">Servicios</th>
+                          <th className="px-5 py-3 text-right">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {techs.map((t) => (
+                          <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50/60">
+                            <td className="px-5 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-sky-500 to-brand-500 text-xs font-bold text-white">
+                                  {(t.firstName[0] + (t.lastName?.[0] || '')).toUpperCase()}
+                                </div>
+                                <span className="font-semibold text-ink-900">{t.firstName} {t.lastName}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-ink-700">{t.email}</td>
+                            <td className="px-3 py-3 text-ink-700">{t.phone || 'N/A'}</td>
+                            <td className="px-3 py-3">
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${SPECIALTY_STYLE[t.specialty] || SPECIALTY_STYLE.General}`}>
+                                {t.specialty || 'Sin especialidad'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${t.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                                {t.isActive !== false ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 ring-1 ring-brand-100">{techJobCount(t)}</span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button type="button" onClick={() => openEditTech(t)} title="Editar"
+                                  className="grid h-11 w-11 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100 active:bg-brand-100 touch-manipulation"><Pencil size={15} /></button>
+                                <button type="button" onClick={() => toggleTechActive(t)} title={t.isActive !== false ? 'Desactivar' : 'Activar'}
+                                  className={`grid h-11 w-11 place-items-center rounded-lg transition touch-manipulation ${t.isActive !== false ? 'bg-slate-100 text-ink-600 hover:bg-slate-200 active:bg-slate-200' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 active:bg-emerald-100'}`}>
+                                  {t.isActive !== false ? <PowerOff size={15} /> : <Power size={15} />}
+                                </button>
+                                <button type="button" onClick={() => setDeleteTech(t)} title="Eliminar"
+                                  className="grid h-11 w-11 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:bg-rose-100 touch-manipulation"><Trash2 size={15} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
-              <div className="border-b border-slate-100 p-5">
-                <div className="flex items-center justify-between">
-                  <div>
+              <div className="border-b border-slate-100 p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <h3 className="font-display font-bold text-ink-900">Directorio de clientes</h3>
                     <p className="text-xs text-ink-500">{filteredClients.length} clientes registrados</p>
                   </div>
                   {hayFiltrosC && (
-                    <button onClick={limpiarFiltrosC} className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200">
+                    <button type="button" onClick={limpiarFiltrosC} className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation">
                       <X size={13} /> Limpiar filtros
                     </button>
                   )}
@@ -766,7 +1421,7 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-3 py-3 text-ink-700">{c.email}</td>
                           <td className="px-3 py-3">
-                            {wa ? <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 font-medium text-brand-700">{c.phone} <MessageCircle size={13} /></a> : 'N/A'}
+                            {wa ? <a href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-1.5 font-medium text-brand-700 hover:text-brand-800 active:text-brand-800 touch-manipulation">{c.phone} <MessageCircle size={13} /></a> : 'N/A'}
                           </td>
                           <td className="px-3 py-3"><span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 ring-1 ring-brand-100">{c._count?.appointments ?? 0}</span></td>
                           <td className="px-3 py-3">
@@ -777,10 +1432,10 @@ export default function AdminDashboard() {
                           <td className="px-3 py-3 text-ink-500">{fmtDate(c.createdAt)}</td>
                           <td className="px-5 py-3">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button onClick={() => openEdit(c)} title="Editar"
-                                className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100"><Pencil size={15} /></button>
-                              <button onClick={() => setDeleteTarget(c)} title="Eliminar"
-                                className="grid h-8 w-8 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100"><Trash2 size={15} /></button>
+                              <button type="button" onClick={() => openEdit(c)} title="Editar"
+                                className="grid h-11 w-11 place-items-center rounded-lg bg-brand-50 text-brand-600 transition hover:bg-brand-100 active:bg-brand-100 touch-manipulation"><Pencil size={15} /></button>
+                              <button type="button" onClick={() => setDeleteTarget(c)} title="Eliminar"
+                                className="grid h-11 w-11 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:bg-rose-100 touch-manipulation"><Trash2 size={15} /></button>
                             </div>
                           </td>
                         </tr>
@@ -798,10 +1453,10 @@ export default function AdminDashboard() {
       {editUser && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => setEditUser(null)}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={saveUser}
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="font-display text-lg font-bold text-ink-900">Editar usuario</h3>
-              <button type="button" onClick={() => setEditUser(null)} className="grid h-8 w-8 place-items-center rounded-lg text-ink-500 hover:bg-slate-100"><X size={18} /></button>
+              <button type="button" onClick={() => setEditUser(null)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
             </div>
             {userMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{userMsg}</div>}
             <div className="mt-4 grid grid-cols-2 gap-3">
@@ -823,8 +1478,8 @@ export default function AdminDashboard() {
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nueva contraseña <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
               <input type="text" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} placeholder="Dejar vacío para no cambiarla" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setEditUser(null)} className="rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100">Cancelar</button>
-              <button type="submit" disabled={savingUser} className="rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50">{savingUser ? 'Guardando…' : 'Guardar cambios'}</button>
+              <button type="button" onClick={() => setEditUser(null)} className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100 active:bg-slate-100 touch-manipulation">Cancelar</button>
+              <button type="submit" disabled={savingUser} className="min-h-11 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 disabled:opacity-50 touch-manipulation">{savingUser ? 'Guardando…' : 'Guardar cambios'}</button>
             </div>
           </form>
         </div>
@@ -833,7 +1488,7 @@ export default function AdminDashboard() {
       {/* Modal de confirmación de eliminación */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-4 text-center shadow-xl sm:p-6">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600">
               <Trash2 size={26} />
             </div>
@@ -844,8 +1499,207 @@ export default function AdminDashboard() {
               {' '}Esta acción no se puede deshacer.
             </p>
             <div className="mt-6 flex gap-2">
-              <button onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 disabled:opacity-50">Cancelar</button>
-              <button onClick={confirmDelete} disabled={deleting} className="flex-1 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 disabled:opacity-50">{deleting ? 'Eliminando…' : 'Sí, eliminar'}</button>
+              <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleting} className="flex-1 min-h-11 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 disabled:opacity-50 touch-manipulation">Cancelar</button>
+              <button type="button" onClick={confirmDelete} disabled={deleting} className="flex-1 min-h-11 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 touch-manipulation">{deleting ? 'Eliminando…' : 'Sí, eliminar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nuevo técnico */}
+      {createTech && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !savingTech && setCreateTech(null)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={saveNewTech}
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Nuevo técnico</h3>
+              <button type="button" onClick={() => setCreateTech(null)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            {techMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{techMsg}</div>}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre</span>
+                <input required value={createTech.firstName} onChange={(e) => setCreateTech({ ...createTech, firstName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Apellido</span>
+                <input required value={createTech.lastName} onChange={(e) => setCreateTech({ ...createTech, lastName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Correo</span>
+              <input required type="email" value={createTech.email} onChange={(e) => setCreateTech({ ...createTech, email: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Teléfono</span>
+              <input value={createTech.phone} onChange={(e) => setCreateTech({ ...createTech, phone: e.target.value })} placeholder="+58 412-0000000" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Contraseña</span>
+              <input required type="text" minLength={6} value={createTech.password} onChange={(e) => setCreateTech({ ...createTech, password: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Especialidad</span>
+              <select value={createTech.specialty} onChange={(e) => setCreateTech({ ...createTech, specialty: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                {SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select></label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setCreateTech(null)} className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100 active:bg-slate-100 touch-manipulation">Cancelar</button>
+              <button type="submit" disabled={savingTech} className="min-h-11 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 disabled:opacity-50 touch-manipulation">{savingTech ? 'Creando…' : 'Crear técnico'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal editar técnico */}
+      {editTech && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !savingTech && setEditTech(null)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={saveEditTech}
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Editar técnico</h3>
+              <button type="button" onClick={() => setEditTech(null)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            {techMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{techMsg}</div>}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre</span>
+                <input required value={editTech.firstName} onChange={(e) => setEditTech({ ...editTech, firstName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Apellido</span>
+                <input required value={editTech.lastName} onChange={(e) => setEditTech({ ...editTech, lastName: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Correo</span>
+              <input required type="email" value={editTech.email} onChange={(e) => setEditTech({ ...editTech, email: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Teléfono</span>
+              <input value={editTech.phone} onChange={(e) => setEditTech({ ...editTech, phone: e.target.value })} placeholder="+58 412-0000000" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Especialidad</span>
+              <select value={editTech.specialty} onChange={(e) => setEditTech({ ...editTech, specialty: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                {SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nueva contraseña <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
+              <input type="text" value={editTech.password} onChange={(e) => setEditTech({ ...editTech, password: e.target.value })} placeholder="Dejar vacío para no cambiarla" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditTech(null)} className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100 active:bg-slate-100 touch-manipulation">Cancelar</button>
+              <button type="submit" disabled={savingTech} className="min-h-11 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 disabled:opacity-50 touch-manipulation">{savingTech ? 'Guardando…' : 'Guardar cambios'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal eliminar técnico */}
+      {deleteTech && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !deleting && setDeleteTech(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-4 text-center shadow-xl sm:p-6">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-ink-900">¿Eliminar este técnico?</h3>
+            <p className="mt-2 text-sm text-ink-500">
+              Vas a eliminar a <strong className="text-ink-900">{deleteTech.firstName} {deleteTech.lastName}</strong> ({deleteTech.email}).
+              {techActiveJobs(deleteTech) > 0 && (
+                <> Este técnico tiene <strong className="text-rose-600">{techActiveJobs(deleteTech)} servicio{techActiveJobs(deleteTech) === 1 ? '' : 's'} activo{techActiveJobs(deleteTech) === 1 ? '' : 's'}</strong>. ¿Seguro que deseas eliminarlo?</>
+              )}
+              {' '}Las citas asignadas quedarán sin técnico. Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-6 flex gap-2">
+              <button type="button" onClick={() => setDeleteTech(null)} disabled={deleting} className="flex-1 min-h-11 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 disabled:opacity-50 touch-manipulation">Cancelar</button>
+              <button type="button" onClick={confirmDeleteTech} disabled={deleting} className="flex-1 min-h-11 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 touch-manipulation">{deleting ? 'Eliminando…' : 'Sí, eliminar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nuevo servicio */}
+      {createSvc && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !savingSvc && setCreateSvc(null)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={saveNewSvc}
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Nuevo servicio</h3>
+              <button type="button" onClick={() => setCreateSvc(null)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            {svcMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{svcMsg}</div>}
+            <label className="mt-4 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre</span>
+              <input required value={createSvc.name} onChange={(e) => setCreateSvc({ ...createSvc, name: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" placeholder="Ej: Cambio de capacitor" /></label>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Categoría</span>
+                <select required value={createSvc.category} onChange={(e) => setCreateSvc({ ...createSvc, category: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                  {SERVICE_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                </select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Tipo de equipo</span>
+                <select required value={createSvc.equipmentType} onChange={(e) => setCreateSvc({ ...createSvc, equipmentType: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                </select></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Precio USD</span>
+              <input required type="number" min="0.01" step="0.01" value={createSvc.priceUsd} onChange={(e) => setCreateSvc({ ...createSvc, priceUsd: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" placeholder="40" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Descripción <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
+              <textarea value={createSvc.description} onChange={(e) => setCreateSvc({ ...createSvc, description: e.target.value })} rows={3} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" placeholder="Detalle breve del servicio…" /></label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setCreateSvc(null)} className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100 active:bg-slate-100 touch-manipulation">Cancelar</button>
+              <button type="submit" disabled={savingSvc} className="min-h-11 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 disabled:opacity-50 touch-manipulation">{savingSvc ? 'Creando…' : 'Crear servicio'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal editar servicio */}
+      {editSvc && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !savingSvc && setEditSvc(null)}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={saveEditSvc}
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Editar servicio</h3>
+              <button type="button" onClick={() => setEditSvc(null)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            {svcMsg && <div className="mt-3 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-100">{svcMsg}</div>}
+            <label className="mt-4 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Nombre</span>
+              <input required value={editSvc.name} onChange={(e) => setEditSvc({ ...editSvc, name: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Categoría</span>
+                <select required value={editSvc.category} onChange={(e) => setEditSvc({ ...editSvc, category: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                  {SERVICE_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                </select></label>
+              <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Tipo de equipo</span>
+                <select required value={editSvc.equipmentType} onChange={(e) => setEditSvc({ ...editSvc, equipmentType: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
+                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                </select></label>
+            </div>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Precio USD</span>
+              <input required type="number" min="0.01" step="0.01" value={editSvc.priceUsd} onChange={(e) => setEditSvc({ ...editSvc, priceUsd: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Descripción <span className="font-normal normal-case text-ink-400">(opcional)</span></span>
+              <textarea value={editSvc.description} onChange={(e) => setEditSvc({ ...editSvc, description: e.target.value })} rows={3} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" /></label>
+            <label className="mt-4 flex min-h-11 cursor-pointer items-center justify-between rounded-xl bg-slate-50 px-4 py-2 ring-1 ring-slate-200">
+              <span className="text-sm font-semibold text-ink-700">{editSvc.isActive ? 'Servicio activo' : 'Servicio inactivo'}</span>
+              <input type="checkbox" checked={editSvc.isActive} onChange={(e) => setEditSvc({ ...editSvc, isActive: e.target.checked })} className="h-5 w-5 accent-brand-600" />
+            </label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditSvc(null)} className="min-h-11 rounded-full px-4 py-2 text-sm font-semibold text-ink-600 hover:bg-slate-100 active:bg-slate-100 touch-manipulation">Cancelar</button>
+              <button type="submit" disabled={savingSvc} className="min-h-11 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 disabled:opacity-50 touch-manipulation">{savingSvc ? 'Guardando…' : 'Guardar cambios'}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal eliminar servicio */}
+      {deleteSvc && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => !deleting && setDeleteSvc(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-4 text-center shadow-xl sm:p-6">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-ink-900">¿Eliminar este servicio?</h3>
+            <p className="mt-2 text-sm text-ink-500">
+              Vas a eliminar <strong className="text-ink-900">{deleteSvc.name}</strong> ({EQUIPMENT_LABELS[deleteSvc.equipmentType] || deleteSvc.equipmentType}).
+              {svcApptCount(deleteSvc) > 0 && (
+                <> Tiene <strong className="text-rose-600">{svcApptCount(deleteSvc)} cita{svcApptCount(deleteSvc) === 1 ? '' : 's'}</strong> asociada{svcApptCount(deleteSvc) === 1 ? '' : 's'}. Si el servidor lo rechaza, desactívalo en lugar de borrarlo.</>
+              )}
+              {' '}Esta acción no se puede deshacer.
+            </p>
+            {deleteSvcError && (
+              <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-left text-sm font-medium text-amber-800 ring-1 ring-amber-100">
+                {deleteSvcError}
+              </div>
+            )}
+            <div className="mt-6 flex flex-col gap-2">
+              {deleteSvcError ? (
+                <button type="button" onClick={deactivateFromDelete} disabled={deleting} className="min-h-11 rounded-full bg-amber-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600 active:bg-amber-700 disabled:opacity-50 touch-manipulation">
+                  {deleting ? 'Desactivando…' : 'Desactivar en su lugar'}
+                </button>
+              ) : (
+                <button type="button" onClick={confirmDeleteSvc} disabled={deleting} className="min-h-11 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 touch-manipulation">
+                  {deleting ? 'Eliminando…' : 'Sí, eliminar'}
+                </button>
+              )}
+              <button type="button" onClick={() => { setDeleteSvc(null); setDeleteSvcError(''); }} disabled={deleting} className="min-h-11 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 disabled:opacity-50 touch-manipulation">Cancelar</button>
             </div>
           </div>
         </div>

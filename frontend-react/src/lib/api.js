@@ -55,8 +55,16 @@ export const api = {
   resetPassword: (token, password) => request('/users/reset-password', { method: 'POST', body: { token, password } }),
   getClients: () => request('/users', { auth: true }),
   getTechnicians: () => request('/users/technicians', { auth: true }),
+  createTechnician: (payload) => request('/users/create-technician', { method: 'POST', body: payload, auth: true }),
   updateUser: (id, data) => request(`/users/${id}`, { method: 'PATCH', body: data, auth: true }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE', auth: true }),
+
+  // Servicios (catálogo)
+  getServices: () => request('/services'),
+  getAllServices: () => request('/services/all', { auth: true }),
+  createService: (payload) => request('/services', { method: 'POST', body: payload, auth: true }),
+  updateService: (id, data) => request(`/services/${id}`, { method: 'PATCH', body: data, auth: true }),
+  deleteService: (id) => request(`/services/${id}`, { method: 'DELETE', auth: true }),
 
   // Citas
   createAppointment: (payload) =>

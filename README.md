@@ -1,97 +1,117 @@
 # ❄ Fresh Service Digital
 
-> Plataforma web de servicios de refrigeración a domicilio — Fase 1: Prototipo UI
+> Plataforma web de servicios de refrigeración y climatización a domicilio — **Versión 1.0** (defendida 2026-07-20)
 
-**Deploy en producción:** [pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)  
-**Zona de operación:** San Juan de los Morros, estado Guárico, Venezuela
+**Producción:** [https://fresh.pedroservicios.xyz](https://fresh.pedroservicios.xyz)  
+**API:** [https://api.pedroservicios.xyz](https://api.pedroservicios.xyz)  
+**Zona:** San Juan de los Morros, estado Guárico, Venezuela
 
 ---
 
 ## Descripción
 
-**Fresh Service Digital** es una plataforma orientada a ofrecer servicios técnicos de refrigeración y climatización a domicilio. Esta primera iteración es un **prototipo UI completo** desarrollado en HTML5 y CSS puro, sin dependencias de frameworks ni librerías externas.
-
-El sistema cubre el flujo completo del usuario: captación vía Landing Page → exploración de servicios → autenticación → solicitud formal → visualización en panel administrativo.
+Fresh Service Digital conecta clientes, taller (admin) y técnicos para solicitar, asignar y completar servicios de aires acondicionados a domicilio. Incluye precios en USD convertidos a Bs (tasa BCV), proforma imprimible, correos reales y paneles por rol.
 
 ---
 
-## Vistas del Prototipo
+## Stack
 
-| Archivo | Vista | Descripción |
+| Capa | Tecnología |
+|---|---|
+| Frontend | React 19 + Vite 6 + Tailwind v4 (`frontend-react/`) |
+| Backend | NestJS 10 + Prisma 6 + JWT/bcrypt (`backend/`) |
+| Base de datos | PostgreSQL |
+| Paquetes | **pnpm** (no npm) |
+| Proceso | pm2 (`fresh-frontend` :4100, `fresh-service` :4000, `fresh-webhook` :4200) |
+| Proxy | Traefik + Let's Encrypt |
+| Deploy | push a `main` → webhook HMAC → `./deploy.sh` |
+
+El HTML/CSS legacy (`index.html`, `views/`) es solo referencia histórica. El producto oficial es `frontend-react/`.
+
+---
+
+## Estructura
+
+```
+Fresh-Service-Digital/
+├── frontend-react/     # SPA React (sitio oficial)
+├── backend/            # API NestJS + Prisma
+├── docker/             # seed SQL offline
+├── docs/               # manual, casos de uso, guía Docker
+├── deploy.sh           # deploy seguro (build antes de reiniciar)
+├── webhook.mjs         # deploy automático desde GitHub
+├── docker-compose.yml  # plan B offline (db + api + front)
+├── Progresos/          # estado actual
+└── History/            # historial de fases
+```
+
+---
+
+## Roles y rutas
+
+| Rol | Panel | Credencial demo |
 |---|---|---|
-| `index.html` | Landing Page | Carrusel hero + secciones de features y CTA |
-| `catalogo.html` | Catálogo de Servicios | Aires de Ventana, Split y Toneladas |
-| `login.html` | Inicio de Sesión | Formulario con validación visual |
-| `recuperar.html` | Recuperar Contraseña | Flujo de recuperación por correo |
-| `registro.html` | Crear Cuenta | Registro de usuario nuevo |
-| `solicitud.html` | Solicitar Servicio | Formulario con campos venezolanos (V/E, +58) |
-| `dashboard.html` | Panel Administrador | Tabla de solicitudes con datos hardcoded |
+| ADMIN (taller) | `/admin` | `admin@freshservice.com` / `Admin1234` |
+| TECHNICIAN | `/tecnico` | `carlos.tecnico@freshservice.com` / `Tecnico1234` |
+| CLIENT | `/panel` | su email / `Demo1234` |
 
 ---
 
-## Stack Tecnológico
-
-- **HTML5** puro — sin frameworks
-- **CSS Vanilla** — sistema de diseño propio con variables CSS
-- **JavaScript mínimo** — solo para interactividad de UI (menú hamburguesa)
-- **Google Fonts** — Exo 2 (display) + Nunito (body)
-- **GitHub Pages** — deploy estático
-
-> ⚠️ Esta fase **no incluye** backend, base de datos, React, Vite ni TypeScript. Todo eso es Fase 2.
-
----
-
-## Identidad Visual
-
-Paleta basada en refrigeración y congelamiento:
-
-| Token | Color | Uso |
-|---|---|---|
-| `--white` | `#FFFFFF` | Fondos principales |
-| `--ice-50` / `--ice-100` | `#F0F9FF` / `#E0F2FE` | Fondos secundarios |
-| `--blue-600` | `#0284C7` | Primario / CTAs |
-| `--blue-800` / `--blue-950` | `#075985` / `#082F49` | Footer / fondos oscuros |
-| `--text-900` | `#0C1A26` | Texto principal |
-
-Tipografía: **Exo 2** (headings) + **Nunito** (body)
-
----
-
-## Ejecutar Localmente
-
-No requiere servidor. Abre directamente en cualquier navegador:
+## Desarrollo local
 
 ```bash
-# Opción 1: doble clic en index.html
-# Opción 2: servidor local con Python
-python3 -m http.server 8080
-# Luego abrir: http://localhost:8080
+# Backend
+cd backend && pnpm install --frozen-lockfile
+pnpm exec prisma migrate deploy
+pnpm run start:prod   # o start:dev
+
+# Frontend
+cd frontend-react && pnpm install --frozen-lockfile
+pnpm run dev
+```
+
+**Docker offline** (tras un build previo con internet): ver `README-DOCKER.md`.
+
+```bash
+docker compose up
+# Front http://localhost:8080 · API http://localhost:4000
 ```
 
 ---
 
-## Navegación entre Vistas
+## Deploy
 
-Todas las vistas están interconectadas mediante `<a href="">` tradicional:
+```bash
+# Automático: git push a main
+# Manual:
+./deploy.sh
+```
 
-```
-index.html → catalogo.html → login.html → registro.html → solicitud.html
-                                         ↓
-                                    dashboard.html (admin)
-```
+Regla de DB: al cambiar `schema.prisma`, generar migración con `pnpm exec prisma migrate dev --name ...` y subir `prisma/migrations/`. Nunca cambiar el schema sin migración.
 
 ---
 
-## Estado del Proyecto
+## Documentación
 
-- [x] Fase 1 — Prototipo UI completo (HTML5 + CSS puro)
-- [ ] Fase 2 — Backend + Supabase + autenticación real
-- [ ] Fase 3 — Módulo de Neveras y Refrigeradores
-- [ ] Fase 4 — Integración de mapas para geolocalización
+- `Progresos/progreso.md` — estado actual y pendientes
+- `History/historial.md` — historial técnico por fases
+- `docs/MANUAL-USUARIO.md` — uso del sistema
+- `docs/GUIA-CASOS-DE-USO.md` — arquitectura y endpoints
+- `AGENTS.md` — reglas para agentes de IA
+- `Cambio-pnpm.md` — guía pnpm / supply-chain
+
+---
+
+## Roadmap v1.1 (abierto)
+
+- Deliverability con dominio propio (SPF/DKIM/DMARC)
+- Chat en tiempo real cliente ↔ taller
+- Ubicación del cliente con Google Maps (ubicación por cita)
+- Mejoras de Ingresos / UX
 
 ---
 
 ## Autor
 
-Desarrollado como plataforma piloto para taller de refrigeración en San Juan de los Morros.  
-© 2025 Fresh Service Digital · Todos los derechos reservados.
+Plataforma piloto para taller de refrigeración en San Juan de los Morros.  
+© 2026 Fresh Service Digital

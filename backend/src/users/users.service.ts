@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { CreateTechnicianDto } from './dto/create-technician.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
@@ -51,25 +53,82 @@ export class UsersService {
         lastName: true,
         phone: true,
         role: true,
+        specialty: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true,
+        _count: { select: { assignedServices: true } },
       },
       orderBy: { firstName: 'asc' },
     });
   }
 
   /**
+   * Crea un técnico desde el panel del taller.
+   * El admin lo valida en persona: queda verificado y activo de inmediato.
+   */
+  async createTechnician(dto: CreateTechnicianDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) {
+      throw new ConflictException('Ya existe un usuario con ese correo electrónico');
+    }
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: await this.hashPassword(dto.password),
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        specialty: dto.specialty ?? null,
+        role: 'TECHNICIAN',
+        isVerified: true,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        specialty: true,
+        isActive: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  /**
    * Actualiza los datos de un usuario (panel del taller). Solo cambia lo que se envía.
    */
-  async updateUser(id: string, dto: any) {
+  async updateUser(id: string, dto: UpdateUserDto) {
     const data: any = {};
-    for (const k of ['firstName', 'lastName', 'email', 'phone', 'role']) {
+    for (const k of ['firstName', 'lastName', 'email', 'phone', 'role', 'specialty'] as const) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
+    if (dto.isActive !== undefined) data.isActive = dto.isActive;
     if (dto.password) data.password = await this.hashPassword(dto.password);
     try {
       return await this.prisma.user.update({
         where: { id },
         data,
-        select: { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, isVerified: true },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          specialty: true,
+          isActive: true,
+          isVerified: true,
+        },
       });
     } catch (e: any) {
       if (e.code === 'P2002') throw new ConflictException('Ese correo ya está registrado en otra cuenta');
@@ -255,6 +314,10 @@ export class UsersService {
     // 3. Validar si está verificado
     if (!user.isVerified) {
       throw new UnauthorizedException('Debes verificar tu correo electrónico antes de iniciar sesión');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Esta cuenta está desactivada. Contacta al taller.');
     }
 
     // 4. Emitir token JWT con la identidad y el rol del usuario

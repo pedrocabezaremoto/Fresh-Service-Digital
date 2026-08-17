@@ -9,9 +9,9 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const TECNICOS = [
-  { email: 'juan.tecnico@freshservice.com',   firstName: 'Juan',   lastName: '— Aires de Ventana',   phone: '+58 412-111 2233' },
-  { email: 'carlos.tecnico@freshservice.com', firstName: 'Carlos', lastName: '— Aires Split',         phone: '+58 414-222 3344' },
-  { email: 'jorge.tecnico@freshservice.com',  firstName: 'Jorge',  lastName: '— Aires por Toneladas', phone: '+58 424-333 4455' },
+  { email: 'juan.tecnico@freshservice.com',   firstName: 'Juan',   lastName: 'Aires de Ventana', phone: '+58 412-111 2233', specialty: 'Aires de Ventana' },
+  { email: 'carlos.tecnico@freshservice.com', firstName: 'Carlos', lastName: 'Aires Split',      phone: '+58 414-222 3344', specialty: 'Aires Split' },
+  { email: 'jorge.tecnico@freshservice.com',  firstName: 'Jorge',  lastName: 'General',          phone: '+58 424-333 4455', specialty: 'General' },
 ];
 
 async function main() {
@@ -19,7 +19,7 @@ async function main() {
   for (const t of TECNICOS) {
     await prisma.user.upsert({
       where: { email: t.email },
-      update: { firstName: t.firstName, lastName: t.lastName, phone: t.phone, role: 'TECHNICIAN', isVerified: true },
+      update: { firstName: t.firstName, lastName: t.lastName, phone: t.phone, role: 'TECHNICIAN', isVerified: true, specialty: t.specialty, isActive: true },
       create: { ...t, password, role: 'TECHNICIAN', isVerified: true },
     });
     console.log('✔ técnico listo:', t.firstName, t.lastName, t.phone);

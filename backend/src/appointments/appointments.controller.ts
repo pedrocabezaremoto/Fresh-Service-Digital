@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -17,7 +18,7 @@ export class AppointmentsController {
     return this.appointmentsService.create(createDto);
   }
 
-  // Ver TODAS las citas: ADMIN y TECHNICIAN (panel del taller)
+  // ADMIN: todas. TECHNICIAN: solo las asignadas por el taller.
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'TECHNICIAN')
@@ -32,12 +33,12 @@ export class AppointmentsController {
     return this.appointmentsService.findByClient(clientId);
   }
 
-  // Cambiar estado de una cita: ADMIN y TECHNICIAN
+  // Cambiar estado: ADMIN libre; TECHNICIAN solo sobre citas suyas
   @Patch(':id/complete')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'TECHNICIAN')
-  async complete(@Param('id') id: string) {
-    return this.appointmentsService.completeAppointment(id);
+  async complete(@Param('id') id: string, @Req() req: any) {
+    return this.appointmentsService.completeAppointment(id, req.user);
   }
 
   @Patch(':id/status')
@@ -46,22 +47,29 @@ export class AppointmentsController {
   async updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateStatusDto,
+    @Req() req: any,
   ) {
-    return this.appointmentsService.updateStatus(id, updateStatusDto.status);
+    return this.appointmentsService.updateStatus(id, updateStatusDto.status, req.user);
   }
 
-  // Asignar técnico a una cita: ADMIN y TECHNICIAN (auto-asignación)
+  // Asignar técnico: SOLO el taller (ADMIN). El técnico no se auto-asigna.
   @Patch(':id/assign')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'TECHNICIAN')
+  @Roles('ADMIN')
   async assign(
     @Param('id') id: string,
     @Body('technicianId') technicianId: string | null,
-    @Req() req: any,
   ) {
-    if (req.user.role === 'TECHNICIAN') {
-      return this.appointmentsService.assignTechnician(id, req.user.sub);
-    }
     return this.appointmentsService.assignTechnician(id, technicianId);
+  }
+
+  // Actualizar ubicación (u otros campos parciales) de una cita
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateAppointmentDto,
+  ) {
+    return this.appointmentsService.update(id, updateDto);
   }
 }

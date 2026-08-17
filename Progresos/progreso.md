@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-06-23  
+**Última actualización:** 2026-08-17  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -477,3 +477,211 @@ Guía completa reutilizable en **`Cambio-pnpm.md`** (raíz).
 ### Pendiente opcional
 - [ ] Borrar el branch `migracion-pnpm` (ya mergeado a main).
 - [ ] Endurecimiento extra opcional de `Cambio-pnpm.md` §11 (`minimumReleaseAge`).
+
+---
+
+## 📍 2026-08-14 — Ubicación por cita (backend) + docs reales
+
+| Cambio | Estado |
+|---|---|
+| `README.md` y `AGENTS.md` reescritos al stack real (React/Nest/pnpm/v1.0) | ✅ |
+| Campos `latitude`/`longitude`/`address` opcionales en `Appointment` | ✅ |
+| Migración `20260814155902_add_location_to_appointment` | ✅ aplicada en DB VPS |
+| DTO create + `UpdateAppointmentDto` + `PATCH /appointments/:id` | ✅ |
+| Validación cruzada lat/lng + rangos (400 si incompleto/fuera de rango) | ✅ verificado |
+| Frontend (mapa / solicitud) | ⏳ siguiente paso |
+
+**Nota:** `prisma migrate dev` falló por falta de permiso de shadow DB; se generó SQL con `migrate diff`, se aplicó y se marcó con `migrate resolve`. Misma migración queda lista para `deploy.sh` / `migrate deploy` tras el push.
+
+---
+
+## Integración Leaflet.js — Mapas de ubicación
+Fecha inicio: 2026-08-14
+
+### Fase 0 — Cimientos DB + Backend ✅
+- Migración Prisma: campos `latitude` (Float?), `longitude` (Float?), `address` (String?) agregados a Appointment
+- Migración: `20260814155902_add_location_to_appointment`
+- DTOs actualizados: CreateAppointmentDto + UpdateAppointmentDto aceptan los 3 campos opcionales
+- Validación cruzada en service: lat sin lng (o viceversa) = error 400, rangos validados
+- Backward compatible: citas existentes sin coordenadas siguen funcionando
+- Estado: COMPLETADO
+
+### Fase 1 — Componentes de mapa (frontend) ✅
+- Paquetes: leaflet 1.9.4, react-leaflet 5.0.0, @types/leaflet 1.9.22 (pnpm)
+- fixLeafletIcons.js: fix de íconos para Vite (mergeOptions con imports directos)
+- LocationPicker.jsx: mapa interactivo, pin draggable, geolocation, Nominatim reverse geocoding, input dirección editable. Props: onLocationChange, initialPosition, height
+- LocationView.jsx: mapa solo lectura, popup con dirección, botón "Cómo llegar" (Google Maps), fallback "Ubicación no registrada". Props: latitude, longitude, address, height, showNavigationButton
+- CSS Leaflet importado en main.jsx
+- Componentes NO integrados en páginas todavía
+- Estado: COMPLETADO
+
+### Fase 1.3-1.8 — Integrar mapa en Solicitud del cliente ✅
+- Archivo modificado: Solicitud.jsx
+- LocationPicker integrado en sección 4 del formulario ("¿Dónde necesitas el servicio?")
+- Ubicación opcional: ignora primer emit del picker, solo marca tras interacción real
+- Indicador verde "Ubicación marcada" con coordenadas
+- Envío condicional de latitude/longitude/address en el payload
+- Backward compatible: formulario funciona sin ubicación como antes
+- Estado: COMPLETADO
+
+### Fase 2 — Mapa en Panel del Técnico ✅
+- Archivo modificado: TecnicoDashboard.jsx
+- LocationView integrado en cada tarjeta de trabajo con coordenadas
+- Acordeón "Ver ubicación" en pestañas Por realizar y Finalizados (mapa 200px)
+- Mapa visible directo en pestaña "En ejecución" (250px, CTA "Cómo llegar" prominente)
+- Dirección con ícono MapPin en las tarjetas que tienen address
+- Responsive mobile: botones min-h-11, touch-manipulation, full-width
+- Render condicional del mapa (evita tiles grises al abrir acordeón)
+- Tarjetas sin coordenadas: sin cambios, layout idéntico al anterior
+- Estado: COMPLETADO
+
+### Fase 3 — Mapa en Panel del Taller (Admin) ✅
+- Componente nuevo: ServiceMap.jsx (mapa multi-marker, diferente a LocationView)
+- Markers L.divIcon con color por estado: PENDING naranja, ASSIGNED azul, IN_PROGRESS violeta, COMPLETED verde, CANCELLED rojo
+- Popup por marker: cliente, equipo, estado (badge), técnico, dirección
+- Integrado en AdminDashboard.jsx entre gráficos y ranking de marcas, ancho completo
+- Filtro por estado desde KPIs del dashboard (toggle on/off) + chip "Quitar filtro"
+- Leyenda horizontal con los 5 estados y colores
+- Fallback: "Ninguna solicitud tiene ubicación registrada" / "No hay solicitudes en este filtro"
+- CSS override en index.css para divIcon sin caja blanca
+- Nota: KPIs Pendientes/En proceso ahora filtran el mapa en vez de navegar a Solicitudes
+- Estado: COMPLETADO
+
+### Fase 4 — Pulido y extras
+- Estado: PENDIENTE
+
+---
+
+## Pendientes post-integración Leaflet — detectados 2026-08-15
+
+### BUG CRÍTICO — Asignación automática al técnico ✅ RESUELTO 2026-08-15
+- Causa: backend devolvía PENDING sin technicianId a técnicos + panel tenía "Tomar servicio"
+- Fix: técnico solo ve citas con technicianId = él, solo ADMIN puede asignar (403 si técnico intenta)
+- Estado: RESUELTO
+
+### Responsive mobile (Android) — pulido pendiente ✅ COMPLETADO 2026-08-15
+- Spacing: px-5 → px-4 sm:px-5 lg:px-8 en todos los paneles
+- Cards: p-5/p-6/p-8 → p-4 sm:p-5|p-6|p-8, gaps reducidos en mobile
+- Botones: min-h-11 (44px), touch-manipulation, active: equivalentes al hover
+- KPIs admin: hint "Filtrar mapa" siempre visible (no solo hover)
+- Logout mobile: agregado en admin y técnico (antes inaccesible, sidebar hidden <lg)
+- Verificado en viewport 360px y 412px, cero overflow horizontal
+- Estado: COMPLETADO — pendiente pruebas UAT en dispositivos reales
+
+### Panel del Taller — mejoras estructurales pendientes → PARCIALMENTE COMPLETADO
+- ✅ CRUD técnicos completo (crear/editar/borrar/activar/desactivar)
+- ✅ Campo specialty real en modelo User (reemplaza hack en lastName)
+- ✅ Campo isActive para desactivar sin borrar
+- ✅ Vista "Equipo Técnico" como 5ª vista en AdminDashboard
+- ⬚ Más funcionalidades pendientes para convertirlo en "centro de control total"
+
+### Mapas — testing pendiente
+- Google Maps redirige correctamente con dirección ✅
+- Falta testing más profundo: múltiples direcciones, precisión del pin, Nominatim en zonas rurales de Guárico
+- Probar con citas reales (no solo demo)
+
+### Prioridad de trabajo (próximas sesiones)
+1. ~~**BUG asignación automática**~~ — ✅ resuelto
+2. ~~**Responsive mobile**~~ — ✅ completado (pendiente UAT en Android real)
+3. ~~**CRUD técnicos**~~ — ✅ completado
+4. ~~**Botones rotos**~~ — ✅ restaurados post-mapas
+5. **Pruebas UAT** — celulares Android reales (360–412px y dispositivos físicos)
+6. **Testing mapas** — pruebas profundas (Nominatim rural, pin, citas reales)
+7. **Panel taller** — más funcionalidades hacia "centro de control total"
+
+---
+
+## CRUD Técnicos + Responsive Android — 2026-08-15
+
+### Backend — modelo User actualizado
+- Migración: `20260815152000_add_specialty_to_user`
+- Campos nuevos: `specialty String?`, `isActive Boolean @default(true)`
+- Endpoint: `POST /users/create-technician` (solo ADMIN, crea con role TECHNICIAN, isVerified: true)
+- Login bloquea técnicos con isActive: false ("Esta cuenta está desactivada")
+- Asignación: solo permite asignar técnicos activos (isActive: true)
+- Migración de datos: Carlos y otros técnicos limpiados (hack lastName → campo specialty)
+
+### Frontend — vista Equipo Técnico en AdminDashboard
+- 5ª vista: Dashboard / Solicitudes / Ingresos / Clientes / **Técnicos**
+- Navegación: item UserCog + badge conteo + select mobile
+- Tabla desktop: Nombre, Email, Teléfono, Especialidad (badge color), Estado (activo/inactivo), Servicios, Acciones
+- Tarjetas mobile: nombre, badges, datos, botones táctiles
+- Modal crear: Nombre, Apellido, Email, Teléfono, Contraseña, Especialidad (select). Éxito: banner verde 4s
+- Modal editar: mismos campos, contraseña vacía = no cambia. PATCH /users/:id
+- Eliminar: modal confirmación, advertencia si tiene citas activas. DELETE /users/:id (citas quedan sin técnico por onDelete: SetNull)
+- Toggle activo/inactivo: PATCH inline, badge cambia al instante
+- Sugerencia de técnico en Solicitudes: ahora usa campo specialty (no parsea lastName), solo técnicos activos
+
+### Responsive Android — pulido general
+- 4 paneles revisados: ClienteDashboard, TecnicoDashboard, AdminDashboard, Solicitud
+- Spacing mobile: padding lateral px-4, cards p-4, gaps gap-3
+- Botones: min-h-11 (44px), touch-manipulation, active: equivalentes
+- KPIs: hint siempre visible, no solo hover
+- Logout mobile: botón en topbar <lg (admin + técnico)
+- Button.jsx: defaults táctiles globales
+- AdminDashboard: mapa 280px en <640px, header flex-col
+- Verificado viewport 360px y 412px: cero overflow
+- Botones restaurados post-mapas: KPIs, Ver solicitudes, iniciar servicio
+
+### Estado del proyecto
+- Leaflet.js: INTEGRADO (4 paneles, 3 componentes de mapa)
+- CRUD Técnicos: COMPLETO
+- Responsive Android: COMPLETADO (pendiente UAT dispositivos reales)
+- Bug asignación: RESUELTO
+- Pendiente: pruebas UAT en celulares Android reales + testing profundo de mapas
+
+---
+
+## Cierre del día — 2026-08-15
+
+### Completado hoy
+- ✅ Bug asignación automática resuelto (técnico ya no ve PENDING ajenos)
+- ✅ Responsive Android: spacing, botones táctiles 44px, active:, logout mobile, KPIs hint visible
+- ✅ CRUD Técnicos completo: vista "Equipo Técnico" en panel admin, crear/editar/borrar/activar/desactivar
+- ✅ Campo specialty y isActive en modelo User (migración aplicada)
+- ✅ Endpoint POST /users/create-technician (solo ADMIN)
+- ✅ Login bloquea técnicos inactivos
+- ✅ Sugerencia de técnico por specialty (ya no parsea lastName)
+- ✅ Fix deploy: backend rebuild + pm2 restart (endpoint 404 → 401)
+- ✅ Frontend rebuild + pm2 restart (vista Técnicos visible en producción)
+- ✅ Prueba UAT: creación de técnico Teofilo Carbona desde el modal — funcional
+
+### Bug encontrado y resuelto en UAT
+- "Cannot POST /users/create-technician" → causa: pm2 servía dist/ viejo (22h sin rebuild). Fix: pnpm build + pm2 restart backend y frontend.
+
+### Pendiente para próxima sesión — Gestión de Servicios (CRUD)
+
+**RESUELTO 2026-08-17** — ver sección "CRUD Servicios + catálogo en DB".
+
+### Backlog actualizado (próximas sesiones)
+1. **Testing profundo mapas** — múltiples direcciones, zonas rurales, dispositivos reales
+2. **Panel taller** — seguir creciendo hacia centro de control total
+3. **Mejoras UX** — lo que salga de las pruebas UAT en Android
+4. **Cuando todas las citas tengan priceUsd/serviceId** — se pueden retirar prices.js / prices.ts
+
+---
+
+## CRUD Servicios + catálogo en DB — 2026-08-17
+
+### Backend
+- Modelo Prisma `Service` + enums `ServiceCategory` y `EquipmentType`
+- `Appointment.serviceId` opcional (citas viejas siguen con `priceUsd` guardado)
+- Migración `20260817183900_add_service_table` con INSERT de 25 servicios (precios de prices.js)
+- Endpoints: GET /services (público), GET /services/all + POST/PATCH/DELETE (ADMIN)
+- Unique `name` + `equipmentType`. DELETE 409 si tiene citas asociadas
+- Crear cita: si viene `serviceId`, el precio lo pone el backend
+
+### Frontend
+- 6ª vista admin "Servicios" (Settings, entre Ingresos y Clientes): tabla + tarjetas, filtros, CRUD, precios USD/Bs
+- Solicitud.jsx: selects desde GET /services; envía `serviceId`; fallback a prices.js si la API falla
+- Catalogo.jsx: lee servicios activos, agrupa por equipo, precios con tasa BCV
+- prices.js / prices.ts NO se borraron (fallback histórico)
+
+### Deploy
+- `prisma migrate deploy` + `pnpm run build` backend/frontend + `pm2 restart fresh-service fresh-frontend`
+- Verificado: GET /services = 25; GET /services/all = 401 sin token; bundle `index-fh-VD5pZ.js` en prod
+
+### No se tocó
+- TecnicoDashboard.jsx
+- Componentes de mapas
+- Citas existentes (backward compatible)

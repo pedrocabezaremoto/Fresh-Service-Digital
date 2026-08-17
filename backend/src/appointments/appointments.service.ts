@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppointmentStatus } from '@prisma/client';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { MailService } from '../mail/mail.service';
 import { RateService } from '../rate/rate.service';
 import { priceUsd as derivePriceUsd } from '../common/prices';
@@ -17,12 +18,67 @@ export class AppointmentsService {
   ) {}
 
   /**
+   * Valida pares lat/lng: ambas o ninguna; rangos geográficos válidos.
+   * `address` puede ir sola o junto con coordenadas.
+   */
+  private assertLocationFields(latitude?: number | null, longitude?: number | null) {
+    const hasLat = latitude !== undefined && latitude !== null;
+    const hasLng = longitude !== undefined && longitude !== null;
+
+    if (hasLat !== hasLng) {
+      throw new BadRequestException(
+        'Si envía coordenadas, debe incluir latitud y longitud',
+      );
+    }
+
+    if (hasLat && hasLng) {
+      if (latitude! < -90 || latitude! > 90) {
+        throw new BadRequestException('La latitud debe estar entre -90 y 90');
+      }
+      if (longitude! < -180 || longitude! > 180) {
+        throw new BadRequestException('La longitud debe estar entre -180 y 180');
+      }
+    }
+  }
+
+  /**
    * Crea una nueva cita de servicio y asocia el equipo de refrigeración de forma transaccional.
    */
   async create(dto: CreateAppointmentDto) {
-    const { clientId, scheduledAt, notes, brand, model, btuCapacity, failureDescription, priceUsd, cedula } = dto;
+    const {
+      clientId,
+      scheduledAt,
+      notes,
+      brand,
+      model,
+      btuCapacity,
+      failureDescription,
+      priceUsd,
+      serviceId,
+      cedula,
+      latitude,
+      longitude,
+      address,
+    } = dto;
+
+    this.assertLocationFields(latitude, longitude);
 
     return this.prisma.$transaction(async (tx) => {
+      // Si viene serviceId, el precio lo fija el catálogo (no se confía en el frontend)
+      let resolvedPrice = priceUsd ?? null;
+      let resolvedServiceId: string | null = null;
+      if (serviceId) {
+        const service = await tx.service.findUnique({ where: { id: serviceId } });
+        if (!service) {
+          throw new BadRequestException('El servicio indicado no existe');
+        }
+        if (!service.isActive) {
+          throw new BadRequestException('Este servicio no está disponible');
+        }
+        resolvedPrice = service.priceUsd;
+        resolvedServiceId = service.id;
+      }
+
       // Recordar la cédula en la cuenta del cliente (para precargarla la próxima vez)
       if (cedula) {
         await tx.user.update({ where: { id: clientId }, data: { cedula } });
@@ -32,7 +88,11 @@ export class AppointmentsService {
         data: {
           clientId,
           scheduledAt: new Date(scheduledAt),
-          priceUsd: priceUsd ?? null,
+          priceUsd: resolvedPrice,
+          serviceId: resolvedServiceId,
+          latitude: latitude ?? null,
+          longitude: longitude ?? null,
+          address: address ?? null,
           notes,
           status: AppointmentStatus.PENDING,
         },
@@ -54,16 +114,48 @@ export class AppointmentsService {
   }
 
   /**
-   * Obtiene todas las citas de la base de datos (con filtrado si el rol es TECHNICIAN),
-   * incluyendo la relación con el cliente (User), técnico asignado (User) y sus equipos asociados (Equipment).
+   * Actualiza campos de ubicación de una cita existente (parcial).
+   */
+  async update(appointmentId: string, dto: UpdateAppointmentDto) {
+    const existing = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Cita no encontrada');
+    }
+
+    // Si solo llega un lado del par, fusionar con lo ya guardado para validar el resultado final
+    const nextLat =
+      dto.latitude !== undefined ? dto.latitude : existing.latitude;
+    const nextLng =
+      dto.longitude !== undefined ? dto.longitude : existing.longitude;
+
+    this.assertLocationFields(nextLat, nextLng);
+
+    const data: {
+      latitude?: number | null;
+      longitude?: number | null;
+      address?: string | null;
+    } = {};
+    if (dto.latitude !== undefined) data.latitude = dto.latitude;
+    if (dto.longitude !== undefined) data.longitude = dto.longitude;
+    if (dto.address !== undefined) data.address = dto.address;
+
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data,
+    });
+  }
+
+  /**
+   * Obtiene las citas. ADMIN ve todas.
+   * TECHNICIAN solo ve las que el taller le asignó (technicianId = él).
+   * Nunca ve PENDING sin asignar — eso es exclusivo del panel del taller.
    */
   async findAll(user?: any) {
     const where: any = {};
     if (user && user.role === 'TECHNICIAN') {
-      where.OR = [
-        { technicianId: user.sub },
-        { technicianId: null, status: AppointmentStatus.PENDING },
-      ];
+      where.technicianId = user.sub;
     }
 
     return this.prisma.appointment.findMany({
@@ -91,11 +183,26 @@ export class AppointmentsService {
           },
         },
         equipment: true,
+        service: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+  }
+
+  /** El técnico solo puede operar sobre citas que el taller le asignó. */
+  private async assertTechnicianOwns(appointmentId: string, user?: any) {
+    if (!user || user.role !== 'TECHNICIAN') return;
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      select: { technicianId: true },
+    });
+    if (!appointment || appointment.technicianId !== user.sub) {
+      throw new ForbiddenException(
+        'Esta solicitud no está asignada a ti. Solo el taller puede asignarla.',
+      );
+    }
   }
 
   /**
@@ -109,6 +216,7 @@ export class AppointmentsService {
         technician: {
           select: { firstName: true, lastName: true, phone: true },
         },
+        service: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -119,7 +227,8 @@ export class AppointmentsService {
   /**
    * Completa una cita cambiando su estado a COMPLETED.
    */
-  async completeAppointment(appointmentId: string) {
+  async completeAppointment(appointmentId: string, user?: any) {
+    await this.assertTechnicianOwns(appointmentId, user);
     return this.prisma.appointment.update({
       where: { id: appointmentId },
       data: { status: AppointmentStatus.COMPLETED },
@@ -130,7 +239,8 @@ export class AppointmentsService {
    * Cambia el estado de una cita a cualquier estado válido.
    * Usado por el panel del taller para gestionar el flujo de trabajo.
    */
-  async updateStatus(appointmentId: string, status: AppointmentStatus) {
+  async updateStatus(appointmentId: string, status: AppointmentStatus, user?: any) {
+    await this.assertTechnicianOwns(appointmentId, user);
     return this.prisma.appointment.update({
       where: { id: appointmentId },
       data: { status },
@@ -145,6 +255,19 @@ export class AppointmentsService {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
     });
+
+    if (technicianId) {
+      const tech = await this.prisma.user.findUnique({
+        where: { id: technicianId },
+        select: { id: true, role: true, isActive: true },
+      });
+      if (!tech || tech.role !== 'TECHNICIAN') {
+        throw new BadRequestException('El técnico indicado no existe');
+      }
+      if (!tech.isActive) {
+        throw new BadRequestException('No se puede asignar un técnico inactivo');
+      }
+    }
 
     const data: any = { technicianId };
     if (technicianId && appointment && appointment.status === AppointmentStatus.PENDING) {
@@ -176,6 +299,7 @@ export class AppointmentsService {
           },
         },
         equipment: true,
+        service: true,
       },
     });
 

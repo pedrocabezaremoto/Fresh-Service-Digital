@@ -29,6 +29,10 @@ export class CreateAppointmentDto {
   @IsOptional()
   priceUsd?: number;
 
+  @IsString({ message: 'El ID del servicio debe ser texto' })
+  @IsOptional()
+  serviceId?: string;
+
   @IsString({ message: 'La cédula debe ser texto' })
   @IsOptional()
   cedula?: string;
@@ -36,4 +40,18 @@ export class CreateAppointmentDto {
   @IsString({ message: 'La descripción de la falla es requerida' })
   @IsNotEmpty({ message: 'La descripción de la falla o servicio es requerida' })
   failureDescription: string;
+
+  /** Coordenadas del domicilio del servicio (opcionales; si se envía una, deben ir ambas). */
+  @IsNumber({}, { message: 'La latitud debe ser un número' })
+  @IsOptional()
+  latitude?: number;
+
+  @IsNumber({}, { message: 'La longitud debe ser un número' })
+  @IsOptional()
+  longitude?: number;
+
+  /** Dirección textual del servicio (puede ir sola o junto con coordenadas). */
+  @IsString({ message: 'La dirección debe ser texto' })
+  @IsOptional()
+  address?: string;
 }

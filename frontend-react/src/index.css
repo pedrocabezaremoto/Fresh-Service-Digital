@@ -210,3 +210,9 @@
 .dark-mode .text-brand-900 { color: #bae6fd !important; }
 .dark-mode .text-brand-800 { color: #38bdf8 !important; }
 .dark-mode .text-brand-700 { color: #0ea5e9 !important; }
+
+/* Markers de color del ServiceMap (L.divIcon): quitar caja blanca por defecto de Leaflet */
+.leaflet-div-icon.fsd-service-marker {
+  background: transparent !important;
+  border: none !important;
+}

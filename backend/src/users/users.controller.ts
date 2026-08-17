@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateTechnicianDto } from './dto/create-technician.dto';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -31,6 +32,14 @@ export class UsersController {
   @Post('register')
   async register(@Body() registerDto: RegisterUserDto) {
     return this.usersService.register(registerDto);
+  }
+
+  // Solo un ADMIN puede dar de alta técnicos (quedan verificados, sin magic link)
+  @Post('create-technician')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async createTechnician(@Body() dto: CreateTechnicianDto) {
+    return this.usersService.createTechnician(dto);
   }
 
   @Get('verify-link')

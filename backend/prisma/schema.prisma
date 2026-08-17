@@ -21,6 +21,24 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum ServiceCategory {
+  MANTENIMIENTO
+  REPARACION
+  INSTALACION
+  DIAGNOSTICO
+  RECARGA
+  OTRO
+}
+
+enum EquipmentType {
+  VENTANA
+  SPLIT
+  TONELADA_1
+  TONELADA_2
+  TONELADA_3
+  GENERAL
+}
+
 model User {
   id               String        @id @default(uuid())
   email            String        @unique
@@ -30,6 +48,8 @@ model User {
   phone            String?
   cedula           String?
   role             Role          @default(CLIENT)
+  specialty        String?
+  isActive         Boolean       @default(true)
   isVerified       Boolean       @default(false)
   verificationCode String?
   resetToken       String?
@@ -51,14 +71,38 @@ model Appointment {
   status       AppointmentStatus @default(PENDING)
   scheduledAt  DateTime
   priceUsd     Float?            // precio congelado del servicio en USD (para proforma/total)
+  // Ubicación del servicio (por cita: un cliente puede pedir en direcciones distintas)
+  latitude     Float?
+  longitude    Float?
+  address      String?
   notes        String?
+  serviceId    String?
+  service      Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   equipment    Equipment[]
 
   @@index([clientId])
   @@index([technicianId])
+  @@index([serviceId])
   @@map("appointments")
+}
+
+model Service {
+  id            String          @id @default(uuid())
+  name          String
+  category      ServiceCategory
+  equipmentType EquipmentType
+  priceUsd      Float
+  description   String?
+  isActive      Boolean         @default(true)
+  sortOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  appointments  Appointment[]
+
+  @@unique([name, equipmentType])
+  @@map("services")
 }
 
 model Equipment {
