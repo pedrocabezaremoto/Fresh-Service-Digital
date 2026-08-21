@@ -820,3 +820,145 @@ Cerrado en el día: CRUD Servicios, fotos de landing, login por username, gráfi
 5. **Testing profundo mapas** — múltiples direcciones, zonas rurales
 6. **Git push** — respaldar cambios de esta sesión a origin + backup
 7. **Mejorar deliverability email** — reputación Resend se construye con el tiempo
+
+---
+
+## 🎨 2026-08-21 — Rediseño minimalista + Resend + registro + tipografía
+
+### Correo profesional (Resend SMTP)
+| Cambio | Estado |
+|---|---|
+| SMTP migrado de Gmail (`freshservicedigital2026@gmail.com`) a **Resend** (`smtp.resend.com`) | ✅ |
+| FROM: `noreply@pedroservicios.xyz` (dominio propio) | ✅ |
+| SPF + DKIM + DMARC configurados en DNS Dynadot | ✅ propagados |
+| API Key Resend en `backend/.env` (gitignored) | ✅ |
+| Prueba: 1 correo inbox ✅, 1 spam ⚠️ (reputación nueva, mejora con el tiempo) | parcial |
+
+### Home minimalista (Home.jsx)
+| Cambio | Estado |
+|---|---|
+| Secciones eliminadas: "¿Por qué Fresh Service?" + "4 pasos" + testimonios + CTA final + stats | ✅ |
+| Eslogan: "El servicio que tu hogar merece." con gradient + shimmer sutil 4.5s | ✅ |
+| Subtítulo: "Reparación, mantenimiento e instalación de aires acondicionados a domicilio." | ✅ |
+| Tipografía: Plus Jakarta Sans (Google Fonts), tracking-tight, contraste bold/extrabold | ✅ |
+| Chip: "SAN JUAN DE LOS MORROS" (sin ícono copo de nieve) | ✅ |
+| Decoración frost/escarcha eliminada, fondo gradiente limpio | ✅ |
+| Botón único "Solicitar servicio →" (quitado "Ver servicios") | ✅ |
+| Card Toneladas: sin precio, texto "3 a 5 toneladas" | ✅ |
+| Franja confianza: 1 línea con 4 ítems | ✅ |
+| Mobile: texto y botón centrados | ✅ |
+
+### Catálogo con acordeón (Catalogo.jsx)
+| Cambio | Estado |
+|---|---|
+| 25 tarjetas → 3 acordeones (Ventana / Split / Toneladas) | ✅ |
+| Solo 1 abierto a la vez, cerrados por defecto | ✅ |
+| Header: 1 foto, nombre, subtítulo, badge servicios, precio mínimo, chevron | ✅ |
+| Ventana/Split: tabla Servicio / Descripción / Precio / Solicitar | ✅ |
+| Toneladas: etiquetas 3T/4T/5T, precios OCULTOS, nota cotización personalizada | ✅ |
+| Hero/banner oscuro → breadcrumb simple | ✅ |
+| Imágenes repetidas eliminadas (1 por sección) | ✅ |
+
+### Registro mejorado (Registro.jsx)
+| Cambio | Estado |
+|---|---|
+| Placeholders: Pedro/Cabeza → Juan/Pérez | ✅ |
+| WhatsApp: +58 fijo → dropdown 11 países (default +58 Venezuela) | ✅ |
+| Submit usa `form.countryCode` dinámico | ✅ |
+
+### Cache de imágenes (SiteImagesContext.jsx)
+| Cambio | Estado |
+|---|---|
+| Cache en localStorage (`fsd_site_images`) para evitar flash default→custom | ✅ |
+| Fallback: cache → API → defaults | ✅ |
+
+### Otros
+- Price.jsx: nuevo `size="sm"` para celdas compactas
+- Plus Jakarta Sans cargada desde Google Fonts en index.html
+- Shimmer CSS en index.css con `prefers-reduced-motion` respetado
+
+### Git
+- `d962bedc` — rediseño minimalista + catálogo acordeón + Resend + registro + tipografía
+- Push a origin + backup ✅
+
+### Backlog (próximas sesiones)
+1. **Imágenes IA** — prompts listos, falta generar (DALL-E/Midjourney) y subir desde panel admin
+2. **Carrusel hero** — fotos IA rotando con lazy load
+3. **Chat realtime + Escarchín** — bot fuera de horario + operador en horario, Socket.IO, tabla Message
+4. **Panel taller** — seguir creciendo
+5. **Testing mobile** — verificar todos los cambios en celular real
+6. **Deliverability email** — reputación Resend mejora con volumen
+
+---
+
+## ❄️ 2026-08-21 — Chatbot Copito (IA) + Mascota + Hardening
+
+### Chatbot "Copito" — DeepSeek API integrado
+| Cambio | Estado |
+|---|---|
+| Módulo `chat/` en backend NestJS (ChatModule, ChatService, LlmService, ChatTelegramService) | ✅ |
+| DeepSeek v4-flash con streaming SSE (tokens en tiempo real al frontend) | ✅ |
+| Tool calling: `guardar_contacto` (crea lead + notifica Telegram) | ✅ |
+| Tool calling: `consultar_servicios` (precios reales desde DB Service) | ✅ |
+| Telegram Bot @copito_fresh_bot (token + chat_id configurados) | ✅ |
+| Notificaciones Telegram con botón "Responder por WhatsApp" | ✅ |
+| Circuit breaker (3 fallos = 5min cooldown) | ✅ |
+| Presupuesto mensual $5 USD (tracked en ChatConversation.estimatedCostUsd) | ✅ |
+| Rate limiting: 10 msgs/conversación, 60 msgs/día por IP | ✅ |
+| Frontend: widget Copito.jsx con SSE, session management, teaser, reset | ✅ |
+| System prompt: español venezolano, solo refrigeración, captura de leads | ✅ |
+| Modelos Prisma: ChatConversation, ChatMessage, ChatLead | ✅ |
+| Endpoint GET /chat/status + POST /chat (SSE stream) | ✅ |
+
+### Mascota Copito — avatar PNG
+| Cambio | Estado |
+|---|---|
+| Avatar generado en Google Flow (copo de nieve kawaii, gorro, llave, botas) | ✅ |
+| Convertido de JPEG a PNG con transparencia real (Pillow flood-fill) | ✅ |
+| Widget FAB: PNG reemplaza SVG dibujado a mano | ✅ |
+| Header del chat: avatar Copito PNG | ✅ |
+| Logo del sitio: Copito reemplaza logo anterior en navbar y footer | ✅ |
+| Logo: chip `rounded-xl bg-white/10 p-0.5`, tamaños sm=10 md=12 lg=14 | ✅ |
+| CSS parpadeo de ojos (copito-eye) eliminado (ya no hay SVG) | ✅ |
+
+### Hardening — validación + anti-trolls
+| Cambio | Estado |
+|---|---|
+| Filtro de groserías en `guardar_contacto` (~35 palabras ES/EN) | ✅ |
+| Validación teléfono venezolano (+58/04XX, códigos 412/414/416/424/426) | ✅ |
+| Normalización automática a formato +58 | ✅ |
+| Lead basura "Culo" borrado de la DB | ✅ |
+| Markdown rendering en mensajes del asistente (negrita, cursiva, saltos) | ✅ |
+| System prompt anti-trolls: humor en 1ª, firme en 2ª, corta en 3ª | ✅ |
+| Proceso de servicio explicado en 3 pasos al cliente | ✅ |
+| Opción "dejar mensaje sin registrarse" para clientes que no dan datos | ✅ |
+
+### Archivos creados/modificados
+- `backend/src/chat/` — módulo completo (5 archivos)
+- `backend/prisma/schema.prisma` — modelos ChatConversation, ChatMessage, ChatLead
+- `frontend-react/src/components/Copito.jsx` — widget completo
+- `frontend-react/src/components/PublicLayout.jsx` — integración Copito
+- `frontend-react/src/components/Logo.jsx` — avatar Copito como logo
+- `frontend-react/src/index.css` — eliminado CSS copito-eye
+- `frontend-react/public/copito-avatar.png` — avatar PNG con transparencia
+
+### Prompts entregados al LLM (en `Progresos/`)
+- `prompt-copito.md` — integración completa del chatbot (7 partes)
+- `prompt-fix-validacion-avatar.md` — fix groserías + teléfono + avatar PNG
+- `prompt-logo-copito-markdown.md` — logo Copito + markdown en chat
+- `prompt-logo-fino-systemprompt.md` — ajuste fino logo + system prompt anti-trolls
+- `prompt-widget-posicion.md` — subir widget en mobile (pendiente de aplicar)
+
+### Pendiente inmediato
+- [ ] Widget: subir posición en mobile (`bottom-10` en vez de `bottom-6`)
+- [ ] Foto de perfil Telegram para @copito_fresh_bot (via BotFather /setuserpic)
+- [ ] Pruebas de estrés del chatbot (lista entregada a Pedro)
+- [ ] Git push de todos los cambios Copito
+
+### Backlog actualizado
+1. **Imágenes IA** — prompts listos, falta generar y subir
+2. **Carrusel hero** — fotos IA rotando
+3. **Chat realtime Escarchín** — Socket.IO, operador en horario + bot fuera de horario (Fase 2)
+4. **Panel taller** — seguir creciendo
+5. **Deliverability email** — reputación Resend mejora con volumen
+6. **Anti-abuso avanzado** — Pedro mencionó proteger contra "gente ociosa"

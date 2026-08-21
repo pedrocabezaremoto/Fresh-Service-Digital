@@ -28,3 +28,6 @@ yarn-error.log*
 
 # Log del webhook de deploy (local al VPS)
 deploy-webhook.log
+
+# Prompts para LLM (contienen credenciales)
+Progresos/prompt-*.md

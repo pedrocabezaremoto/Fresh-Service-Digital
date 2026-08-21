@@ -140,3 +140,61 @@ model Setting {
 
   @@map("settings")
 }
+
+// =====================================================
+// CHATBOT COPITO — modelos para el chat con IA
+// =====================================================
+
+model ChatConversation {
+  id              String        @id @default(uuid())
+  sessionId       String        @unique
+  ipHash          String
+  leadId          String?
+  wasConverted    Boolean       @default(false)
+  messageCount    Int           @default(0)
+  estimatedCostUsd Decimal      @default(0) @db.Decimal(10, 6)
+  lastMessageAt   DateTime?
+  startedAt       DateTime      @default(now())
+  messages        ChatMessage[]
+
+  @@index([ipHash])
+  @@index([startedAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id              String           @id @default(uuid())
+  conversationId  String
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role            String           // 'user' | 'assistant' | 'tool'
+  content         String
+  tokensIn        Int?
+  tokensOut       Int?
+  createdAt       DateTime         @default(now())
+
+  @@index([conversationId])
+  @@map("chat_messages")
+}
+
+model ChatLead {
+  id              String   @id @default(uuid())
+  name            String
+  phone           String?
+  email           String?
+  serviceInterest String?
+  message         String?
+  source          String   @default("chat")
+  ipHash          String
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("chat_leads")
+}
+
+model ChatSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("chat_settings")
+}
