@@ -1,79 +1,203 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Wind, ThermometerSnowflake, Wrench, CheckCircle2, Snowflake, ArrowRight, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
 import { api } from '../lib/api';
-import { CATEGORY_LABELS, EQUIPMENT_LABELS } from '../lib/services';
+import { CATEGORY_LABELS } from '../lib/services';
 
-function equipmentMeta(images) {
-  return {
-    VENTANA: { tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: images.maintenance },
-    SPLIT: { tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: images.install },
-    TONELADA_1: { tag: 'Tipo 3', title: 'Aire 1 Tonelada', icon: Wrench, img: images.repair },
-    TONELADA_2: { tag: 'Tipo 4', title: 'Aire 2 Toneladas', icon: Wrench, img: images.repair },
-    TONELADA_3: { tag: 'Tipo 5', title: 'Aire 3 Toneladas', icon: Wrench, img: images.repair },
-    GENERAL: { tag: 'General', title: 'Servicios generales', icon: Wrench, img: images.repair },
-  };
-}
+const CATEGORY_ORDER = ['MANTENIMIENTO', 'REPARACION', 'INSTALACION', 'RECARGA', 'DIAGNOSTICO', 'OTRO'];
 
-function fallbackGroups(images) {
-  return [
+const SECTION_DEFS = [
   {
-    tag: 'Tipo 1', title: 'Aires de Ventana', icon: Wind, img: images.maintenance,
-    cards: [
-      { name: 'Reparación', sub: 'Diagnóstico + Reparación', price: 40, points: ['Diagnóstico completo', 'Revisión eléctrica y mecánica', 'Prueba de funcionamiento', 'Informe técnico'] },
-      { name: 'Mantenimiento', sub: 'Limpieza + Revisión', price: 25, points: ['Lavado de filtros y tinas', 'Limpieza de serpentines', 'Revisión del compresor', 'Recarga de gas (si aplica)'] },
-    ],
+    key: 'ventana',
+    title: 'Aires de Ventana',
+    subtitle: 'Unidades de ventana de todas las marcas',
+    types: ['VENTANA'],
+    imgKey: 'maintenance',
+    mode: 'list',
   },
   {
-    tag: 'Tipo 2', title: 'Aires Split', icon: ThermometerSnowflake, img: images.install,
-    cards: [
-      { name: 'Reparación', sub: 'Mini + Maxi Split', price: 55, points: ['Diagnóstico interior y exterior', 'Revisión de plaquetas', 'Verificación de tuberías', 'Recarga y verificación de gas'] },
-      { name: 'Mantenimiento', sub: 'Preventivo + Correctivo', price: 35, points: ['Desmontaje y lavado a presión', 'Limpieza de drenaje', 'Revisión del condensador', 'Control de temperatura'] },
-    ],
+    key: 'split',
+    title: 'Aires Split',
+    subtitle: 'Sistemas mini y maxi split, interior y exterior',
+    types: ['SPLIT'],
+    imgKey: 'install',
+    mode: 'list',
   },
   {
-    tag: 'Tipo 3', title: 'Aires por Toneladas', icon: Wrench, img: images.repair,
-    cards: [
-      { name: '1 Tonelada', sub: 'Hasta 30 m²', price: 50, points: ['Cuartos y oficinas pequeñas', 'Recarga R-22 / R-410A', 'Instalación de soportes', 'Mantenimiento preventivo'] },
-      { name: '2 Toneladas', sub: 'Hasta 55 m²', price: 75, popular: true, points: ['Salas y oficinas medianas', 'Revisión completa del sistema', 'Recarga y hermeticidad', 'Limpieza profunda'] },
-      { name: '3 Toneladas', sub: 'Hasta 80 m²', price: 100, points: ['Locales y espacios abiertos', 'Revisión trifásica', 'Línea dedicada', 'Diagnóstico de compresor'] },
-    ],
+    key: 'toneladas',
+    title: 'Aires por Toneladas',
+    subtitle: 'Equipos de 3 a 5 toneladas para comercios y locales. Cotización personalizada.',
+    types: ['TONELADA_1', 'TONELADA_2', 'TONELADA_3'],
+    imgKey: 'repair',
+    mode: 'tonnage',
   },
 ];
+
+const FALLBACK_DESC = {
+  MANTENIMIENTO: 'Limpieza de filtros, tinas y serpentines',
+  REPARACION: 'Diagnóstico y corrección de fallas',
+  INSTALACION: 'Montaje, vacío y puesta en marcha',
+  RECARGA: 'Recarga R-22 / R-410A y prueba de fugas',
+  DIAGNOSTICO: 'Revisión técnica con informe',
+};
+
+const FALLBACK_PRICES = {
+  VENTANA: { MANTENIMIENTO: 25, REPARACION: 40, DIAGNOSTICO: 15, RECARGA: 30, INSTALACION: 45 },
+  SPLIT: { MANTENIMIENTO: 35, REPARACION: 55, DIAGNOSTICO: 20, RECARGA: 40, INSTALACION: 70 },
+  TONELADA_1: { MANTENIMIENTO: 50, REPARACION: 75, DIAGNOSTICO: 30, RECARGA: 55, INSTALACION: 90 },
+  TONELADA_2: { MANTENIMIENTO: 75, REPARACION: 110, DIAGNOSTICO: 40, RECARGA: 80, INSTALACION: 130 },
+  TONELADA_3: { MANTENIMIENTO: 100, REPARACION: 150, DIAGNOSTICO: 55, RECARGA: 105, INSTALACION: 170 },
+};
+
+function normalizeCategory(category) {
+  if (category === 'RECARGA_GAS') return 'RECARGA';
+  return category;
 }
 
-function CatalogCard({ name, sub, price, points, popular, img, title }) {
+function categoryLabel(category) {
+  const key = normalizeCategory(category);
+  return CATEGORY_LABELS[key] || category || 'Servicio';
+}
+
+/** Descripción útil: no repetir el nombre; máximo 60 caracteres. */
+function usefulDesc(name, description, category) {
+  const d = (description || '').trim();
+  if (!d) return '';
+  const candidates = [name, categoryLabel(category), CATEGORY_LABELS[normalizeCategory(category)]]
+    .filter(Boolean)
+    .map((s) => s.trim().toLowerCase());
+  if (candidates.includes(d.toLowerCase())) return '';
+  if (d.length > 60) return `${d.slice(0, 59)}…`;
+  return d;
+}
+
+function fallbackServices() {
+  const list = [];
+  Object.entries(FALLBACK_PRICES).forEach(([equipmentType, byCat]) => {
+    Object.entries(byCat).forEach(([category, priceUsd]) => {
+      list.push({
+        id: `${equipmentType}-${category}`,
+        name: categoryLabel(category),
+        category,
+        equipmentType,
+        priceUsd,
+        description: FALLBACK_DESC[category] || '',
+        isActive: true,
+      });
+    });
+  });
+  return list;
+}
+
+function minUsd(services) {
+  const prices = services.map((s) => Number(s.priceUsd)).filter(Number.isFinite);
+  return prices.length ? Math.min(...prices) : null;
+}
+
+function AccordionPanel({ open, children }) {
   return (
-    <div className={`group relative flex flex-col overflow-hidden rounded-3xl bg-white ring-1 transition hover:-translate-y-1 hover:shadow-glow ${popular ? 'ring-2 ring-brand-400 shadow-glow' : 'ring-slate-100 shadow-sm'}`}>
-      <div className="relative h-40 overflow-hidden">
-        <img src={img} alt={title} loading="lazy" className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imgObjectClass(img)}`} />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 via-brand-950/10 to-transparent" />
-        {popular && (
-          <div className="absolute right-3 top-3 rounded-full bg-brand-gradient px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-glow">★ Más solicitado</div>
-        )}
-        <h3 className="absolute bottom-3 left-4 font-display text-lg font-bold text-white drop-shadow">{name}</h3>
-      </div>
-      <div className="flex flex-1 flex-col p-6">
-        {sub && <p className="text-sm font-semibold text-brand-600">{sub}</p>}
-        {points?.length > 0 && (
-          <ul className="mt-5 flex-1 space-y-2.5">
-            {points.map((p) => (
-              <li key={p} className="flex items-start gap-2 text-sm text-ink-700">
-                <CheckCircle2 size={17} className="mt-0.5 shrink-0 text-brand-500" /> {p}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
-          <Price usd={price} />
-          <Button to="/solicitud" size="sm">Solicitar</Button>
-        </div>
-      </div>
+    <div
+      className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+      }`}
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
     </div>
+  );
+}
+
+function ListTable({ rows }) {
+  return (
+    <>
+      <div className="divide-y divide-slate-100 md:hidden">
+        {rows.map((row) => (
+          <div key={row.id} className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-brand-50">
+            <div className="font-display font-bold text-ink-900">{row.label}</div>
+            {row.desc ? <p className="text-sm text-ink-500">{row.desc}</p> : null}
+            <div className="flex items-center justify-between gap-3">
+              <Price usd={row.price} size="sm" />
+              <Button to="/solicitud" size="sm">Solicitar</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wide text-ink-500">
+              <th className="px-5 py-3">Servicio</th>
+              <th className="px-5 py-3">Descripción</th>
+              <th className="px-5 py-3">Precio</th>
+              <th className="px-5 py-3"><span className="sr-only">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="border-b border-slate-50 last:border-0 transition-colors hover:bg-brand-50">
+                <td className="px-5 py-4 font-display font-bold text-ink-900">{row.label}</td>
+                <td className="px-5 py-4 text-sm text-ink-500">{row.desc || '—'}</td>
+                <td className="px-5 py-4"><Price usd={row.price} size="sm" /></td>
+                <td className="px-5 py-4 text-right">
+                  <Button to="/solicitud" size="sm">Solicitar</Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function TonnageTable({ groups }) {
+  const quoteNote =
+    'Los precios para equipos comerciales se cotizan según capacidad y condiciones del local. Regístrate o contáctanos para una cotización personalizada.';
+
+  return (
+    <>
+      <div className="divide-y divide-slate-100 md:hidden">
+        {groups.map((g) => (
+          <div key={g.category} className="flex items-start justify-between gap-3 px-4 py-4 transition-colors hover:bg-brand-50">
+            <div className="min-w-0">
+              <div className="font-display font-bold text-ink-900">{g.label}</div>
+              {g.desc ? <p className="mt-1 text-sm text-ink-500">{g.desc}</p> : null}
+            </div>
+            <Button to="/solicitud" size="sm">Solicitar</Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wide text-ink-500">
+              <th className="px-5 py-3">Servicio</th>
+              <th className="px-5 py-3"><span className="sr-only">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g) => (
+              <tr key={g.category} className="border-b border-slate-50 last:border-0 transition-colors hover:bg-brand-50">
+                <td className="px-5 py-4">
+                  <div className="font-display font-bold text-ink-900">{g.label}</div>
+                  {g.desc ? <div className="mt-0.5 text-xs text-ink-500">{g.desc}</div> : null}
+                </td>
+                <td className="px-5 py-4 text-right">
+                  <Button to="/solicitud" size="sm">Solicitar</Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="px-5 py-4 text-xs leading-relaxed text-ink-500">{quoteNote}</p>
+    </>
   );
 }
 
@@ -81,98 +205,159 @@ export default function Catalogo() {
   const { images } = useSiteImages();
   const [apiServices, setApiServices] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openKey, setOpenKey] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     api.getServices()
       .then((list) => {
         if (cancelled) return;
-        setApiServices(Array.isArray(list) && list.length ? list : null);
+        const active = Array.isArray(list) ? list.filter((s) => s.isActive === true) : [];
+        setApiServices(active.length ? active : null);
       })
       .catch(() => { if (!cancelled) setApiServices(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
-  const apiGroups = useMemo(() => {
-    if (!apiServices) return null;
-    const order = ['VENTANA', 'SPLIT', 'TONELADA_1', 'TONELADA_2', 'TONELADA_3', 'GENERAL'];
-    const byEq = {};
-    apiServices.forEach((s) => {
-      (byEq[s.equipmentType] ||= []).push(s);
-    });
-    return order
-      .filter((eq) => byEq[eq]?.length)
-      .map((eq, i) => {
-        const meta = equipmentMeta(images)[eq] || { tag: `Tipo ${i + 1}`, title: EQUIPMENT_LABELS[eq] || eq, icon: Wrench, img: images.repair };
+  const sections = useMemo(() => {
+    const source = apiServices || fallbackServices();
+    return SECTION_DEFS.map((def) => {
+      const items = source.filter((s) => def.types.includes(s.equipmentType) && s.isActive !== false);
+      if (def.mode === 'tonnage') {
+        const byCat = {};
+        items.forEach((s) => {
+          const cat = normalizeCategory(s.category);
+          if (!byCat[cat]) {
+            byCat[cat] = {
+              category: cat,
+              label: categoryLabel(cat),
+              desc: usefulDesc(s.name, s.description, cat),
+            };
+          }
+          if (!byCat[cat].desc) byCat[cat].desc = usefulDesc(s.name, s.description, cat);
+        });
+        const groups = CATEGORY_ORDER.filter((c) => byCat[c]).map((c) => byCat[c]);
         return {
-          key: eq,
-          ...meta,
-          cards: byEq[eq].map((s) => ({
-            name: s.name,
-            sub: s.description || CATEGORY_LABELS[s.category] || '',
-            price: s.priceUsd,
-            points: s.description ? [s.description] : [],
-          })),
+          ...def,
+          img: images[def.imgKey],
+          count: groups.length,
+          minPrice: null,
+          groups,
         };
-      });
+      }
+
+      const orderIndex = (s) => {
+        const i = CATEGORY_ORDER.indexOf(normalizeCategory(s.category));
+        return i === -1 ? 99 : i;
+      };
+      const rows = [...items]
+        .sort((a, b) => orderIndex(a) - orderIndex(b) || String(a.name).localeCompare(String(b.name)))
+        .map((s) => ({
+          id: s.id || `${s.equipmentType}-${s.category}-${s.name}`,
+          label: categoryLabel(s.category) || s.name,
+          desc: usefulDesc(s.name, s.description, s.category),
+          price: Number(s.priceUsd),
+        }));
+      return {
+        ...def,
+        img: images[def.imgKey],
+        count: rows.length,
+        minPrice: minUsd(items),
+        rows,
+      };
+    }).filter((s) => (s.rows?.length || s.groups?.length));
   }, [apiServices, images]);
 
-  const groups = apiGroups || fallbackGroups(images);
+  function toggle(key) {
+    setOpenKey((prev) => (prev === key ? null : key));
+  }
 
   return (
     <div className="bg-white">
-      <section className="relative overflow-hidden bg-brand-950 py-16 text-white">
-        <div className="absolute -right-20 -top-10 h-72 w-72 rounded-full bg-brand-500/20 blur-3xl" />
-        <Snowflake className="absolute right-6 top-6 text-white/10" size={140} />
-        <div className="relative mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="text-sm text-brand-200">
-            <Link to="/" className="hover:text-white">Inicio</Link> / Catálogo
-          </div>
-          <h1 className="mt-3 font-display text-4xl font-extrabold sm:text-5xl">Catálogo de Servicios</h1>
-          <p className="mt-3 max-w-xl text-brand-100/80">
-            Soluciones profesionales de climatización a domicilio. Cobertura en San
-            Juan de los Morros y alrededores · Todas las marcas.
-          </p>
+      <section className="border-b border-slate-100">
+        <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
+          <nav className="text-sm text-ink-500">
+            <Link to="/" className="hover:text-brand-600">Inicio</Link>
+            <span className="mx-1.5">/</span>
+            <span className="text-ink-700">Servicios</span>
+          </nav>
+          <h1 className="mt-3 font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
+            Catálogo de Servicios
+          </h1>
+          <p className="mt-2 text-ink-500">Cobertura en San Juan de los Morros</p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-20 px-5 py-20 lg:px-8">
-        {loading && !apiGroups ? (
-          <div className="grid place-items-center py-16 text-brand-400"><Loader2 className="animate-spin" size={36} /></div>
-        ) : groups.map((g) => (
-          <section key={g.key || g.title}>
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <span className="inline-block rounded-full bg-brand-50 px-3 py-0.5 text-xs font-bold uppercase tracking-wide text-brand-600 ring-1 ring-brand-100">{g.tag}</span>
-                <h2 className="mt-1 font-display text-2xl font-extrabold text-ink-900">{g.title}</h2>
-              </div>
-            </div>
-
-            <div className={`mt-8 grid gap-6 ${g.cards.length >= 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2'}`}>
-              {g.cards.map((c) => (
-                <CatalogCard key={c.name} {...c} img={g.img} title={g.title} />
-              ))}
-            </div>
-          </section>
-        ))}
-
-        <section className="overflow-hidden rounded-3xl bg-brand-50 ring-1 ring-brand-100">
-          <div className="grid items-center gap-6 md:grid-cols-2">
-            <div className="p-8 lg:p-12">
-              <span className="inline-block rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-600 ring-1 ring-brand-100">Próximamente · Fase 2</span>
-              <h2 className="mt-4 font-display text-2xl font-extrabold text-ink-900">Neveras & Refrigeradores</h2>
-              <p className="mt-3 text-ink-500">Servicio técnico especializado para neveras domésticas y comerciales. Estamos preparando este módulo para ti.</p>
-            </div>
-            <img src={images.appliance} alt="Electrodomésticos" className="h-full max-h-72 w-full object-cover" />
+      <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+        {loading && !apiServices ? (
+          <div className="grid place-items-center py-16 text-brand-400">
+            <Loader2 className="animate-spin" size={36} />
           </div>
-        </section>
+        ) : (
+          <div className="space-y-4">
+            {sections.map((s) => {
+              const open = openKey === s.key;
+              return (
+                <section
+                  key={s.key}
+                  className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm"
+                >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggle(s.key)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggle(s.key);
+                      }
+                    }}
+                    aria-expanded={open}
+                    className="flex w-full cursor-pointer items-center gap-4 px-4 py-4 text-left transition-colors hover:bg-brand-50 sm:gap-5 sm:px-5"
+                  >
+                    <img
+                      src={s.img}
+                      alt={s.title}
+                      className={`h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-slate-100 sm:h-20 sm:w-20 ${imgObjectClass(s.img)}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="font-display text-lg font-extrabold text-ink-900 sm:text-xl">{s.title}</h2>
+                        <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-700 ring-1 ring-brand-100">
+                          {s.count} {s.count === 1 ? 'servicio' : 'servicios'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-ink-500">{s.subtitle}</p>
+                      {s.mode !== 'tonnage' && s.minPrice != null && (
+                        <div className="mt-2 flex items-baseline gap-1.5">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Desde</span>
+                          <Price usd={s.minPrice} size="sm" />
+                        </div>
+                      )}
+                    </div>
+                    <ChevronDown
+                      size={22}
+                      className={`shrink-0 text-brand-600 transition-transform duration-300 motion-reduce:transition-none ${open ? 'rotate-180' : ''}`}
+                    />
+                  </div>
 
-        <div className="rounded-3xl bg-brand-gradient px-8 py-12 text-center text-white shadow-glow-lg">
-          <h2 className="font-display text-2xl font-extrabold sm:text-3xl">¿Encontraste el servicio que necesitas?</h2>
-          <p className="mt-3 text-brand-50/90">Agéndalo en minutos y recibe a un técnico certificado en tu domicilio.</p>
-          <div className="mt-6 flex justify-center">
-            <Button to="/solicitud" size="lg" variant="dark">Solicitar servicio <ArrowRight size={18} /></Button>
+                  <AccordionPanel open={open}>
+                    <div className="border-t border-slate-100">
+                      {s.mode === 'tonnage' ? <TonnageTable groups={s.groups} /> : <ListTable rows={s.rows} />}
+                    </div>
+                  </AccordionPanel>
+                </section>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-10 rounded-2xl bg-brand-50 px-6 py-8 text-center ring-1 ring-brand-100">
+          <p className="font-display text-lg font-bold text-ink-900">¿Encontraste el servicio que necesitas?</p>
+          <p className="mt-1 text-sm text-ink-500">Agéndalo en minutos. Un técnico certificado va a tu domicilio.</p>
+          <div className="mt-5 flex justify-center">
+            <Button to="/solicitud" size="md">Solicitar servicio</Button>
           </div>
         </div>
       </div>

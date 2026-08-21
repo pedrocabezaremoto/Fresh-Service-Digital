@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, MailCheck, ArrowRight, ExternalLink, Info } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, MailCheck, ArrowRight, ExternalLink, Info, ChevronDown } from 'lucide-react';
 import AuthShell, { Field, inputClass } from '../components/AuthShell';
 import Button from '../components/Button';
 import { api } from '../lib/api';
@@ -13,6 +13,20 @@ function strength(pw) {
   if (/[^A-Za-z0-9]/.test(pw)) s++;
   return s;
 }
+const COUNTRY_CODES = [
+  { code: '+58', name: 'Venezuela' },
+  { code: '+57', name: 'Colombia' },
+  { code: '+56', name: 'Chile' },
+  { code: '+55', name: 'Brasil' },
+  { code: '+54', name: 'Argentina' },
+  { code: '+51', name: 'Perú' },
+  { code: '+52', name: 'México' },
+  { code: '+53', name: 'Cuba' },
+  { code: '+593', name: 'Ecuador' },
+  { code: '+1', name: 'Estados Unidos' },
+  { code: '+34', name: 'España' },
+];
+
 const stMap = [
   { w: '0%', c: 'bg-slate-200', t: '', tc: 'text-ink-500' },
   { w: '25%', c: 'bg-rose-400', t: 'Muy débil', tc: 'text-rose-600' },
@@ -24,7 +38,7 @@ const stMap = [
 export default function Registro() {
   const location = useLocation();
   const from = location.state?.from;
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', countryCode: '+58', password: '', confirm: '' });
   const [show, setShow] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +54,7 @@ export default function Registro() {
     if (form.password !== form.confirm) return setError('Las contraseñas no coinciden');
     setLoading(true);
     try {
-      const phone = `+58${form.phone.replace(/\D/g, '')}`;
+      const phone = form.countryCode + form.phone.replace(/\D/g, '');
       const data = await api.register({
         email: form.email.trim(), password: form.password,
         firstName: form.firstName.trim(), lastName: form.lastName.trim(), phone,
@@ -90,15 +104,28 @@ export default function Registro() {
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Nombre"><input required value={form.firstName} onChange={set('firstName')} className={inputClass} placeholder="Pedro" /></Field>
-          <Field label="Apellido"><input required value={form.lastName} onChange={set('lastName')} className={inputClass} placeholder="Cabeza" /></Field>
+          <Field label="Nombre"><input required value={form.firstName} onChange={set('firstName')} className={inputClass} placeholder="Juan" /></Field>
+          <Field label="Apellido"><input required value={form.lastName} onChange={set('lastName')} className={inputClass} placeholder="Pérez" /></Field>
         </div>
         <Field label="Correo electrónico">
           <input type="email" required value={form.email} onChange={set('email')} className={inputClass} placeholder="tucorreo@ejemplo.com" />
         </Field>
         <Field label="WhatsApp">
           <div className="flex">
-            <span className="grid place-items-center rounded-l-xl border-2 border-r-0 border-brand-100 bg-brand-50 px-3 text-sm font-bold text-brand-700">+58</span>
+            <div className="relative shrink-0">
+              <select
+                value={form.countryCode}
+                onChange={set('countryCode')}
+                title={COUNTRY_CODES.find((c) => c.code === form.countryCode)?.name}
+                aria-label="Código de país"
+                className="h-full w-[4.75rem] appearance-none rounded-l-xl border-2 border-r-0 border-brand-100 bg-brand-50 py-2.5 pl-2.5 pr-6 text-sm font-bold text-brand-700 outline-none"
+              >
+                {COUNTRY_CODES.map(({ code, name }) => (
+                  <option key={code} value={code}>{code} {name}</option>
+                ))}
+              </select>
+              <ChevronDown size={12} className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-brand-700" />
+            </div>
             <input required value={form.phone} onChange={set('phone')} maxLength={10} className={inputClass + ' rounded-l-none'} placeholder="4120000000" />
           </div>
         </Field>

@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-17 (tarde)  
+**Última actualización:** 2026-08-17 (cierre de sesión — CRUD servicios, fotos, username, gráficas)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -656,8 +656,9 @@ Fecha inicio: 2026-08-14
 ### Backlog actualizado (próximas sesiones)
 1. **Testing profundo mapas** — múltiples direcciones, zonas rurales, dispositivos reales
 2. **Panel taller** — seguir creciendo hacia centro de control total
-3. **Mejoras UX** — lo que salga de las pruebas UAT en Android
-4. **Cuando todas las citas tengan priceUsd/serviceId** — se pueden retirar prices.js / prices.ts
+3. **Mejoras UX** — lo que salga de pruebas UAT
+4. **Chat realtime** cliente ↔ taller (roadmap v1.1)
+5. **SPF/DKIM/DMARC** — mejorar deliverability de correos
 
 ---
 
@@ -719,3 +720,103 @@ Fecha inicio: 2026-08-14
 - Crear/editar técnico: username opcional, regex `^[a-z0-9._]{4,30}$`
 - Login.jsx + columna Usuario en Equipo Técnico
 - Tests OK: email, `admin`, compat `email`, técnico `uat.user`
+- Clientes siguen entrando solo con email
+
+---
+
+## Gráficas premium del dashboard admin — 2026-08-17
+
+- Sin librerías de charts. SVG inline + CSS/Tailwind. Extraído a `DashboardVisuals.jsx`.
+- KPIs: counter `requestAnimationFrame` + easeOutQuad, 800ms
+- Sparklines Catmull-Rom en Solicitudes (totales/mes) y Clientes (`createdAt`/mes). Pendientes y En proceso: no (estado actual)
+- Donut: `strokeDasharray` 1s ease-out; hover/tap expande segmento + tooltip con %; leyenda resaltada
+- Barras: cascada 500ms / delay 100ms; tooltip mes+año+cantidad; gradiente vidrio; hover brightness
+- Fade 200ms entre vistas (`admin-view-fade`)
+- `prefers-reduced-motion`: counters al valor final, resto sin animación
+- Bundle `index-DkCCVbjB.js`. `pm2 restart fresh-frontend`
+
+---
+
+## Git — 2026-08-17
+
+- `b74153d8` — Leaflet + técnicos + servicios + responsive
+- `56e247d3` — fotos + login username + gráficas premium
+- Push a origin + backup
+
+---
+
+## Recap de sesión 2026-08-17 (cierre)
+
+Cerrado en el día: CRUD Servicios, fotos de landing, login por username, gráficas premium del dashboard. Todo en prod.
+
+**Backlog (próximas sesiones)**
+1. Testing profundo mapas — múltiples direcciones, zonas rurales, dispositivos reales
+2. Panel taller — seguir creciendo hacia centro de control total
+3. Mejoras UX — lo que salga de pruebas UAT
+4. Chat realtime cliente ↔ taller (roadmap v1.1)
+5. SPF/DKIM/DMARC — deliverability de correos
+
+---
+
+## 🔧 2026-08-20/21 — Rediseño minimalista + Resend + catálogo acordeón
+
+### Correo profesional (Resend)
+| Cambio | Estado |
+|---|---|
+| SMTP migrado de Gmail a **Resend** (`smtp.resend.com`) | ✅ |
+| FROM: `noreply@pedroservicios.xyz` (dominio propio, no Gmail) | ✅ |
+| SPF (`send.pedroservicios.xyz`) | ✅ propagado |
+| DKIM (`resend._domainkey`) | ✅ propagado |
+| DMARC (`_dmarc`, p=none, reportes a Gmail) | ✅ propagado |
+| API Key Resend en `backend/.env` (gitignored) | ✅ |
+| pm2 restart fresh-service | ✅ |
+| Prueba: 1 correo a inbox ✅, 1 a spam ⚠️ (reputación nueva) | parcial |
+
+**Nota:** los correos ya no salen desde `freshservicedigital2026@gmail.com` sino desde `noreply@pedroservicios.xyz`. La reputación del dominio mejora con el tiempo. DNS administrado en **Dynadot** (dyna-ns.net).
+
+### Home minimalista (Home.jsx)
+| Cambio | Estado |
+|---|---|
+| Eliminada sección "¿Por qué Fresh Service?" (4 bloques + foto + badge 8 años) | ✅ |
+| Eliminada sección "Tu servicio en 4 pasos" | ✅ |
+| Eliminada sección "Clientes felices" (testimonios) | ✅ |
+| Eliminado CTA final "¿Tu aire no enfría como antes?" | ✅ |
+| Eliminadas stats "+500 / 8 años / 4.9★" | ✅ |
+| Hero: copy nuevo "Aire fresco a tu puerta." + "Reparamos, instalamos y mantenemos. Sin complicaciones." | ✅ |
+| Hero: chip cambiado a "SAN JUAN DE LOS MORROS" (sin ícono) | ✅ |
+| Hero: quitados blobs de escarcha/frost (blur-3xl), fondo gradiente limpio | ✅ |
+| Hero: quitado botón "Ver servicios", solo queda "Solicitar servicio →" | ✅ |
+| 3 cards de servicio (Ventana/Split/Toneladas) con precio DESDE y CTA | ✅ |
+| Card Toneladas: sin precio (cotización personalizada), texto "3 a 5 toneladas" | ✅ |
+| Franja de confianza: 1 línea con 4 ítems (Respuesta / Técnicos / Garantía / Ubicación) | ✅ |
+
+### Catálogo con acordeón (Catalogo.jsx)
+| Cambio | Estado |
+|---|---|
+| 25 tarjetas → 3 secciones acordeón (Ventana / Split / Toneladas) | ✅ |
+| Solo 1 sección abierta a la vez, cerradas por defecto | ✅ |
+| Header de sección: 1 foto, nombre, subtítulo, badge servicios, precio mínimo, chevron | ✅ |
+| Ventana/Split: tabla (Servicio / Descripción / Precio / Solicitar) | ✅ |
+| Toneladas: tabla sin precios, botón "Solicitar", nota de cotización personalizada | ✅ |
+| Etiquetas toneladas: 3 TON / 4 TON / 5 TON (no 1/2/3) | ✅ |
+| Hero/banner oscuro del catálogo → breadcrumb simple | ✅ |
+| Texto duplicado eliminado (título ≠ descripción) | ✅ |
+| Imágenes repetidas eliminadas (1 foto por sección, no por tarjeta) | ✅ |
+| CTA final: "¿Encontraste el servicio que necesitas?" + botón Solicitar | ✅ |
+
+### Componente Price.jsx
+- Nuevo size="sm" para celdas compactas de tabla
+
+### Deploy
+- Frontend reconstruido y desplegado múltiples veces durante la sesión
+- Último bundle: `index-tvdpzh9e.js`
+- `pm2 restart fresh-frontend` después de cada build
+
+### Backlog (próximas sesiones)
+1. **Imágenes IA para landing** — 7 prompts entregados (DALL-E/Midjourney), falta generar y subir
+2. **Carrusel de imágenes** — hero/landing con fotos IA, lazy loading, WebP
+3. **Chat realtime** cliente ↔ taller — concepto "Escarchín" (bot fuera de horario + operador en horario), memoria persistente en DB, Socket.IO
+4. **Panel taller** — seguir creciendo hacia centro de control total
+5. **Testing profundo mapas** — múltiples direcciones, zonas rurales
+6. **Git push** — respaldar cambios de esta sesión a origin + backup
+7. **Mejorar deliverability email** — reputación Resend se construye con el tiempo

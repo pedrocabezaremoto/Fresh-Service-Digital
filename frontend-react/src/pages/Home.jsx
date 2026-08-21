@@ -1,167 +1,149 @@
-import { Link } from 'react-router-dom';
-import {
-  Snowflake, Wrench, Wind, ShieldCheck, Zap, Clock, MapPin, Star,
-  ArrowRight, CheckCircle2, PhoneCall, Award, ThermometerSnowflake,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, Zap, Wrench, ShieldCheck, MapPin } from 'lucide-react';
 import Button from '../components/Button';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
+import { api } from '../lib/api';
 
-function Stat({ value, label }) {
-  return (
-    <div className="text-center">
-      <div className="font-display text-3xl font-extrabold text-white sm:text-4xl">{value}</div>
-      <div className="mt-1 text-xs font-medium uppercase tracking-wider text-brand-200">{label}</div>
-    </div>
-  );
+const SERVICE_CARDS = [
+  {
+    key: 'ventana',
+    title: 'Aires de Ventana',
+    types: ['VENTANA'],
+    fallbackUsd: 25,
+    desc: 'Reparación, mantenimiento e instalación de unidades de ventana.',
+    imgKey: 'maintenance',
+  },
+  {
+    key: 'split',
+    title: 'Aires Split',
+    types: ['SPLIT'],
+    fallbackUsd: 35,
+    desc: 'Servicio integral para mini y maxi split: interior y exterior.',
+    imgKey: 'install',
+  },
+  {
+    key: 'toneladas',
+    title: 'Aires por Toneladas',
+    types: ['TONELADA_1', 'TONELADA_2', 'TONELADA_3'],
+    fallbackUsd: 50,
+    desc: 'Equipos de 3 a 5 toneladas para locales y comercios.',
+    imgKey: 'repair',
+    hidePrice: true,
+  },
+];
+
+const TRUST_ITEMS = [
+  { icon: Zap, label: 'Respuesta el mismo día' },
+  { icon: Wrench, label: 'Técnicos certificados' },
+  { icon: ShieldCheck, label: 'Garantía incluida' },
+  { icon: MapPin, label: 'San Juan de los Morros' },
+];
+
+function minPriceForTypes(services, types, fallback) {
+  const prices = services
+    .filter((s) => types.includes(s.equipmentType) && Number.isFinite(Number(s.priceUsd)))
+    .map((s) => Number(s.priceUsd));
+  return prices.length ? Math.min(...prices) : fallback;
 }
-
-function serviceCards(images) {
-  return [
-    {
-      icon: Wind, title: 'Aires de Ventana', img: images.maintenance, priceFrom: 25,
-      desc: 'Reparación, mantenimiento e instalación de unidades de ventana de todas las marcas.',
-      points: ['Diagnóstico incluido', 'Recarga de gas', 'Limpieza profunda'],
-    },
-    {
-      icon: ThermometerSnowflake, title: 'Aires Split', img: images.install, priceFrom: 35,
-      desc: 'Servicio integral para sistemas Split mini y maxi: unidad interna y externa.',
-      points: ['Lavado a presión', 'Revisión de plaquetas', 'Recarga y hermeticidad'],
-    },
-    {
-      icon: Wrench, title: 'Aires por Toneladas', img: images.repair, priceFrom: 50,
-      desc: 'Equipos de 1 a 3 toneladas para locales y espacios grandes. Servicio especializado.',
-      points: ['Hasta 80 m²', 'Línea trifásica', 'Diagnóstico de compresor'],
-    },
-  ];
-}
-
-const features = [
-  { icon: Zap, title: 'Respuesta el mismo día', desc: 'Agendas tu cita en minutos por la plataforma. El técnico llega en el horario que elijas.' },
-  { icon: Award, title: 'Técnicos certificados', desc: 'Equipo con formación especializada y años de experiencia en refrigeración.' },
-  { icon: ShieldCheck, title: 'Servicio garantizado', desc: 'Todos los trabajos incluyen garantía. Si algo falla, regresamos sin costo.' },
-  { icon: MapPin, title: 'A domicilio', desc: 'Vamos hasta tu casa o local en San Juan de los Morros y alrededores.' },
-];
-
-const steps = [
-  { n: '01', title: 'Solicita en línea', desc: 'Elige el servicio y cuéntanos qué necesitas.' },
-  { n: '02', title: 'Coordinamos por WhatsApp', desc: 'Confirmamos fecha y hora que te convengan.' },
-  { n: '03', title: 'El técnico llega', desc: 'Puntual y con las herramientas necesarias.' },
-  { n: '04', title: 'Trabajo garantizado', desc: 'Pagas al finalizar, con garantía incluida.' },
-];
-
-const testimonials = [
-  { name: 'Yolanda T.', area: 'Urb. Las Mercedes', text: 'Vinieron el mismo día, repararon mi split que no enfriaba y quedó como nuevo. Excelente trato.' },
-  { name: 'Carlos S.', area: 'Centro', text: 'Mantenimiento de los aires de mi local. Profesionales, puntuales y precio justo. Recomendados.' },
-  { name: 'Ana M.', area: 'La Morera', text: 'Me encantó poder agendar por internet sin tantas llamadas. El técnico súper amable y rápido.' },
-];
 
 export default function Home() {
   const { images } = useSiteImages();
-  const services = serviceCards(images);
+  const [apiServices, setApiServices] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getServices()
+      .then((list) => {
+        if (cancelled) return;
+        setApiServices(Array.isArray(list) && list.length ? list : null);
+      })
+      .catch(() => { if (!cancelled) setApiServices(null); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const cards = useMemo(() => {
+    const list = apiServices || [];
+    return SERVICE_CARDS.map((card) => ({
+      ...card,
+      img: images[card.imgKey],
+      priceFrom: minPriceForTypes(list, card.types, card.fallbackUsd),
+    }));
+  }, [apiServices, images]);
 
   return (
     <div className="overflow-hidden">
       {/* ===== HERO ===== */}
-      <section className="relative bg-brand-950">
-        <div className="absolute inset-0">
-          <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl" />
-          <div className="absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-frost-400/20 blur-3xl" />
-        </div>
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8 lg:py-28">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-100 ring-1 ring-white/15">
-              <Snowflake size={14} /> Refrigeración a domicilio
+      <section className="relative flex min-h-[calc(100vh-4rem)] items-center bg-gradient-to-br from-brand-950 via-brand-900 to-brand-950">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-5 py-10 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-12">
+          <div className="text-center lg:text-left">
+            <span className="inline-flex items-center rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-100 ring-1 ring-white/15">
+              San Juan de los Morros
             </span>
-            <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.1] text-white sm:text-5xl lg:text-6xl">
-              Tu clima ideal,<br />
-              <span className="text-gradient">sin complicaciones.</span>
+            <h1 className="mt-5 font-display text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl lg:text-5xl">
+              El servicio que<br />
+              <span className="font-extrabold text-gradient text-shimmer">tu hogar merece.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-brand-100/80">
-              Reparación, mantenimiento e instalación de aires acondicionados a
-              domicilio en San Juan de los Morros. Agenda en minutos, técnicos
-              certificados y garantía en cada visita.
+            <p className="mx-auto mt-5 max-w-xl text-sm font-normal leading-snug tracking-wide text-brand-100/80 sm:text-base lg:mx-0">
+              Reparación, mantenimiento e instalación de aires acondicionados a domicilio.
             </p>
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-8 flex justify-center lg:justify-start">
               <Button to="/solicitud" size="lg" variant="bright">
                 Solicitar servicio <ArrowRight size={18} />
               </Button>
-              <Button to="/catalogo" size="lg" variant="ghostWhite">
-                Ver servicios
-              </Button>
-            </div>
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-brand-100/80">
-              {['Técnicos certificados', 'Garantía incluida', 'Respuesta el mismo día'].map((t) => (
-                <span key={t} className="inline-flex items-center gap-2">
-                  <CheckCircle2 size={16} className="text-frost-300" /> {t}
-                </span>
-              ))}
             </div>
           </div>
 
-          {/* Visual */}
           <div className="relative">
             <div className="group relative overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg transition duration-300 ease-out hover:-translate-y-2 hover:shadow-glow-lg hover:ring-frost-300/40 will-change-transform">
               <img
                 src={images.heroTech}
                 alt="Técnico de refrigeración trabajando"
-                className="h-[420px] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] sm:h-[480px]"
+                className="h-[320px] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] sm:h-[420px] lg:h-[min(480px,calc(100vh-14rem))]"
                 loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 to-transparent" />
             </div>
           </div>
         </div>
-
-        {/* Stats strip */}
-        <div className="relative border-t border-white/10 bg-white/5">
-          <div className="mx-auto grid max-w-7xl grid-cols-3 gap-6 px-5 py-8 lg:px-8">
-            <Stat value="+500" label="Servicios" />
-            <Stat value="8 años" label="Experiencia" />
-            <Stat value="4.9★" label="Calificación" />
-          </div>
-        </div>
       </section>
 
       {/* ===== SERVICIOS ===== */}
-      <section className="bg-white py-20 lg:py-28">
+      <section className="bg-white py-14 lg:py-20">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-bold uppercase tracking-widest text-brand-600">Nuestros servicios</span>
-            <h2 className="mt-3 font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
-              Todo lo que tu aire necesita
-            </h2>
-            <p className="mt-4 text-ink-500">
-              Especialistas en climatización para hogares y locales. Para todas las marcas.
-            </p>
-          </div>
+          <h2 className="text-center font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
+            Nuestros Servicios
+          </h2>
 
-          <div className="mt-14 grid gap-7 md:grid-cols-3">
-            {services.map((s) => (
-              <div key={s.title} className="group overflow-hidden rounded-3xl bg-white ring-1 ring-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow">
-                <div className="relative h-48 overflow-hidden">
-                  <img src={s.img} alt={s.title} loading="lazy" className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imgObjectClass(s.img)}`} />
+          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {cards.map((s) => (
+              <div
+                key={s.key}
+                className="group overflow-hidden rounded-3xl bg-white ring-1 ring-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow"
+              >
+                <div className="relative h-40 overflow-hidden">
+                  <img
+                    src={s.img}
+                    alt={s.title}
+                    loading="lazy"
+                    className={`h-full w-full object-cover transition duration-500 group-hover:scale-105 ${imgObjectClass(s.img)}`}
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-brand-950/10 to-transparent" />
                   <h3 className="absolute bottom-3 left-4 font-display text-xl font-bold text-white">{s.title}</h3>
                 </div>
-                <div className="p-6">
-                  <p className="text-sm leading-relaxed text-ink-500">{s.desc}</p>
-                  <ul className="mt-4 space-y-2">
-                    {s.points.map((p) => (
-                      <li key={p} className="flex items-center gap-2 text-sm font-medium text-ink-700">
-                        <CheckCircle2 size={16} className="text-brand-500" /> {p}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
-                    <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Desde</div>
-                      <Price usd={s.priceFrom} />
-                    </div>
-                    <Link to="/catalogo" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 transition hover:gap-2.5">
-                      Explorar <ArrowRight size={15} />
-                    </Link>
+                <div className="p-5">
+                  <p className="truncate text-sm text-ink-500">{s.desc}</p>
+                  <div className={`mt-4 flex items-end gap-3 border-t border-slate-100 pt-4 ${s.hidePrice ? 'justify-end' : 'justify-between'}`}>
+                    {!s.hidePrice && (
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">Desde</div>
+                        <Price usd={s.priceFrom} />
+                      </div>
+                    )}
+                    <Button to="/solicitud" size="sm">
+                      Solicitar <ArrowRight size={15} />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -170,120 +152,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== POR QUÉ NOSOTROS ===== */}
-      <section className="bg-brand-50 py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="grid items-center gap-14 lg:grid-cols-2">
-            <div className="relative">
-              <img src={images.technician} alt="Técnico certificado" loading="lazy" className="rounded-3xl object-cover shadow-xl ring-1 ring-white" />
-              <div className="absolute -bottom-6 -right-4 hidden rounded-2xl bg-brand-gradient p-5 text-white shadow-glow-lg sm:block">
-                <Award size={26} />
-                <div className="mt-2 font-display text-lg font-extrabold leading-none">8 años</div>
-                <div className="text-xs text-brand-100">de experiencia</div>
-              </div>
-            </div>
-            <div>
-              <span className="text-sm font-bold uppercase tracking-widest text-brand-600">¿Por qué Fresh Service?</span>
-              <h2 className="mt-3 font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
-                Profesionales en quienes confiar
-              </h2>
-              <p className="mt-4 text-ink-500">
-                Combinamos experiencia técnica con una plataforma digital que hace
-                pedir un servicio tan fácil como enviar un mensaje.
-              </p>
-              <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                {features.map((f) => (
-                  <div key={f.title} className="flex gap-4">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-gradient text-white shadow-glow sheen">
-                      <f.icon size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-base font-bold text-ink-900">{f.title}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-ink-500">{f.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CÓMO FUNCIONA ===== */}
-      <section className="bg-white py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-bold uppercase tracking-widest text-brand-600">Así de fácil</span>
-            <h2 className="mt-3 font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
-              Tu servicio en 4 pasos
-            </h2>
-          </div>
-          <div className="mt-14 grid gap-7 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s) => (
-              <div key={s.n} className="relative rounded-2xl bg-brand-50/60 p-6 ring-1 ring-brand-100">
-                <div className="font-display text-4xl font-extrabold text-brand-200">{s.n}</div>
-                <h3 className="mt-3 font-display text-lg font-bold text-ink-900">{s.title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-500">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIOS ===== */}
-      <section className="bg-brand-50 py-20 lg:py-28">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-bold uppercase tracking-widest text-brand-600">Clientes felices</span>
-            <h2 className="mt-3 font-display text-3xl font-extrabold text-ink-900 sm:text-4xl">
-              Lo que dicen de nosotros
-            </h2>
-          </div>
-          <div className="mt-14 grid gap-7 md:grid-cols-3">
-            {testimonials.map((t) => (
-              <div key={t.name} className="rounded-3xl bg-white p-7 ring-1 ring-slate-100 shadow-sm">
-                <div className="flex gap-1 text-amber-400">
-                  {[...Array(5)].map((_, i) => <Star key={i} size={18} fill="currentColor" />)}
-                </div>
-                <p className="mt-4 leading-relaxed text-ink-700">“{t.text}”</p>
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-brand-gradient font-bold text-white">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-ink-900">{t.name}</div>
-                    <div className="text-xs text-ink-500">{t.area}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CTA ===== */}
-      <section className="bg-white py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-brand-gradient px-8 py-14 text-center shadow-glow-lg sm:px-16">
-            <div className="absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-            <Snowflake className="absolute right-8 top-8 text-white/15" size={120} />
-            <div className="relative mx-auto max-w-2xl">
-              <h2 className="font-display text-3xl font-extrabold text-white sm:text-4xl">
-                ¿Tu aire no enfría como antes?
-              </h2>
-              <p className="mt-4 text-lg text-brand-50/90">
-                Agenda hoy mismo. Un técnico te visita en menos de 2 horas hábiles.
-              </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-4">
-                <Button to="/solicitud" size="lg" variant="dark">
-                  <PhoneCall size={18} /> Solicitar ahora
-                </Button>
-                <Button to="/registro" size="lg" variant="ghostWhite">
-                  Crear cuenta gratis
-                </Button>
-              </div>
-            </div>
-          </div>
+      {/* ===== CONFIANZA ===== */}
+      <section className="bg-slate-100 py-4 dark:bg-slate-800">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-5 text-center text-sm font-medium text-ink-700 lg:px-8">
+          {TRUST_ITEMS.map((item, i) => (
+            <span key={item.label} className="inline-flex items-center gap-1.5">
+              {i > 0 && <span className="select-none text-ink-400" aria-hidden>·</span>}
+              <item.icon size={15} className="text-brand-600" />
+              {item.label}
+            </span>
+          ))}
         </div>
       </section>
     </div>
