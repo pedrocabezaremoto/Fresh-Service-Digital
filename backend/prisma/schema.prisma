@@ -198,3 +198,19 @@ model ChatSetting {
 
   @@map("chat_settings")
 }
+
+model CarouselImage {
+  id        String   @id @default(uuid())
+  filename  String
+  mimeType  String
+  alt       String   @default("")
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  width     Int?
+  height    Int?
+  sizeBytes Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("carousel_images")
+}

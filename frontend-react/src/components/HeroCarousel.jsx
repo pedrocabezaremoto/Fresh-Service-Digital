@@ -1,38 +1,57 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-const SLIDES = [
-  { src: '/carrusel/diagnostico1.jpeg', alt: 'Diagnóstico eléctrico con multímetro' },
-  { src: '/carrusel/spl1.jpeg', alt: 'Instalación de split' },
-  { src: '/carrusel/ventana1.jpeg', alt: 'Reparación de aire de ventana' },
-  { src: '/carrusel/tone1.jpeg', alt: 'Mantenimiento de equipo por toneladas' },
-  { src: '/carrusel/diagnostico2.jpeg', alt: 'Revisión de componentes' },
-  { src: '/carrusel/split-mejor.jpeg', alt: 'Servicio de split completo' },
-  { src: '/carrusel/ventana2.jpeg', alt: 'Técnico en aires de ventana' },
-  { src: '/carrusel/split-mal.jpeg', alt: 'Diagnóstico de split' },
-];
+import { API_BASE } from '../lib/api';
+import { useSiteImages } from '../context/SiteImagesContext';
 
 const INTERVAL = 5000;
+const FALLBACK_ALT = 'Técnico de refrigeración trabajando';
 
 export default function HeroCarousel() {
+  const { images } = useSiteImages();
+  const fallback = [{ src: images.heroTech, alt: FALLBACK_ALT }];
+  const [slides, setSlides] = useState(fallback);
   const [cur, setCur] = useState(0);
   const timer = useRef(null);
 
-  const advance = useCallback(() => setCur(i => (i + 1) % SLIDES.length), []);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/carousel`)
+      .then((r) => r.json())
+      .then((list) => {
+        if (cancelled) return;
+        if (Array.isArray(list) && list.length) {
+          setSlides(list.map((img) => ({ src: img.url, alt: img.alt || '' })));
+          setCur(0);
+        } else {
+          setSlides(fallback);
+        }
+      })
+      .catch(() => { if (!cancelled) setSlides(fallback); });
+    return () => { cancelled = true; };
+  }, [images.heroTech]);
+
+  const advance = useCallback(() => {
+    setCur((i) => (slides.length ? (i + 1) % slides.length : 0));
+  }, [slides.length]);
 
   useEffect(() => {
+    if (slides.length < 2) {
+      clearInterval(timer.current);
+      return undefined;
+    }
     timer.current = setInterval(advance, INTERVAL);
     return () => clearInterval(timer.current);
-  }, [advance]);
+  }, [advance, slides.length]);
 
   const goTo = (i) => {
     setCur(i);
+    if (slides.length < 2) return;
     clearInterval(timer.current);
     timer.current = setInterval(advance, INTERVAL);
   };
 
   return (
     <div className="relative h-[320px] w-full overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg sm:h-[420px] lg:h-[min(480px,calc(100vh-14rem))]">
-      {SLIDES.map((s, i) => (
+      {slides.map((s, i) => (
         <img
           key={s.src}
           src={s.src}
@@ -43,17 +62,18 @@ export default function HeroCarousel() {
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 to-transparent" />
 
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
-        {SLIDES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            aria-label={`Imagen ${i + 1}`}
-            className={`h-2 rounded-full transition-all duration-300 ${i === cur ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              aria-label={`Imagen ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${i === cur ? 'w-6 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

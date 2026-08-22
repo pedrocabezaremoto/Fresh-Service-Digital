@@ -7,6 +7,7 @@ import { RateModule } from './rate/rate.module';
 import { ServicesModule } from './services/services.module';
 import { SiteImagesModule } from './site-images/site-images.module';
 import { ChatModule } from './chat/chat.module';
+import { CarouselModule } from './carousel/carousel.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ChatModule } from './chat/chat.module';
     ServicesModule,
     SiteImagesModule,
     ChatModule,
+    CarouselModule,
   ],
 })
 export class AppModule {}

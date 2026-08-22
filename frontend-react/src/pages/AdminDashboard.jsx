@@ -15,6 +15,7 @@ import { formatBs, formatUsd } from '../lib/money';
 import { STATUS, fmtDate, fmtTime } from '../lib/status';
 import ServiceMap from '../components/maps/ServiceMap';
 import SiteImagesSection from '../components/admin/SiteImagesSection';
+import CarouselSection from '../components/admin/CarouselSection';
 import { Donut, KPI, MonthBars } from '../components/admin/DashboardVisuals';
 import Price from '../components/Price';
 import {
@@ -1353,7 +1354,12 @@ export default function AdminDashboard() {
               )}
             </div>
           ) : view === 'configuracion' ? (
-            <SiteImagesSection />
+            <>
+              <SiteImagesSection />
+              <div className="mt-10">
+                <CarouselSection />
+              </div>
+            </>
           ) : (
             <div className="rounded-2xl bg-white ring-1 ring-slate-100 shadow-sm">
               <div className="border-b border-slate-100 p-4 sm:p-5">

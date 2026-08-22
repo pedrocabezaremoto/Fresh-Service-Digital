@@ -98,6 +98,13 @@ export const api = {
   uploadSiteImage: (slot, file) => uploadFile(`/site-images/${slot}`, file),
   deleteSiteImage: (slot) => request(`/site-images/${slot}`, { method: 'DELETE', auth: true }),
 
+  // Carrusel hero
+  getCarousel: () => request('/carousel'),
+  getCarouselAll: () => request('/carousel/all', { auth: true }),
+  uploadCarouselImage: (file) => uploadFile('/carousel', file),
+  toggleCarouselImage: (id) => request(`/carousel/${id}/toggle`, { method: 'PATCH', auth: true }),
+  deleteCarouselImage: (id) => request(`/carousel/${id}`, { method: 'DELETE', auth: true }),
+
   // Citas
   createAppointment: (payload) =>
     request('/appointments', { method: 'POST', body: payload, auth: true }),

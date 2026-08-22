@@ -992,18 +992,66 @@ La imagen `copito-avatar.png` tenia **265,608 pixeles semi-transparentes** (47% 
 ### Leccion aprendida
 Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg/u2net), SIEMPRE aplicar threshold de alpha antes de usar sobre fondos oscuros. No perder tiempo con CSS.
 
+### Cambios adicionales (misma sesión)
+
+**Admin panel — Copito integrado:**
+- Sidebar: cambiado /logo.png por /copito-avatar.png sin caja blanca
+- Botón "Ver sitio web": icono Globe reemplazado por mini Copito 20×20px
+- Import Globe eliminado de lucide-react
+
+**Widget chatbot — animación float:**
+- Nuevo keyframe widgetFloat en index.css: sube 10px, ciclo 3s ease-in-out infinite
+- Clase animate-widget-float en div wrapper del FAB button
+- Se detiene cuando el chat está abierto
+- Respeta prefers-reduced-motion
+
+**Carrusel hero — implementación inicial:**
+- Componente HeroCarousel.jsx creado con 8 fotos en public/carrusel/
+- Reemplaza imagen única del hero en Home.jsx
+- Fade suave 700ms, auto-avance cada 5s, dots indicadores
+- PENDIENTE: convertir a dinámico con gestión desde panel admin (prompt entregado)
+
+**Archivos modificados:**
+- frontend-react/src/pages/AdminDashboard.jsx — sidebar Copito + botón Ver sitio web
+- frontend-react/src/components/Copito.jsx — wrapper animate-widget-float
+- frontend-react/src/index.css — keyframe widgetFloat + reduced-motion
+- frontend-react/src/components/HeroCarousel.jsx — NUEVO componente carrusel
+- frontend-react/src/pages/Home.jsx — import HeroCarousel, reemplaza imagen hero
+
+### Carrusel dinámico (completado)
+
+- Tabla `carousel_images` en DB (migración 20260822190000_add_carousel_images)
+- 8 fotos sembradas en `backend/uploads/carousel/`
+- API: GET /carousel (público), GET /carousel/all, POST, PATCH toggle, DELETE (admin)
+- Módulo NestJS: `backend/src/carousel/` (controller, service, module)
+- Admin panel: sección "Carrusel de la página principal" en Configuración con Activar/Desactivar y Eliminar
+- HeroCarousel.jsx ahora consulta la API, no tiene fotos hardcodeadas
+- Si solo hay 1 imagen activa, no muestra dots ni auto-avance
+- Si la API falla, usa la foto hero por defecto como fallback
+
+### Archivos nuevos/modificados (carrusel dinámico)
+- `backend/prisma/schema.prisma` — modelo CarouselImage
+- `backend/prisma/migrations/20260822190000_add_carousel_images/` — migración
+- `backend/src/carousel/` — carousel.module.ts, carousel.controller.ts, carousel.service.ts
+- `backend/src/app.module.ts` — importa CarouselModule
+- `backend/uploads/carousel/` — 8 fotos copiadas desde public/carrusel/
+- `frontend-react/src/components/admin/CarouselSection.jsx` — NUEVO, gestión admin
+- `frontend-react/src/components/HeroCarousel.jsx` — ahora dinámico via API
+- `frontend-react/src/pages/AdminDashboard.jsx` — integra CarouselSection en configuración
+
 ### Pendiente
-- [ ] Verificar visualmente que el halo desaparecio (desktop + Android, Ctrl+Shift+R)
-- [ ] Si Pedro aprueba: git push
+- [ ] Fase 2 — Chat Copito en vivo (operador): Socket.IO, vista Chat admin, handoff IA→humano
+- [ ] Anti-abuso avanzado del chatbot
+- [ ] Deliverability email Resend
 
 ### Backlog actualizado
-1. **Fase 2 — Chat Copito en vivo (operador)** — PROXIMA SESION:
+1. **Fase 2 — Chat Copito en vivo (operador)** — PRÓXIMA:
    - Vista "Chat" en panel admin: lista de conversaciones activas, mensajes en tiempo real
-   - Socket.IO: conexion bidireccional widget - panel taller (sin recargar)
-   - Handoff IA - Operador: cuando el operador se conecta, Copito cede el control; si no esta, la IA sigue sola
+   - Socket.IO: conexión bidireccional widget - panel taller (sin recargar)
+   - Handoff IA - Operador: cuando el operador se conecta, Copito cede control; si no está, IA sigue sola
    - Indicador en el widget: cliente ve si habla con IA o con humano
    - Estimado: 1-2 sesiones completas
-2. **Carrusel hero** — fotos de Pedro en public/, cuidado de no romper nada
+2. **Carrusel** — agregar drag-and-drop para reordenar en admin (futuro)
 3. **Panel taller** — seguir creciendo
-4. **Deliverability email** — reputacion Resend mejora con volumen
+4. **Deliverability email** — reputación Resend mejora con volumen
 5. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot

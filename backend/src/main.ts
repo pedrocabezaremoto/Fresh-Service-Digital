@@ -11,6 +11,7 @@ async function bootstrap() {
 
   const uploadsDir = join(process.cwd(), 'uploads');
   mkdirSync(join(uploadsDir, 'site'), { recursive: true });
+  mkdirSync(join(uploadsDir, 'carousel'), { recursive: true });
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
   // Habilitar validación global de datos (DTOs)
