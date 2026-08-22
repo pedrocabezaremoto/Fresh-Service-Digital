@@ -143,6 +143,14 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-6px); }
   }
+  .animate-widget-float {
+    animation: widgetFloat 3s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes widgetFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
 }
 
 .admin-view-fade {
@@ -156,6 +164,7 @@
 /* Respeta a quien prefiere menos movimiento */
 @media (prefers-reduced-motion: reduce) {
   .animate-logo-float { animation: none; }
+  .animate-widget-float { animation: none; }
   .text-shimmer { animation: none; }
   .admin-view-fade { animation: none; }
   .admin-donut-seg,

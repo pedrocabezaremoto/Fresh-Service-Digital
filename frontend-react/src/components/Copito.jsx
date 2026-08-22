@@ -395,17 +395,19 @@ export default function Copito() {
       )}
 
       {/* FAB button */}
-      <button
-        onClick={() => {
-          if (!open) { setShowTeaser(false); sessionStorage.setItem(TEASER_KEY, '1'); }
-          setOpen(prev => !prev);
-        }}
-        className="group relative overflow-hidden rounded-full bg-gradient-to-br from-brand-600 to-brand-400 p-2 shadow-glow transition-all duration-200 hover:scale-110 hover:shadow-glow-lg"
-        aria-label="Chat con Copito"
-      >
-        <CopitoIcon size={40} />
-        <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-brand-400/30" style={{ animationDuration: '3s' }} />
-      </button>
+      <div className={open ? '' : 'animate-widget-float'}>
+        <button
+          onClick={() => {
+            if (!open) { setShowTeaser(false); sessionStorage.setItem(TEASER_KEY, '1'); }
+            setOpen(prev => !prev);
+          }}
+          className="group relative overflow-hidden rounded-full bg-gradient-to-br from-brand-600 to-brand-400 p-2 shadow-glow transition-all duration-200 hover:scale-110 hover:shadow-glow-lg"
+          aria-label="Chat con Copito"
+        >
+          <CopitoIcon size={40} />
+          <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-brand-400/30" style={{ animationDuration: '3s' }} />
+        </button>
+      </div>
     </div>
   );
 }

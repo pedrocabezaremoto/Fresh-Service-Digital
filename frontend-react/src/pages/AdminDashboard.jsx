@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, ClipboardList, Users, LogOut, Globe, RefreshCw,
+  LayoutDashboard, ClipboardList, Users, LogOut, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   Download, Sparkles, UserCog, Power, PowerOff,
   TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
@@ -725,7 +725,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand-950 lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-6 py-5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white p-1 shadow-sm"><img src="/logo.png" alt="Fresh Service" className="h-full w-full object-contain" /></span>
+          <span className="grid h-10 w-10 shrink-0 place-items-center"><img src="/copito-avatar.png" alt="Copito" className="h-full w-full object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" /></span>
           <div>
             <div className="font-display text-sm font-extrabold text-white leading-none">Fresh Service</div>
             <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-400">Panel Taller</div>
@@ -741,7 +741,7 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div className="space-y-2 border-t border-white/10 p-4">
-          <Link to="/" target="_blank" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 active:brightness-95 sheen touch-manipulation"><Globe size={16} /> Ver sitio web</Link>
+          <Link to="/" target="_blank" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 active:brightness-95 sheen touch-manipulation"><img src="/copito-avatar.png" alt="" className="h-5 w-5 object-contain" /> Ver sitio web</Link>
           <button type="button" onClick={() => { logout(); navigate('/'); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 px-4 py-2.5 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 hover:ring-rose-300/50 active:bg-rose-500/40 cursor-pointer touch-manipulation"><LogOut size={17} /> Cerrar sesión</button>
           <div className="flex items-center gap-2.5 pt-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Zap, Wrench, ShieldCheck, MapPin } from 'lucide-react';
 import Button from '../components/Button';
+import HeroCarousel from '../components/HeroCarousel';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
@@ -96,15 +97,7 @@ export default function Home() {
           </div>
 
           <div className="relative">
-            <div className="group relative overflow-hidden rounded-[2rem] ring-1 ring-white/15 shadow-glow-lg transition duration-300 ease-out hover:-translate-y-2 hover:shadow-glow-lg hover:ring-frost-300/40 will-change-transform">
-              <img
-                src={images.heroTech}
-                alt="Técnico de refrigeración trabajando"
-                className="h-[320px] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04] sm:h-[420px] lg:h-[min(480px,calc(100vh-14rem))]"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-950/60 to-transparent" />
-            </div>
+            <HeroCarousel />
           </div>
         </div>
       </section>
