@@ -242,7 +242,7 @@ export default function Copito() {
   const canSend = chatEnabled && !streaming && draft.trim().length > 0 && statusChecked;
 
   return (
-    <div ref={panelRef} className="fixed bottom-6 right-6 z-[60] flex items-end gap-3">
+    <div ref={panelRef} className="fixed bottom-10 right-4 sm:bottom-6 sm:right-6 z-[60] flex items-end gap-3">
       {/* Teaser */}
       {showTeaser && !open && (
         <div className="absolute bottom-full right-0 mb-3 flex max-w-[220px] items-start gap-2 rounded-xl border border-brand-200 bg-white px-3 py-2 shadow-lg animate-[fadeIn_0.2s_ease-out]">

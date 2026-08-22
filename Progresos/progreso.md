@@ -955,10 +955,55 @@ Cerrado en el día: CRUD Servicios, fotos de landing, login por username, gráfi
 - [ ] Pruebas de estrés del chatbot (lista entregada a Pedro)
 - [ ] Git push de todos los cambios Copito
 
+### Cerrado en esta sesión (por Pedro)
+- ✅ Foto de perfil Telegram @copito_fresh_bot subida via BotFather
+- ✅ Imágenes IA para la landing generadas y subidas
+- ✅ Pruebas de estrés en curso (Pedro las hace durante el día)
+- ✅ Widget reposicionado en mobile (bottom-10)
+
+---
+
+## Sesión 2026-08-22 — Fix logo Copito (halo gris) + favicons
+
+### Problema diagnosticado
+
+El logo de Copito en el navbar se veia con un fondo gris/oscuro horrible, tanto en desktop como en Android. Pedro lleva 2+ horas con este problema.
+
+**Causa raiz (encontrada tras 6+ iteraciones CSS fallidas):**
+La imagen `copito-avatar.png` tenia **265,608 pixeles semi-transparentes** (47% del total). Esto venia de la conversion JPEG→PNG con `rembg`: el modelo de IA deja anti-aliasing (pixeles con alpha entre 1 y 254). Sobre fondo blanco se ven bien, pero sobre el navbar oscuro esos pixeles se renderizan como gris — creando un halo visible alrededor del personaje.
+
+**NO era un problema de CSS.** Se probaron 6+ combinaciones (bg-white, rounded-full, transparent, shadow, etc.) sin resultado porque el problema estaba en la imagen misma.
+
+### Solucion aplicada
+
+1. **Threshold duro de alpha:** Script Python con NumPy — todo pixel con alpha < 128 → transparente (0), alpha >= 128 → opaco (255). Resultado: 0 pixeles semi-transparentes, bordes limpios.
+2. **Logo.jsx:** Eliminado `bg-white rounded-full p-0.5 shadow-sm`. Copito flota directo sin contenedor circular. Agregado `drop-shadow` sutil para resaltar en cualquier fondo.
+3. **Favicons regenerados:** Todos los archivos favicon (ico, png 16/32/48, apple-touch-icon, icon-512) regenerados desde la imagen limpia. Eliminado `favicon.svg` viejo.
+4. **Build + deploy:** `pnpm build && pm2 restart fresh-frontend` ejecutado.
+
+### Archivos modificados
+- `frontend-react/public/copito-avatar.png` — imagen limpia, 0 semi-transparentes
+- `frontend-react/public/favicon.ico` — Copito multi-size (16/32/48)
+- `frontend-react/public/favicon-16.png`, `favicon-32.png`, `favicon-48.png`, `favicon.png`
+- `frontend-react/public/apple-touch-icon.png`, `icon-512.png`
+- `frontend-react/public/favicon.svg` — ELIMINADO (logo viejo)
+- `frontend-react/src/components/Logo.jsx` — sin fondo circular, con drop-shadow
+
+### Leccion aprendida
+Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg/u2net), SIEMPRE aplicar threshold de alpha antes de usar sobre fondos oscuros. No perder tiempo con CSS.
+
+### Pendiente
+- [ ] Verificar visualmente que el halo desaparecio (desktop + Android, Ctrl+Shift+R)
+- [ ] Si Pedro aprueba: git push
+
 ### Backlog actualizado
-1. **Imágenes IA** — prompts listos, falta generar y subir
-2. **Carrusel hero** — fotos IA rotando
-3. **Chat realtime Escarchín** — Socket.IO, operador en horario + bot fuera de horario (Fase 2)
-4. **Panel taller** — seguir creciendo
-5. **Deliverability email** — reputación Resend mejora con volumen
-6. **Anti-abuso avanzado** — Pedro mencionó proteger contra "gente ociosa"
+1. **Fase 2 — Chat Copito en vivo (operador)** — PROXIMA SESION:
+   - Vista "Chat" en panel admin: lista de conversaciones activas, mensajes en tiempo real
+   - Socket.IO: conexion bidireccional widget - panel taller (sin recargar)
+   - Handoff IA - Operador: cuando el operador se conecta, Copito cede el control; si no esta, la IA sigue sola
+   - Indicador en el widget: cliente ve si habla con IA o con humano
+   - Estimado: 1-2 sesiones completas
+2. **Carrusel hero** — fotos de Pedro en public/, cuidado de no romper nada
+3. **Panel taller** — seguir creciendo
+4. **Deliverability email** — reputacion Resend mejora con volumen
+5. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot

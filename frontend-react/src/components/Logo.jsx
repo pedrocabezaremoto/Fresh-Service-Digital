@@ -10,14 +10,14 @@ export default function Logo({ size = 'md', light = false, effect = 'hover' }) {
 
   return (
     <div className="flex items-center gap-2.5">
-      {/* Chip blanco fijo para que el logo se vea bien en navbar claro y oscuro */}
+      {/* Copito flota directo — sin fondo circular */}
       <span
-        className={`${box} ${motion} grid shrink-0 place-items-center rounded-xl bg-white/10 p-0.5 will-change-transform`}
+        className={`${box} ${motion} grid shrink-0 place-items-center will-change-transform`}
       >
         <img
           src="/copito-avatar.png"
           alt="Copito — Fresh Service Digital"
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
         />
       </span>
       <span
