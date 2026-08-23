@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { LlmService, type LlmChatMessage } from './llm.service';
 import { ChatTelegramService } from './chat-telegram.service';
 import { ChatGateway } from './chat.gateway';
 import { Prisma } from '@prisma/client';
+
+// Sharp 0.35: types ESM-first, runtime CJS. require() is the callable factory.
+const sharp = require('sharp');
+const heicConvert = require('heic-convert');
 
 const MAX_TOOL_ROUNDS = 3;
 
@@ -96,6 +100,26 @@ export class ChatService {
   }
 
   async deleteConversation(id: string) {
+    const imageMessages = await this.prisma.chatMessage.findMany({
+      where: { conversationId: id, type: 'image' },
+      select: { imageUrl: true },
+    });
+
+    const uploadDir = join(process.cwd(), 'uploads', 'chat-images');
+    for (const msg of imageMessages) {
+      if (msg.imageUrl) {
+        const filename = msg.imageUrl.split('/').pop();
+        if (filename && !filename.includes('..')) {
+          const filePath = join(uploadDir, filename);
+          try {
+            if (existsSync(filePath)) unlinkSync(filePath);
+          } catch {
+            this.logger.warn(`No se pudo borrar imagen: ${filename}`);
+          }
+        }
+      }
+    }
+
     await this.prisma.chatMessage.deleteMany({ where: { conversationId: id } });
     await this.prisma.chatConversation.delete({ where: { id } });
     return { success: true };
@@ -147,6 +171,28 @@ export class ChatService {
     return `${this.publicBase()}/uploads/chat-images/${filename}`;
   }
 
+  private async toJpegBuffer(buffer: Buffer): Promise<Buffer> {
+    try {
+      return await sharp(buffer, { unlimited: true, limitInputPixels: false })
+        .jpeg({ quality: 80 })
+        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer();
+    } catch (err) {
+      this.logger.warn(`Sharp no pudo convertir (${err}). Intento heic-convert.`);
+    }
+
+    try {
+      const jpeg = await heicConvert({ buffer, format: 'JPEG', quality: 0.8 });
+      return await sharp(Buffer.from(jpeg))
+        .jpeg({ quality: 80 })
+        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+        .toBuffer();
+    } catch (err) {
+      this.logger.warn(`heic-convert tampoco pudo, se guarda el original: ${err}`);
+      return buffer;
+    }
+  }
+
   async handleImageUpload(
     sessionId: string,
     file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
@@ -174,9 +220,9 @@ export class ChatService {
     if (conversation.paused) return { error: 'Esta conversación está pausada.' };
     if (conversation.imageCount >= 5) return { error: 'Máximo 5 imágenes por conversación.' };
 
-    const ext = file.mimetype === 'image/png' ? '.png' : '.jpg';
-    const filename = `${conversation.id}-${Date.now()}${ext}`;
-    const imageUrl = this.saveChatImage(filename, file.buffer);
+    const processedBuffer = await this.toJpegBuffer(file.buffer);
+    const filename = `${conversation.id}-${Date.now()}.jpg`;
+    const imageUrl = this.saveChatImage(filename, processedBuffer);
 
     const msg = await this.prisma.chatMessage.create({
       data: {
@@ -223,9 +269,9 @@ export class ChatService {
     const conversation = await this.prisma.chatConversation.findUnique({ where: { id: conversationId } });
     if (!conversation) return { error: 'Conversación no encontrada.' };
 
-    const ext = file.mimetype === 'image/png' ? '.png' : '.jpg';
-    const filename = `op-${conversationId}-${Date.now()}${ext}`;
-    const imageUrl = this.saveChatImage(filename, file.buffer);
+    const processedBuffer = await this.toJpegBuffer(file.buffer);
+    const filename = `op-${conversationId}-${Date.now()}.jpg`;
+    const imageUrl = this.saveChatImage(filename, processedBuffer);
 
     const msg = await this.prisma.chatMessage.create({
       data: {

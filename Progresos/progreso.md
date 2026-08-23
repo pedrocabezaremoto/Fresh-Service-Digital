@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-23 (sesión nocturna — chat imágenes, moderación, modales, Samsung fix)  
+**Última actualización:** 2026-08-23 (tarde — Sharp, desbloquear, emojis, lista visual)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1107,16 +1107,73 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - `compressImage` con try/catch y fallback al archivo original
 - Frontend sin validación de formato (el Canvas convierte a JPEG)
 
-**Bug pendiente (Samsung Galaxy):**
-- La imagen sube sin error pero NO se muestra en el chat (icono roto)
-- Causa probable: Canvas falla por memoria, guarda el HEIC original que el navegador no renderiza
-- Solución pendiente para próxima sesión: convertir en el backend con Sharp si no es JPEG/PNG
+**Fix Samsung Galaxy (2026-08-23 tarde):** RESUELTO ✅
+- Backend convierte todo upload de chat a JPEG 80 / max 1200px (`toJpegBuffer`).
+- `sharp` 0.35.3 para WebP/PNG/JPEG/HEIC simple. Fallback `heic-convert` 2.1.0: Sharp trae libvips 8.18.3 y rechaza HEIC Samsung (`ipma box > 16 items`).
+- Import CJS `require('sharp')` — el `import` del prompt compilaba a `.default` undefined.
+- 2 HEIC Samsung ya en disco convertidos in-place (ahora JPEG real).
+- Frontend / gateway / migraciones sin tocar. `pm2 restart fresh-service`. En prod.
+
+**Emoji picker + limpieza (2026-08-23 tarde):** ✅
+- Operador: botón 😊 + popover (Comunes / Servicio / Expresiones). Inserta en `draft`.
+- `deleteConversation` borra archivos de `uploads/chat-images/` antes de borrar la BD.
+- Bundle `index-Ds3sXay7.js`. En prod (backend + frontend).
+
+**Desbloquear conversación (2026-08-23 tarde):** ✅
+- Gateway `unblockConversation` + widget escucha `unblocked`.
+- Admin: botón 🔓 Desbloquear (modal verde). ConfirmModal ya tenía `green`.
+- Bundle `index-0wvei023.js`. En prod.
+
+**Lista chats visual (2026-08-23 tarde):** ✅
+- Avatar de color por `sessionId`, borde izquierdo por estado, grupos Hoy/Ayer, zebra + hover.
+- Bundle `index-D2l_W1qi.js`. En prod. Solo lista izquierda.
 
 **Commits pendientes:** todos los cambios de esta sesión están en producción pero sin commit formal
 
+### Sesión 2026-08-23 (tarde) — Fix Samsung + moderación completa + UI profesional
+
+**Fix Samsung Galaxy (Sharp backend):**
+- Instalado `sharp 0.35.3` + `heic-convert 2.1.0` en el backend
+- Método `toJpegBuffer()` convierte CUALQUIER formato (HEIC, WebP, AVIF, TIFF, etc.) a JPEG 1200x1200 calidad 80
+- Pipeline: Sharp primero → si falla → heic-convert → si ambos fallan → archivo original
+- Backend acepta cualquier `image/*` (no solo JPG/PNG)
+- Frontend sin validación de formato (Canvas convierte, backend acepta todo)
+- Probado con Samsung Galaxy, POCO X3 Pro, iPhone 11/12/15 — todos funcionan
+
+**Desbloquear conversaciones:**
+- Nuevo evento `unblockConversation` en el gateway
+- Botón verde "🔓 Desbloquear" con modal de confirmación reemplaza el badge estático
+- Widget del cliente reactiva el input al desbloquear
+
+**Emoji picker del operador:**
+- Componente `EmojiPicker.jsx` con 27 emojis en 3 categorías (Comunes, Servicio, Expresiones)
+- Botón 😊 al lado del input del operador
+- Se cierra con Escape o click fuera
+
+**Limpieza de imágenes al eliminar:**
+- `deleteConversation` ahora borra los archivos JPG del disco además de la BD
+- Usa `unlinkSync` + `existsSync` con try/catch para no bloquear el delete
+
+**Fix restaurar conversaciones:**
+- `handleUnarchive` ahora agrega la conversación de vuelta a la lista de activas (antes se perdía)
+
+**Mejoras visuales lista de conversaciones:**
+- Avatar con color único por sessionId (10 colores, letra inicial)
+- Borde izquierdo por estado: verde=EN VIVO, amarillo=pausada, rojo=bloqueada
+- Separadores por fecha: "Hoy", "Ayer", "22 ago."
+- Zebra suave: filas alternas con tono diferente
+- Funciona en modo claro y oscuro
+
+**Archivos modificados/creados:**
+- `backend/src/chat/chat.service.ts` — toJpegBuffer, limpieza imágenes, sharp+heic-convert
+- `backend/src/chat/chat.gateway.ts` — evento unblockConversation
+- `frontend-react/src/components/admin/AdminChatView.jsx` — avatars, zebra, fecha, desbloquear, fix restaurar
+- `frontend-react/src/components/admin/EmojiPicker.jsx` — nuevo componente
+- `backend/package.json` — sharp, heic-convert
+
 ### Backlog actualizado
-1. **Fix Samsung Galaxy** — imágenes suben pero no se muestran (convertir en backend)
-2. **Carrusel** — agregar drag-and-drop para reordenar en admin (futuro)
-3. **Panel taller** — seguir creciendo
-4. **Deliverability email** — reputación Resend mejora con volumen
-5. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+1. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+2. **Panel taller** — seguir creciendo
+3. **Deliverability email** — reputación Resend mejora con volumen
+4. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+5. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat

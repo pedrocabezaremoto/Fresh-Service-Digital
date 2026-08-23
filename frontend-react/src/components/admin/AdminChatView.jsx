@@ -4,6 +4,40 @@ import { MessageCircle, Send, UserCheck, UserX } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from './ConfirmModal';
+import EmojiPicker from './EmojiPicker';
+
+function avatarColor(sessionId) {
+  let hash = 0;
+  for (let i = 0; i < sessionId.length; i++) {
+    hash = sessionId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500',
+    'bg-yellow-500', 'bg-red-500', 'bg-indigo-500', 'bg-teal-500',
+    'bg-orange-500', 'bg-cyan-500',
+  ];
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function avatarInitial(conv) {
+  const firstMsg = conv.lastMessage?.content || conv.sessionId;
+  const letter = firstMsg.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, '')[0] || '#';
+  return letter.toUpperCase();
+}
+
+function formatDateGroup(dateStr) {
+  if (!dateStr) return 'Sin fecha';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'Sin fecha';
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return 'Hoy';
+  if (date.toDateString() === yesterday.toDateString()) return 'Ayer';
+
+  return date.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' });
+}
 
 export default function AdminChatView() {
   const { token } = useAuth();
@@ -17,7 +51,9 @@ export default function AdminChatView() {
   const messagesEndRef = useRef(null);
   const selectedRef = useRef(null);
   const fileInputRef = useRef(null);
+  const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [viewMode, setViewMode] = useState('active'); // 'active' | 'archived'
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [modal, setModal] = useState({ open: false, title: '', message: '', confirmText: '', confirmColor: 'blue', onConfirm: () => {} });
@@ -195,11 +231,7 @@ export default function AdminChatView() {
       headers: { Authorization: `Bearer ${token}` },
     });
     setArchivedConversations(prev => prev.filter(c => c.id !== conv.id));
-    if (selected === conv.sessionId) {
-      setSelected(null);
-      selectedRef.current = null;
-      setMessages([]);
-    }
+    setConversations(prev => [...prev, { ...conv, archived: false }]);
   }
 
   async function handleDelete(conv) {
@@ -268,76 +300,109 @@ export default function AdminChatView() {
               {viewMode === 'archived' ? 'No hay conversaciones archivadas' : 'No hay conversaciones activas'}
             </p>
           ) : (
-            list.map(conv => (
-              <div
-                key={conv.sessionId}
-                onClick={() => selectConversation(conv)}
-                className={`w-full cursor-pointer border-b border-brand-50 px-4 py-3 text-left transition hover:bg-brand-50 ${
-                  selected === conv.sessionId ? 'bg-brand-50 ring-1 ring-inset ring-brand-200' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-ink-900 truncate">
-                    {conv.lastMessage?.content?.slice(0, 30) || 'Sin mensajes'}
-                  </span>
-                  {conv.unreadByAdmin > 0 && (
-                    <span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      {conv.unreadByAdmin}
-                    </span>
+            list.map((conv, i) => {
+              const currentGroup = formatDateGroup(conv.lastMessageAt || conv.startedAt);
+              const prevGroup = i > 0 ? formatDateGroup(list[i - 1].lastMessageAt || list[i - 1].startedAt) : null;
+              const showSeparator = currentGroup !== prevGroup;
+              const statusBorder = conv.blocked
+                ? 'border-l-red-500'
+                : conv.paused
+                  ? 'border-l-yellow-500'
+                  : conv.operatorActive
+                    ? 'border-l-green-500'
+                    : 'border-l-brand-500';
+              const isSelected = selected === conv.sessionId;
+
+              return (
+                <div key={conv.id || conv.sessionId}>
+                  {showSeparator && (
+                    <div className="sticky top-0 z-10 border-b border-brand-100 bg-slate-50/95 px-4 py-1.5 backdrop-blur-sm dark:border-brand-700 dark:bg-brand-900/90">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-ink-400 dark:text-brand-400">
+                        {currentGroup}
+                      </span>
+                    </div>
                   )}
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-xs text-ink-400">
-                  <span>{conv.messageCount} msgs</span>
-                  {conv.operatorActive && (
-                    <span className="rounded bg-green-100 px-1 py-0.5 text-[10px] font-bold text-green-700">EN VIVO</span>
-                  )}
-                  {conv.paused && (
-                    <span className="rounded bg-yellow-100 px-1 py-0.5 text-[10px] font-bold text-yellow-700">PAUSADA</span>
-                  )}
-                  {conv.blocked && (
-                    <span className="rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-700">BLOQUEADA</span>
-                  )}
-                  <span className="ml-auto">
-                    {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : ''}
-                  </span>
-                </div>
-                {viewMode === 'active' ? (
-                  <div className="flex gap-1 mt-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleArchive(conv); }}
-                      className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-amber-50 hover:text-amber-700 transition"
-                      title="Archivar"
-                    >
-                      📦 Archivar
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(conv); }}
-                      className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-red-50 hover:text-red-600 transition"
-                      title="Eliminar permanentemente"
-                    >
-                      🗑️ Eliminar
-                    </button>
+                  <div
+                    onClick={() => selectConversation(conv)}
+                    className={`w-full cursor-pointer border-b border-b-brand-50 border-l-[3px] px-4 py-3 text-left transition hover:bg-brand-100 dark:hover:bg-brand-700/50 ${statusBorder} ${
+                      isSelected
+                        ? 'bg-brand-50 ring-1 ring-inset ring-brand-200 dark:bg-brand-800/60'
+                        : i % 2 === 0
+                          ? ''
+                          : 'bg-gray-50 dark:bg-brand-800/30'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${avatarColor(conv.sessionId)}`}>
+                        {avatarInitial(conv)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-ink-900 truncate">
+                            {conv.lastMessage?.content?.slice(0, 30) || 'Sin mensajes'}
+                          </span>
+                          {conv.unreadByAdmin > 0 && (
+                            <span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              {conv.unreadByAdmin}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-ink-400">
+                          <span>{conv.messageCount} msgs</span>
+                          {conv.operatorActive && (
+                            <span className="rounded bg-green-100 px-1 py-0.5 text-[10px] font-bold text-green-700">EN VIVO</span>
+                          )}
+                          {conv.paused && (
+                            <span className="rounded bg-yellow-100 px-1 py-0.5 text-[10px] font-bold text-yellow-700">PAUSADA</span>
+                          )}
+                          {conv.blocked && (
+                            <span className="rounded bg-red-100 px-1 py-0.5 text-[10px] font-bold text-red-700">BLOQUEADA</span>
+                          )}
+                          <span className="ml-auto">
+                            {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                        {viewMode === 'active' ? (
+                          <div className="flex gap-1 mt-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleArchive(conv); }}
+                              className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-amber-50 hover:text-amber-700 transition"
+                              title="Archivar"
+                            >
+                              📦 Archivar
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(conv); }}
+                              className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-red-50 hover:text-red-600 transition"
+                              title="Eliminar permanentemente"
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1 mt-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleUnarchive(conv); }}
+                              className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-blue-50 hover:text-blue-700 transition"
+                              title="Desarchivar"
+                            >
+                              📂 Restaurar
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(conv); }}
+                              className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-red-50 hover:text-red-600 transition"
+                              title="Eliminar permanentemente"
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex gap-1 mt-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleUnarchive(conv); }}
-                      className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-blue-50 hover:text-blue-700 transition"
-                      title="Desarchivar"
-                    >
-                      📂 Restaurar
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(conv); }}
-                      className="rounded px-1.5 py-0.5 text-[10px] text-ink-400 hover:bg-red-50 hover:text-red-600 transition"
-                      title="Eliminar permanentemente"
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -409,7 +474,22 @@ export default function AdminChatView() {
                   </>
                 )}
                 {selectedConv?.blocked && (
-                  <span className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700">Bloqueado</span>
+                  <button
+                    onClick={() => openModal({
+                      title: 'Desbloquear cliente',
+                      message: 'El cliente podrá volver a enviar mensajes en esta conversación.',
+                      confirmText: 'Desbloquear',
+                      confirmColor: 'green',
+                      onConfirm: () => {
+                        closeModal();
+                        socketRef.current?.emit('unblockConversation', { sessionId: selected });
+                      },
+                    })}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-700 transition"
+                    title="Desbloquear cliente"
+                  >
+                    🔓 Desbloquear
+                  </button>
                 )}
               </div>
             </div>
@@ -464,7 +544,28 @@ export default function AdminChatView() {
                     title="Enviar imagen">
                     {uploading ? '...' : '📷'}
                   </button>
+                  <div className="relative">
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => setShowEmoji(!showEmoji)}
+                      className="rounded-xl px-3 py-2.5 text-lg transition hover:bg-brand-100"
+                      type="button"
+                      title="Emojis"
+                    >
+                      😊
+                    </button>
+                    {showEmoji && (
+                      <EmojiPicker
+                        onSelect={(emoji) => {
+                          setDraft(prev => prev + emoji);
+                          inputRef.current?.focus();
+                        }}
+                        onClose={() => setShowEmoji(false)}
+                      />
+                    )}
+                  </div>
                   <input
+                    ref={inputRef}
                     type="text"
                     value={draft}
                     onChange={e => setDraft(e.target.value)}

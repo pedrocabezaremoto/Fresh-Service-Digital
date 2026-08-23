@@ -227,7 +227,7 @@ export default function Copito() {
       if (data.action === 'blocked' || data.action === 'paused') {
         setModerationMsg(data.message);
         setChatEnabled(false);
-      } else if (data.action === 'resumed') {
+      } else if (data.action === 'resumed' || data.action === 'unblocked') {
         setModerationMsg('');
         setChatEnabled(true);
       }

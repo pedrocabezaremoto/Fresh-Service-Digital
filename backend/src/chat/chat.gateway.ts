@@ -268,6 +268,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('unblockConversation')
+  async handleUnblock(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { sessionId: string },
+  ) {
+    if (socket.data.type !== 'operator') return;
+
+    await this.prisma.chatConversation.update({
+      where: { sessionId: data.sessionId },
+      data: { blocked: false, status: 'active' },
+    });
+
+    this.server.to(`session:${data.sessionId}`).emit('moderation', {
+      action: 'unblocked',
+      message: '',
+    });
+
+    this.server.to('operators').emit('conversationUpdated', {
+      sessionId: data.sessionId,
+      blocked: false,
+    });
+  }
+
   // Called from ChatService when client sends a message via HTTP
   // This notifies operators in real-time
   async notifyNewClientMessage(sessionId: string, message: { id: string; role: string; content: string; createdAt: Date; type?: string; imageUrl?: string }) {
