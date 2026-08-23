@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { RotateCcw, Send, X } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { API_BASE } from '../lib/api';
 
 const SESSION_KEY = 'copito_session';
@@ -25,6 +26,70 @@ function saveMessages(msgs) {
 }
 function uid() { return crypto.randomUUID(); }
 
+function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.7) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          let { width, height } = img;
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              if (blob.size > 900 * 1024 && quality > 0.3) {
+                canvas.toBlob(
+                  (blob2) => resolve(blob2 || blob),
+                  'image/jpeg',
+                  0.4,
+                );
+              } else {
+                resolve(blob);
+              }
+            },
+            'image/jpeg',
+            quality,
+          );
+        } catch {
+          resolve(file);
+        }
+      };
+      img.src = url;
+    } catch {
+      resolve(file);
+    }
+  });
+}
+
 function CopitoIcon({ size = 28 }) {
   return (
     <img
@@ -48,17 +113,17 @@ function TypingDots() {
   );
 }
 
-function renderSimpleMarkdown(text) {
+function renderMarkdown(text) {
   if (!text) return '';
-  const escaped = text
+  const escaped = String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
-  const rendered = escaped
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+  return escaped
+    .replace(/\*\*([\s\S]+?)\*\*/g, '<strong style="font-weight:700">$1</strong>')
+    .replace(/__([\s\S]+?)__/g, '<strong style="font-weight:700">$1</strong>')
+    .replace(/(^|[^*])\*(?!\*)([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
     .replace(/\n/g, '<br/>');
-  return rendered;
 }
 
 export default function Copito() {
@@ -71,8 +136,15 @@ export default function Copito() {
   const [chatEnabled, setChatEnabled] = useState(true);
   const [statusChecked, setStatusChecked] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [chatMode, setChatMode] = useState('ai'); // 'ai' | 'operator'
+  const [operatorName, setOperatorName] = useState('');
+  const [socketSessionId, setSocketSessionId] = useState(() => loadSession());
+  const [imageCount, setImageCount] = useState(() => loadMessages().filter(m => m.type === 'image').length);
+  const [moderationMsg, setModerationMsg] = useState('');
 
   const panelRef = useRef(null);
+  const socketRef = useRef(null);
+  const fileInputRef = useRef(null);
   const messagesRef = useRef(null);
   const textareaRef = useRef(null);
   const abortRef = useRef(null);
@@ -127,6 +199,60 @@ export default function Copito() {
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !socketSessionId) return;
+
+    const socket = io(`${API_BASE}/live-chat`, {
+      auth: { sessionId: socketSessionId },
+      transports: ['websocket', 'polling'],
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[Copito] Socket connected, sessionId:', socketSessionId);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('[Copito] Socket error:', err.message);
+    });
+
+    socket.on('mode', (data) => {
+      setChatMode(data.mode);
+      if (data.mode === 'operator') {
+        setOperatorName(data.operatorName || 'Operador');
+      }
+    });
+
+    socket.on('moderation', (data) => {
+      if (data.action === 'blocked' || data.action === 'paused') {
+        setModerationMsg(data.message);
+        setChatEnabled(false);
+      } else if (data.action === 'resumed') {
+        setModerationMsg('');
+        setChatEnabled(true);
+      }
+    });
+
+    socket.on('message', (msg) => {
+      if (msg.role === 'operator') {
+        setMessages(prev => {
+          const updated = [...prev, {
+            id: msg.id,
+            role: 'assistant',
+            content: msg.content,
+            operatorName: msg.operatorName,
+            type: msg.type || 'text',
+            imageUrl: msg.imageUrl,
+          }];
+          saveMessages(updated);
+          return updated;
+        });
+      }
+    });
+
+    return () => { socket.disconnect(); socketRef.current = null; };
+  }, [open, socketSessionId]);
+
   function close() {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -149,9 +275,62 @@ export default function Copito() {
     const newId = uid();
     saveSession(newId);
     setSessionId(newId);
+    setSocketSessionId(newId);
     setMessages([]);
     setDraft('');
+    setImageCount(0);
+    setModerationMsg('');
     stickRef.current = true;
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (imageCount >= 5) {
+      alert('Máximo 5 imágenes por conversación.');
+      return;
+    }
+
+    const compressed = await compressImage(file);
+
+    if (!compressed) {
+      alert('No se pudo procesar la imagen.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', compressed, 'foto.jpg');
+    formData.append('sessionId', sessionId);
+
+    try {
+      const res = await fetch(`${API_BASE}/chat/upload-image`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+        return;
+      }
+      setMessages(prev => {
+        const updated = [...prev, {
+          id: data.messageId,
+          role: 'user',
+          content: '[Imagen]',
+          type: 'image',
+          imageUrl: data.url,
+        }];
+        saveMessages(updated);
+        return updated;
+      });
+      setImageCount(prev => prev + 1);
+    } catch {
+      alert('Error al subir la imagen.');
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function sendMessage() {
@@ -235,7 +414,14 @@ export default function Copito() {
     } finally {
       setStreaming(false);
       abortRef.current = null;
-      setMessages(prev => { saveMessages(prev); return prev; });
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        const next = last?.id === assistantId && last.role === 'assistant' && last.content === ''
+          ? prev.slice(0, -1)
+          : prev;
+        saveMessages(next);
+        return next;
+      });
     }
   }
 
@@ -264,8 +450,13 @@ export default function Copito() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-white">Copito</p>
-              <p className="text-xs text-brand-200">Asistente de Fresh Service</p>
+              <p className="text-xs text-brand-200">
+                {chatMode === 'operator' ? `${operatorName} — en vivo` : 'Asistente IA de Fresh Service'}
+              </p>
             </div>
+            {chatMode === 'operator' && (
+              <span className="shrink-0 rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">EN VIVO</span>
+            )}
             <div className="flex items-center gap-1">
               <button onClick={() => setConfirmReset(true)}
                 className="rounded-md p-1.5 text-brand-200 hover:bg-white/10 hover:text-white">
@@ -330,7 +521,17 @@ export default function Copito() {
                 return (
                   <div key={msg.id} className="flex justify-end">
                     <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-brand-600 px-3 py-2 text-sm text-white">
-                      {msg.content}
+                      {msg.type === 'image' && msg.imageUrl ? (
+                        <img
+                          src={msg.imageUrl}
+                          alt="Imagen enviada"
+                          className="max-w-[200px] max-h-[200px] rounded-lg object-cover cursor-pointer"
+                          onClick={() => window.open(msg.imageUrl, '_blank')}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                      )}
                     </div>
                   </div>
                 );
@@ -349,10 +550,22 @@ export default function Copito() {
               if (msg.content === '' && streaming) return null;
               return (
                 <div key={msg.id} className="flex justify-start">
-                  <div
-                    className="max-w-[85%] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-sm text-ink-700 shadow-sm ring-1 ring-brand-100 [&_strong]:font-semibold [&_em]:italic"
-                    dangerouslySetInnerHTML={{ __html: renderSimpleMarkdown(msg.content) }}
-                  />
+                  <div className="max-w-[85%] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-sm text-ink-700 shadow-sm ring-1 ring-brand-100 [&_strong]:font-semibold [&_em]:italic">
+                    {msg.operatorName && (
+                      <span className="mb-1 block text-[10px] font-semibold text-brand-500">{msg.operatorName}</span>
+                    )}
+                    {msg.type === 'image' && msg.imageUrl ? (
+                      <img
+                        src={msg.imageUrl}
+                        alt="Imagen enviada"
+                        className="max-w-[200px] max-h-[200px] rounded-lg object-cover cursor-pointer"
+                        onClick={() => window.open(msg.imageUrl, '_blank')}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -363,8 +576,29 @@ export default function Copito() {
           </div>
 
           {/* Input */}
+          {moderationMsg ? (
+            <div className="border-t border-brand-100 p-4 text-center">
+              <p className="text-sm text-red-500 font-medium">{moderationMsg}</p>
+            </div>
+          ) : (
           <footer className="shrink-0 border-t border-brand-100 bg-white p-3">
             <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!chatEnabled || imageCount >= 5}
+                className="shrink-0 rounded-lg p-2 text-brand-400 hover:bg-brand-50 hover:text-brand-600 disabled:opacity-30 transition"
+                aria-label="Enviar imagen"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+              </button>
               <div className="min-w-0 flex-1">
                 <textarea
                   ref={textareaRef}
@@ -391,6 +625,7 @@ export default function Copito() {
               </button>
             </div>
           </footer>
+          )}
         </div>
       )}
 

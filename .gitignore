@@ -11,6 +11,9 @@ yarn-error.log*
 # Imágenes subidas desde el panel admin (no van al repo)
 /backend/uploads/
 
+# Imágenes de chat subidas por usuarios/operador
+backend/uploads/chat-images/
+
 # Entorno y Datos Sensibles
 .env
 .env.local

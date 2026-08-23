@@ -1,6 +1,10 @@
-import { Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, Response } from 'express';
 import { ChatService } from './chat.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller('chat')
 export class ChatController {
@@ -9,6 +13,70 @@ export class ChatController {
   @Get('status')
   async getStatus() {
     return this.chatService.getStatus();
+  }
+
+  @Get('archived')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getArchivedConversations() {
+    return this.chatService.getArchivedConversations();
+  }
+
+  @Get('conversations/:id/messages')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getMessages(@Param('id') id: string) {
+    return this.chatService.getConversationMessages(id);
+  }
+
+  @Patch(':id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async archiveConversation(@Param('id') id: string) {
+    return this.chatService.archiveConversation(id);
+  }
+
+  @Patch(':id/unarchive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async unarchiveConversation(@Param('id') id: string) {
+    return this.chatService.unarchiveConversation(id);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async deleteConversation(@Param('id') id: string) {
+    return this.chatService.deleteConversation(id);
+  }
+
+  @Post('upload-image')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadImage(
+    @Req() req: Request,
+    @UploadedFile() file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
+    @Body() body: { sessionId: string },
+  ) {
+    return this.chatService.handleImageUpload(body.sessionId, file, req);
+  }
+
+  @Post('operator-upload-image')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 2 * 1024 * 1024 },
+    }),
+  )
+  async operatorUploadImage(
+    @UploadedFile() file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
+    @Body() body: { conversationId: string },
+  ) {
+    return this.chatService.handleOperatorImageUpload(body.conversationId, file);
   }
 
   @Post()

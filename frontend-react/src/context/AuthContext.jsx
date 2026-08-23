@@ -5,6 +5,9 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => {
+    try { return localStorage.getItem('fsd_token'); } catch { return null; }
+  });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -19,7 +22,10 @@ export function AuthProvider({ children }) {
 
   async function login(identifier, password) {
     const data = await api.login({ identifier, password });
-    if (data.accessToken) localStorage.setItem('fsd_token', data.accessToken);
+    if (data.accessToken) {
+      localStorage.setItem('fsd_token', data.accessToken);
+      setToken(data.accessToken);
+    }
     localStorage.setItem('fsd_user', JSON.stringify(data.user));
     setUser(data.user);
     return data.user;
@@ -28,6 +34,7 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem('fsd_token');
     localStorage.removeItem('fsd_user');
+    setToken(null);
     setUser(null);
   }
 
@@ -42,6 +49,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    token,
     ready,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'ADMIN',

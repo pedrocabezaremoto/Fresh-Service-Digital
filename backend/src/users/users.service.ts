@@ -365,6 +365,7 @@ export class UsersService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      firstName: user.firstName,
     });
 
     // 5. Retornar datos seguros del usuario (sin contraseña) + token

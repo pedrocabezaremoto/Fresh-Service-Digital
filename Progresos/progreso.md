@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-17 (cierre de sesión — CRUD servicios, fotos, username, gráficas)  
+**Última actualización:** 2026-08-23 (sesión nocturna — chat imágenes, moderación, modales, Samsung fix)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1040,17 +1040,82 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - `frontend-react/src/pages/AdminDashboard.jsx` — integra CarouselSection en configuración
 
 ### Pendiente
-- [ ] Fase 2 — Chat Copito en vivo (operador): Socket.IO, vista Chat admin, handoff IA→humano
+- [x] Fase 2 — Chat Copito en vivo (operador): Socket.IO, vista Chat admin, handoff IA→humano ✅ 2026-08-22
 - [ ] Anti-abuso avanzado del chatbot
 - [ ] Deliverability email Resend
 
+### Sesión 2026-08-22 (tarde) — Chat en vivo operador
+
+- Namespace Socket.IO `/live-chat` (`ChatGateway`). Operador JWT admin; cliente `sessionId`.
+- Prisma: `operatorActive`, `operatorName`, `status`, `unreadByAdmin` (migración `20260822200000_add_live_chat_fields`).
+- Si `operatorActive`, POST `/chat` guarda el mensaje y no llama al LLM.
+- Admin: menú "Chat en vivo" + `AdminChatView` (tomar control / devolver a Copito).
+- Widget: badge EN VIVO + mensajes del operador. Socket.IO público en `api.pedroservicios.xyz/socket.io/` (200).
+- JWT login ahora incluye `firstName` (tokens viejos muestran "Operador" hasta re-login).
+
+### Sesión 2026-08-22 (noche) — Imágenes + bloquear/pausar
+
+- Cliente y operador pueden enviar JPG/PNG (1 MB / 2 MB). Máx. 5 fotos por conversación.
+- Uploads en `backend/uploads/chat-images/` (gitignored). Endpoints `POST /chat/upload-image` y `POST /chat/operator-upload-image`.
+- Operador: Pausar / Reanudar / Bloquear. El widget muestra el aviso y desactiva el input.
+- Prisma: `paused`, `blocked`, `imageCount`, `type`, `imageUrl` (migración `20260822213000_add_image_and_moderation`).
+- Bundle frontend `index-Bckd59qt.js`. En prod.
+
+### Sesión 2026-08-23 — Samsung 5 MB + archivar/eliminar
+
+- Upload cliente: límite **5 MB** (controller + service). Si Canvas falla, se sube el original.
+- Prisma `archived` (migración `20260823010000_add_archived_field`).
+- Admin Chat: tabs Activas / Archivadas, Archivar, Restaurar, Eliminar (doble confirmación).
+- Bundle `index-Dgq7xq-T.js`. En prod.
+
+### Sesión 2026-08-23 (nocturna) — Imágenes en chat + moderación + modales
+
+**Envío de imágenes bidireccional:**
+- Cliente puede enviar fotos desde el widget (botón cámara/galería)
+- Operador puede enviar fotos desde el panel admin (botón 📷)
+- Compresión automática con Canvas (1024px max, JPEG 0.7)
+- Backend: `POST /chat/upload-image` (cliente) y `POST /chat/operator-upload-image` (operador, JWT)
+- Archivos en `backend/uploads/chat-images/`
+- Migración Prisma: `type` + `imageUrl` en ChatMessage, `imageCount` en ChatConversation
+- Límite: 5 imágenes por conversación (cliente), 5MB max por archivo
+
+**Moderación de clientes:**
+- Botón **Pausar** (amarillo): desactiva el input del cliente, muestra aviso
+- Botón **Reanudar** (azul): restaura la conversación
+- Botón **Bloquear** (rojo): cierra la conversación, redirige a WhatsApp
+- Eventos Socket.IO: `pauseConversation`, `resumeConversation`, `blockConversation`
+- Badges visuales PAUSADA / BLOQUEADA en la lista de conversaciones
+
+**Gestión de conversaciones:**
+- Tabs **Activas / Archivadas** en el panel
+- Botón **Archivar**: mueve a archivadas sin borrar
+- Botón **Restaurar**: devuelve a activas
+- Botón **Eliminar**: borra permanentemente (mensajes + conversación) con doble confirmación
+- Migración Prisma: `paused`, `blocked`, `archived` en ChatConversation
+
+**Modales profesionales:**
+- Componente `ConfirmModal.jsx` reemplaza todos los `confirm()` nativos
+- Fondo oscuro con blur, iconos de advertencia, colores por acción
+- Se cierra con Escape o click fuera
+
+**Markdown en respuestas IA:**
+- `renderMarkdown()` convierte `**texto**` a negrita y `*texto*` a cursiva
+- Los precios ya no muestran asteriscos visibles
+
+**Compatibilidad Samsung Galaxy:**
+- Backend acepta cualquier `image/*` (no solo JPG/PNG)
+- `compressImage` con try/catch y fallback al archivo original
+- Frontend sin validación de formato (el Canvas convierte a JPEG)
+
+**Bug pendiente (Samsung Galaxy):**
+- La imagen sube sin error pero NO se muestra en el chat (icono roto)
+- Causa probable: Canvas falla por memoria, guarda el HEIC original que el navegador no renderiza
+- Solución pendiente para próxima sesión: convertir en el backend con Sharp si no es JPEG/PNG
+
+**Commits pendientes:** todos los cambios de esta sesión están en producción pero sin commit formal
+
 ### Backlog actualizado
-1. **Fase 2 — Chat Copito en vivo (operador)** — PRÓXIMA:
-   - Vista "Chat" en panel admin: lista de conversaciones activas, mensajes en tiempo real
-   - Socket.IO: conexión bidireccional widget - panel taller (sin recargar)
-   - Handoff IA - Operador: cuando el operador se conecta, Copito cede control; si no está, IA sigue sola
-   - Indicador en el widget: cliente ve si habla con IA o con humano
-   - Estimado: 1-2 sesiones completas
+1. **Fix Samsung Galaxy** — imágenes suben pero no se muestran (convertir en backend)
 2. **Carrusel** — agregar drag-and-drop para reordenar en admin (futuro)
 3. **Panel taller** — seguir creciendo
 4. **Deliverability email** — reputación Resend mejora con volumen

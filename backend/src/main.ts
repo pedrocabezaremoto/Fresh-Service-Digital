@@ -12,6 +12,7 @@ async function bootstrap() {
   const uploadsDir = join(process.cwd(), 'uploads');
   mkdirSync(join(uploadsDir, 'site'), { recursive: true });
   mkdirSync(join(uploadsDir, 'carousel'), { recursive: true });
+  mkdirSync(join(uploadsDir, 'chat-images'), { recursive: true });
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
   // Habilitar validación global de datos (DTOs)
@@ -21,7 +22,10 @@ async function bootstrap() {
   }));
 
   // CORS: el frontend (otro origen) puede llamar la API y cargar /uploads/
-  app.enableCors();
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);

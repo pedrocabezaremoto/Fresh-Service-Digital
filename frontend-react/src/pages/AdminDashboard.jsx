@@ -16,6 +16,7 @@ import { STATUS, fmtDate, fmtTime } from '../lib/status';
 import ServiceMap from '../components/maps/ServiceMap';
 import SiteImagesSection from '../components/admin/SiteImagesSection';
 import CarouselSection from '../components/admin/CarouselSection';
+import AdminChatView from '../components/admin/AdminChatView';
 import { Donut, KPI, MonthBars } from '../components/admin/DashboardVisuals';
 import Price from '../components/Price';
 import {
@@ -714,6 +715,7 @@ export default function AdminDashboard() {
   const nav = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'solicitudes', label: 'Solicitudes', icon: ClipboardList, badge: stats.pending },
+    { id: 'chat', label: 'Chat en vivo', icon: MessageCircle },
     { id: 'ingresos', label: 'Ingresos', icon: TrendingUp },
     { id: 'servicios', label: 'Servicios', icon: Settings, badge: services.length },
     { id: 'clientes', label: 'Clientes', icon: Users, badge: stats.clients },
@@ -760,14 +762,14 @@ export default function AdminDashboard() {
         <header className="sticky top-0 z-30 flex min-h-16 flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-8">
           <div className="min-w-0">
             <div className="truncate font-display font-bold text-ink-900">
-              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : view === 'configuracion' ? 'Configuración del sitio' : 'Clientes del Taller'}
+              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'chat' ? 'Chat en Vivo — Copito' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : view === 'configuracion' ? 'Configuración del sitio' : 'Clientes del Taller'}
             </div>
             <div className="hidden text-xs text-ink-500 sm:block">Fresh Service Digital · Taller de Refrigeración</div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
             {/* Mobile nav — alternativa a los KPIs para ir a Solicitudes / Ingresos / Clientes */}
             <select value={view} onChange={(e) => setView(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm touch-manipulation sm:flex-none lg:hidden">
-              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Configuración</option>
+              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="chat">Chat en vivo</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Configuración</option>
             </select>
             <button type="button" onClick={toggleTheme} title="Cambiar tema" className="grid h-11 w-11 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
               {isDark ? <Sun size={17} className="text-amber-500" /> : <Moon size={17} className="text-brand-700" />}
@@ -1353,6 +1355,8 @@ export default function AdminDashboard() {
                 </>
               )}
             </div>
+          ) : view === 'chat' ? (
+            <AdminChatView />
           ) : view === 'configuracion' ? (
             <>
               <SiteImagesSection />

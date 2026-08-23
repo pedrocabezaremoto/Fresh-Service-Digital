@@ -157,6 +157,16 @@ model ChatConversation {
   startedAt       DateTime      @default(now())
   messages        ChatMessage[]
 
+  // NUEVOS campos para chat en vivo
+  operatorActive  Boolean   @default(false)
+  operatorName    String?
+  status          String    @default("active")  // 'active' | 'closed'
+  unreadByAdmin   Int       @default(0)
+  paused          Boolean   @default(false)
+  blocked         Boolean   @default(false)
+  imageCount      Int       @default(0)
+  archived        Boolean   @default(false)
+
   @@index([ipHash])
   @@index([startedAt])
   @@map("chat_conversations")
@@ -166,8 +176,10 @@ model ChatMessage {
   id              String           @id @default(uuid())
   conversationId  String
   conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role            String           // 'user' | 'assistant' | 'tool'
+  role            String           // 'user' | 'assistant' | 'tool' | 'operator'
   content         String
+  type            String           @default("text")    // 'text' | 'image'
+  imageUrl        String?
   tokensIn        Int?
   tokensOut       Int?
   createdAt       DateTime         @default(now())

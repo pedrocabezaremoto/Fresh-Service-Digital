@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { mkdirSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { LlmService, type LlmChatMessage } from './llm.service';
 import { ChatTelegramService } from './chat-telegram.service';
+import { ChatGateway } from './chat.gateway';
 import { Prisma } from '@prisma/client';
 
 const MAX_TOOL_ROUNDS = 3;
@@ -73,7 +76,195 @@ export class ChatService {
     private readonly prisma: PrismaService,
     private readonly llm: LlmService,
     private readonly telegram: ChatTelegramService,
+    private readonly gateway: ChatGateway,
   ) {}
+
+  async archiveConversation(id: string) {
+    await this.prisma.chatConversation.update({
+      where: { id },
+      data: { archived: true },
+    });
+    return { success: true };
+  }
+
+  async unarchiveConversation(id: string) {
+    await this.prisma.chatConversation.update({
+      where: { id },
+      data: { archived: false },
+    });
+    return { success: true };
+  }
+
+  async deleteConversation(id: string) {
+    await this.prisma.chatMessage.deleteMany({ where: { conversationId: id } });
+    await this.prisma.chatConversation.delete({ where: { id } });
+    return { success: true };
+  }
+
+  async getArchivedConversations() {
+    const convs = await this.prisma.chatConversation.findMany({
+      where: { archived: true },
+      orderBy: { lastMessageAt: 'desc' },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+    return convs.map(c => ({
+      id: c.id,
+      sessionId: c.sessionId,
+      operatorActive: c.operatorActive,
+      operatorName: c.operatorName,
+      unreadByAdmin: c.unreadByAdmin,
+      messageCount: c.messageCount,
+      lastMessageAt: c.lastMessageAt,
+      startedAt: c.startedAt,
+      lastMessage: c.messages[0] || null,
+      paused: c.paused,
+      blocked: c.blocked,
+      archived: c.archived,
+    }));
+  }
+
+  async getConversationMessages(conversationId: string) {
+    return this.prisma.chatMessage.findMany({
+      where: { conversationId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, role: true, content: true, type: true, imageUrl: true, createdAt: true },
+    });
+  }
+
+  private publicBase() {
+    return process.env.PUBLIC_API_URL || `http://localhost:${process.env.PORT || 4000}`;
+  }
+
+  private saveChatImage(filename: string, buffer: Buffer) {
+    const uploadDir = join(process.cwd(), 'uploads', 'chat-images');
+    mkdirSync(uploadDir, { recursive: true });
+    writeFileSync(join(uploadDir, filename), buffer);
+    return `${this.publicBase()}/uploads/chat-images/${filename}`;
+  }
+
+  async handleImageUpload(
+    sessionId: string,
+    file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
+    req: any,
+  ): Promise<{ url: string; messageId: string } | { error: string }> {
+    if (!sessionId) return { error: 'Sesión inválida.' };
+    if (!file?.buffer?.length) return { error: 'No se adjuntó ningún archivo.' };
+
+    if (file.mimetype && !file.mimetype.startsWith('image/')) {
+      return { error: 'Solo se permiten archivos de imagen.' };
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: 'La imagen no puede superar 5 MB.' };
+    }
+
+    let conversation = await this.prisma.chatConversation.findUnique({ where: { sessionId } });
+    if (!conversation) {
+      const clientIp = (req.headers?.['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '0.0.0.0';
+      conversation = await this.prisma.chatConversation.create({
+        data: { sessionId, ipHash: this.hashIp(clientIp) },
+      });
+    }
+    if (conversation.blocked) return { error: 'Esta conversación ha sido bloqueada.' };
+    if (conversation.paused) return { error: 'Esta conversación está pausada.' };
+    if (conversation.imageCount >= 5) return { error: 'Máximo 5 imágenes por conversación.' };
+
+    const ext = file.mimetype === 'image/png' ? '.png' : '.jpg';
+    const filename = `${conversation.id}-${Date.now()}${ext}`;
+    const imageUrl = this.saveChatImage(filename, file.buffer);
+
+    const msg = await this.prisma.chatMessage.create({
+      data: {
+        conversationId: conversation.id,
+        role: 'user',
+        content: '[Imagen]',
+        type: 'image',
+        imageUrl,
+      },
+    });
+
+    await this.prisma.chatConversation.update({
+      where: { id: conversation.id },
+      data: {
+        imageCount: { increment: 1 },
+        messageCount: { increment: 1 },
+        lastMessageAt: new Date(),
+      },
+    });
+
+    await this.gateway.notifyNewClientMessage(sessionId, {
+      id: msg.id,
+      role: 'user',
+      content: '[Imagen]',
+      type: 'image',
+      imageUrl,
+      createdAt: msg.createdAt,
+    });
+
+    return { url: imageUrl, messageId: msg.id };
+  }
+
+  async handleOperatorImageUpload(
+    conversationId: string,
+    file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
+  ): Promise<{ url: string; messageId: string } | { error: string }> {
+    if (!conversationId) return { error: 'Conversación inválida.' };
+    if (!file?.buffer?.length) return { error: 'No se adjuntó ningún archivo.' };
+
+    if (file.mimetype && !file.mimetype.startsWith('image/')) {
+      return { error: 'Solo se permiten archivos de imagen.' };
+    }
+
+    const conversation = await this.prisma.chatConversation.findUnique({ where: { id: conversationId } });
+    if (!conversation) return { error: 'Conversación no encontrada.' };
+
+    const ext = file.mimetype === 'image/png' ? '.png' : '.jpg';
+    const filename = `op-${conversationId}-${Date.now()}${ext}`;
+    const imageUrl = this.saveChatImage(filename, file.buffer);
+
+    const msg = await this.prisma.chatMessage.create({
+      data: {
+        conversationId,
+        role: 'operator',
+        content: '[Imagen]',
+        type: 'image',
+        imageUrl,
+      },
+    });
+
+    await this.prisma.chatConversation.update({
+      where: { id: conversationId },
+      data: { messageCount: { increment: 1 }, lastMessageAt: new Date() },
+    });
+
+    this.gateway.server.to(`session:${conversation.sessionId}`).emit('message', {
+      id: msg.id,
+      role: 'operator',
+      content: '[Imagen]',
+      type: 'image',
+      imageUrl,
+      createdAt: msg.createdAt,
+      operatorName: 'Operador',
+    });
+
+    this.gateway.server.to('operators').emit('message', {
+      sessionId: conversation.sessionId,
+      id: msg.id,
+      role: 'operator',
+      content: '[Imagen]',
+      type: 'image',
+      imageUrl,
+      createdAt: msg.createdAt,
+      operatorName: 'Operador',
+    });
+
+    return { url: imageUrl, messageId: msg.id };
+  }
 
   async getStatus(): Promise<{ enabled: boolean; reason?: string }> {
     if (!this.llm.isConfigured()) return { enabled: false, reason: 'not_configured' };
@@ -330,14 +521,38 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
   ): Promise<{ conversationId: string } | { error: string }> {
     const ipHash = this.hashIp(clientIp);
 
-    if (!this.llm.isConfigured()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
-    if (this.isCircuitOpen()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
-    if (await this.isBudgetExceeded()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
-
     let conversation = await this.prisma.chatConversation.findUnique({ where: { sessionId } });
     if (!conversation) {
       conversation = await this.prisma.chatConversation.create({ data: { sessionId, ipHash } });
     }
+
+    if (conversation.blocked) {
+      return { error: 'Esta conversación ha sido cerrada.' };
+    }
+    if (conversation.paused) {
+      return { error: 'Conversación pausada. El operador te contactará pronto.' };
+    }
+
+    const trimmedMessage = userMessage.slice(0, 500);
+
+    // Si el operador tomó control, NO usar la IA
+    if (conversation.operatorActive) {
+      const userMsg = await this.prisma.chatMessage.create({
+        data: { conversationId: conversation.id, role: 'user', content: trimmedMessage },
+      });
+      await this.prisma.chatConversation.update({
+        where: { id: conversation.id },
+        data: { lastMessageAt: new Date(), messageCount: { increment: 1 } },
+      });
+      await this.gateway.notifyNewClientMessage(sessionId, {
+        id: userMsg.id, role: 'user', content: userMsg.content, createdAt: userMsg.createdAt,
+      });
+      return { conversationId: conversation.id };
+    }
+
+    if (!this.llm.isConfigured()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
+    if (this.isCircuitOpen()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
+    if (await this.isBudgetExceeded()) return { error: 'El chat no está disponible ahora. Escríbenos por WhatsApp.' };
 
     const userCount = await this.prisma.chatMessage.count({
       where: { conversationId: conversation.id, role: 'user' },
@@ -355,14 +570,15 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
       return { error: 'Has enviado muchos mensajes hoy. Intenta mañana o escríbenos por WhatsApp.' };
     }
 
-    const trimmedMessage = userMessage.slice(0, 500);
-
-    await this.prisma.chatMessage.create({
+    const userMsg = await this.prisma.chatMessage.create({
       data: { conversationId: conversation.id, role: 'user', content: trimmedMessage },
     });
     await this.prisma.chatConversation.update({
       where: { id: conversation.id },
       data: { lastMessageAt: new Date(), messageCount: { increment: 1 } },
+    });
+    await this.gateway.notifyNewClientMessage(sessionId, {
+      id: userMsg.id, role: 'user', content: userMsg.content, createdAt: userMsg.createdAt,
     });
 
     // Cargar historial
@@ -432,7 +648,7 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
       this.recordSuccess();
       const cost = this.llm.computeCostUsd(totalTokensIn, totalTokensOut);
 
-      await this.prisma.chatMessage.create({
+      const assistantMsg = await this.prisma.chatMessage.create({
         data: { conversationId: conversation.id, role: 'assistant', content: assistantContent, tokensIn: totalTokensIn, tokensOut: totalTokensOut },
       });
       await this.prisma.chatConversation.update({
@@ -442,6 +658,9 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
           messageCount: { increment: 1 },
           estimatedCostUsd: { increment: new Prisma.Decimal(cost.toFixed(6)) },
         },
+      });
+      await this.gateway.notifyAiResponse(sessionId, {
+        id: assistantMsg.id, role: 'assistant', content: assistantMsg.content, createdAt: assistantMsg.createdAt,
       });
 
       this.logger.log(`Chat OK: ${totalTokensIn}in/${totalTokensOut}out, $${cost.toFixed(6)}, ${toolRounds} tool rounds`);
