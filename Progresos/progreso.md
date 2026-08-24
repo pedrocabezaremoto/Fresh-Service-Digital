@@ -1194,6 +1194,11 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Avatar + primer mensaje como título. Subtítulo: msgs · fecha · quién controla.
 - Botones de acción intactos. Bundle `index-QtjZ67Kr.js`. En prod.
 
+**Indicador escribiendo bidireccional (2026-08-23 noche):** ✅
+- Socket `typing` / `stopTyping`. Debounce 2s, desaparece a los 3s o al enviar.
+- Cliente ve al operador; operador ve al cliente (solo en el chat abierto).
+- Bundle `index-Ci4dZHo6.js`. En prod (backend + frontend).
+
 **Sidebar colapsable (2026-08-23 noche):** ✅
 - Botón chevron (</>): alterna entre 256px (labels) y 72px (iconos).
 - Tooltips al hover en modo colapsado. Badges como puntos rojos.
@@ -1245,8 +1250,15 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Subtítulo: "4 msgs · 23 ago., 07:35 p. m. · Admin en control" (punto verde pulsante).
 - Botones de acción intactos. Solo AdminChatView. Bundle `index-QtjZ67Kr.js`.
 
+**Indicador "escribiendo..." bidireccional:** ✅
+- Backend: eventos `typing` / `stopTyping` en gateway (reenvía cliente→operadores, operador→cliente).
+- Widget Copito: emite typing al escribir (debounce 2s), muestra "... escribiendo..." con puntos animados.
+- AdminChatView: emite typing al escribir, muestra indicador solo en la conversación seleccionada.
+- Timeout 3s auto-oculta. `stopTyping` al enviar mensaje para ocultar inmediato.
+- Backend rebuild + frontend rebuild. Bundle `index-Ci4dZHo6.js`. En prod.
+
 ### Backlog actualizado
-1. **Indicador "escribiendo..."** — bidireccional (cliente↔operador), Socket.IO typing/stopTyping, debounce 2s (prompt listo)
+1. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller (próxima sesión 2026-08-25)
 2. **Agendar cita desde el chat** — botón modal en panel operador (nombre/tel/servicio/fecha/hora), tabla Appointment Prisma
 3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
 4. **Panel taller** — seguir creciendo

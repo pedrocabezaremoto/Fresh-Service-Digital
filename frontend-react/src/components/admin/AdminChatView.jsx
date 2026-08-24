@@ -60,6 +60,9 @@ export default function AdminChatView() {
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [modal, setModal] = useState({ open: false, title: '', message: '', confirmText: '', confirmColor: 'blue', onConfirm: () => {} });
   const [searchTerm, setSearchTerm] = useState('');
+  const [clientTyping, setClientTyping] = useState(null); // sessionId del cliente que escribe
+  const clientTypingTimeoutRef = useRef(null);
+  const lastOperatorTypingRef = useRef(0);
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try { return localStorage.getItem('chat-sound') !== 'false'; } catch { return true; }
   });
@@ -111,13 +114,27 @@ export default function AdminChatView() {
       }
     });
 
+    socket.on('typing', (data) => {
+      if (data.from === 'client' && data.sessionId) {
+        setClientTyping(data.sessionId);
+        clearTimeout(clientTypingTimeoutRef.current);
+        clientTypingTimeoutRef.current = setTimeout(() => setClientTyping(null), 3000);
+      }
+    });
+
+    socket.on('stopTyping', (data) => {
+      if (data.from === 'client' && data.sessionId) {
+        setClientTyping(prev => prev === data.sessionId ? null : prev);
+      }
+    });
+
     return () => socket.disconnect();
   }, [token]);
 
   // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, clientTyping]);
 
   useEffect(() => {
     try {
@@ -199,6 +216,7 @@ export default function AdminChatView() {
   // Send message
   const sendMessage = () => {
     if (!selected || !draft.trim() || !socketRef.current) return;
+    socketRef.current.emit('stopTyping', { sessionId: selected });
     setSending(true);
     socketRef.current.emit('operatorMessage', {
       sessionId: selected,
@@ -673,6 +691,18 @@ export default function AdminChatView() {
                   </div>
                 </div>
               ))}
+              {clientTyping === selected && (
+                <div className="flex justify-end">
+                  <div className="rounded-2xl bg-brand-100 px-4 py-2 text-sm text-ink-400 italic">
+                    <span className="inline-flex gap-1">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                    </span>
+                    {' '}escribiendo...
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -736,7 +766,14 @@ export default function AdminChatView() {
                     ref={inputRef}
                     type="text"
                     value={draft}
-                    onChange={e => setDraft(e.target.value)}
+                    onChange={e => {
+                      setDraft(e.target.value);
+                      const now = Date.now();
+                      if (now - lastOperatorTypingRef.current > 2000 && socketRef.current && selected) {
+                        socketRef.current.emit('typing', { sessionId: selected });
+                        lastOperatorTypingRef.current = now;
+                      }
+                    }}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                     placeholder="Escribe un mensaje..."
                     className="flex-1 rounded-xl border border-brand-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400"

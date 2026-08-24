@@ -318,6 +318,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('typing')
+  handleTyping(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { sessionId: string },
+  ) {
+    if (socket.data.type === 'operator' && data.sessionId) {
+      // Operador escribiendo -> avisar al cliente
+      const clientSocket = this.clients.get(data.sessionId);
+      if (clientSocket) {
+        clientSocket.emit('typing', { from: 'operator' });
+      }
+    } else if (socket.data.type === 'client' && socket.data.sessionId) {
+      // Cliente escribiendo -> avisar a los operadores
+      this.server.to('operators').emit('typing', {
+        from: 'client',
+        sessionId: socket.data.sessionId,
+      });
+    }
+  }
+
+  @SubscribeMessage('stopTyping')
+  handleStopTyping(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { sessionId: string },
+  ) {
+    if (socket.data.type === 'operator' && data.sessionId) {
+      const clientSocket = this.clients.get(data.sessionId);
+      if (clientSocket) {
+        clientSocket.emit('stopTyping', { from: 'operator' });
+      }
+    } else if (socket.data.type === 'client' && socket.data.sessionId) {
+      this.server.to('operators').emit('stopTyping', {
+        from: 'client',
+        sessionId: socket.data.sessionId,
+      });
+    }
+  }
+
   private async getActiveConversations() {
     const convs = await this.prisma.chatConversation.findMany({
       where: { status: 'active', archived: false },

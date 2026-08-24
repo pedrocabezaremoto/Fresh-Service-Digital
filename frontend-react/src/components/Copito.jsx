@@ -141,6 +141,9 @@ export default function Copito() {
   const [socketSessionId, setSocketSessionId] = useState(() => loadSession());
   const [imageCount, setImageCount] = useState(() => loadMessages().filter(m => m.type === 'image').length);
   const [moderationMsg, setModerationMsg] = useState('');
+  const [operatorTyping, setOperatorTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
+  const lastTypingRef = useRef(0);
 
   const panelRef = useRef(null);
   const socketRef = useRef(null);
@@ -174,7 +177,7 @@ export default function Copito() {
     if (stickRef.current && messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messages, streaming]);
+  }, [messages, streaming, operatorTyping]);
 
   // Focus textarea when open
   useEffect(() => {
@@ -248,6 +251,17 @@ export default function Copito() {
           return updated;
         });
       }
+    });
+
+    socket.on('typing', () => {
+      setOperatorTyping(true);
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => setOperatorTyping(false), 3000);
+    });
+
+    socket.on('stopTyping', () => {
+      setOperatorTyping(false);
+      clearTimeout(typingTimeoutRef.current);
     });
 
     return () => { socket.disconnect(); socketRef.current = null; };
@@ -336,6 +350,7 @@ export default function Copito() {
   async function sendMessage() {
     const text = draft.trim();
     if (!text || streaming || !chatEnabled) return;
+    if (socketRef.current) socketRef.current.emit('stopTyping', {});
 
     const userMsg = { id: uid(), role: 'user', content: text };
     const assistantId = uid();
@@ -573,6 +588,18 @@ export default function Copito() {
             {streaming && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content === '' && (
               <div className="flex justify-start"><TypingDots /></div>
             )}
+            {operatorTyping && (
+              <div className="flex justify-start">
+                <div className="rounded-2xl bg-brand-50 px-4 py-2 text-sm text-ink-500 italic">
+                  <span className="inline-flex gap-1">
+                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                    <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                  </span>
+                  {' '}escribiendo...
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input */}
@@ -610,6 +637,12 @@ export default function Copito() {
                     setDraft(e.target.value);
                     e.target.style.height = 'auto';
                     e.target.style.height = Math.min(e.target.scrollHeight, 72) + 'px';
+                    // Typing indicator (debounce 2s)
+                    const now = Date.now();
+                    if (now - lastTypingRef.current > 2000 && socketRef.current) {
+                      socketRef.current.emit('typing', {});
+                      lastTypingRef.current = now;
+                    }
                   }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   placeholder="Escribe tu mensaje…"
