@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-23 (tarde — Sharp, desbloquear, emojis, lista visual)  
+**Última actualización:** 2026-08-24 (5 mejoras UX chat completadas)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1171,9 +1171,85 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - `frontend-react/src/components/admin/EmojiPicker.jsx` — nuevo componente
 - `backend/package.json` — sharp, heic-convert
 
+**Respuestas rápidas del operador (2026-08-23 noche):** ✅
+- Botón ⚡ (Zap) junto a cámara y emoji. Popup con 4 grupos: Saludo, Diagnóstico, Presupuesto, Cierre.
+- Click inserta en el input (no envía). Escape / click fuera cierra. Se abre hacia arriba.
+- `QuickReplies.jsx` nuevo. Solo AdminChatView. Bundle `index-Y8ujmyDS.js`. En prod.
+
+**Buscador de conversaciones (2026-08-23 noche):** ✅
+- Input con lupa entre el header y los tabs Activas/Archivadas.
+- Filtra en vivo por último mensaje o sessionId. X limpia. Mensaje si no hay resultados.
+- QuickReplies intacto. Bundle `index-C_YHcT4I.js`. En prod.
+
+**Respuestas rápidas personalizadas (2026-08-23 noche):** ✅
+- Sección verde "Mis respuestas" (crear/eliminar) + sugeridas abajo.
+- Persistencia `localStorage` `quick-replies-custom`. Max 200 chars.
+- Solo `QuickReplies.jsx`. Bundle `index-6p6W4hkB.js`. En prod.
+
+**Indicador no leído (2026-08-23 noche):** ✅
+- `unreadByAdmin > 0`: fondo azul, título bold, preview semibold. Badge intacto.
+- Solo clases en lista AdminChatView. Bundle `index-jKXfYN4v.js`. En prod.
+
+**Header chat mejorado (2026-08-23 noche):** ✅
+- Avatar + primer mensaje como título. Subtítulo: msgs · fecha · quién controla.
+- Botones de acción intactos. Bundle `index-QtjZ67Kr.js`. En prod.
+
+**Sidebar colapsable (2026-08-23 noche):** ✅
+- Botón chevron (</>): alterna entre 256px (labels) y 72px (iconos).
+- Tooltips al hover en modo colapsado. Badges como puntos rojos.
+- Botones inferiores (Ver sitio web, Cerrar sesión, avatar) adaptados.
+- Contenido principal ajusta margin-left con transición 300ms.
+- Estado en `localStorage` (`sidebar-collapsed`). Solo AdminDashboard.jsx.
+
+**Notificación sonora (2026-08-23 noche):** ✅
+- Beep 880Hz / 0.3s (Web Audio API, sin archivo .mp3) cuando llega mensaje del cliente.
+- Icono Volume2/VolumeX al lado del punto de conexión. Click silencia/activa.
+- `localStorage` (`chat-sound`). `soundEnabledRef` resuelve closure del socket.
+- Solo AdminChatView. Bundle `index-D6ZPc2Li.js`. En prod.
+
+**Preview último mensaje (2026-08-23 noche):** ✅
+- Debajo del título: "Tú: ..." (operador), "Copito: ..." (IA), texto directo (cliente), "📷 Foto enviada" (imagen).
+- Título truncado a 22 chars. Preview con CSS `truncate`.
+
+**Timestamps en burbujas (2026-08-23 noche):** ✅
+- Hora (es-VE, 2 dígitos) debajo de cada mensaje, alineada a la derecha.
+- Color adaptado: `text-white/60` (cliente), `text-green-500/70` (operador), `text-ink-300` (Copito).
+- Usa `createdAt` del backend (ya existía en la query Prisma).
+- Junto con preview en un solo prompt. Solo AdminChatView. Bundle `index-COn5tqcC.js`. En prod.
+
+### Sesión 2026-08-24 — 5 mejoras UX del chat
+
+**Buscador de conversaciones:** ✅
+- Input con lupa entre header y tabs. Filtra en vivo por último mensaje o sessionId.
+- Botón X limpia. Funciona en Activas y Archivadas. Mensaje si no hay resultados.
+- Solo AdminChatView. Bundle `index-ImqSf3wD.js` → `index-C_YHcT4I.js`.
+
+**Respuestas rápidas del operador:** ✅
+- Botón ⚡ (Zap) junto a 📷 y 😊. Popup 4 grupos: Saludo, Diagnóstico, Presupuesto, Cierre.
+- Click inserta en input (no envía). Escape/click fuera cierra. Se abre hacia arriba.
+- `QuickReplies.jsx` nuevo. Bundle `index-Y8ujmyDS.js`.
+
+**Respuestas rápidas personalizadas:** ✅
+- Sección verde "Mis respuestas" arriba del popup con botón + para crear.
+- Input inline (max 200 chars), Trash2 al hover para eliminar.
+- `localStorage` (`quick-replies-custom`). Sugeridas intactas abajo.
+- Solo `QuickReplies.jsx`. Bundle `index-6p6W4hkB.js`.
+
+**Indicador visual no leído:** ✅
+- `unreadByAdmin > 0`: fondo `bg-blue-50/60`, título `font-bold text-ink-950`, preview `font-semibold text-ink-600`.
+- Al abrir conversación vuelve al estilo normal. Badge numérico intacto.
+- Solo clases en AdminChatView. Bundle `index-jKXfYN4v.js`.
+
+**Header del chat mejorado:** ✅
+- Adiós "Sesión: c87cf8a7..." → avatar + primer mensaje del cliente como título.
+- Subtítulo: "4 msgs · 23 ago., 07:35 p. m. · Admin en control" (punto verde pulsante).
+- Botones de acción intactos. Solo AdminChatView. Bundle `index-QtjZ67Kr.js`.
+
 ### Backlog actualizado
-1. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-2. **Panel taller** — seguir creciendo
-3. **Deliverability email** — reputación Resend mejora con volumen
-4. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-5. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+1. **Indicador "escribiendo..."** — bidireccional (cliente↔operador), Socket.IO typing/stopTyping, debounce 2s (prompt listo)
+2. **Agendar cita desde el chat** — botón modal en panel operador (nombre/tel/servicio/fecha/hora), tabla Appointment Prisma
+3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+4. **Panel taller** — seguir creciendo
+5. **Deliverability email** — reputación Resend mejora con volumen
+6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat

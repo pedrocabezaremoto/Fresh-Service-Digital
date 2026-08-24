@@ -5,6 +5,7 @@ import {
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   Download, Sparkles, UserCog, Power, PowerOff,
   TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -100,6 +101,17 @@ export default function AdminDashboard() {
   const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const [view, setView] = useState('dashboard');
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+
+  function toggleSidebar() {
+    setCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar-collapsed', String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
   const [appts, setAppts] = useState([]);
   const [clients, setClients] = useState([]);
   const [techs, setTechs] = useState([]);
@@ -726,38 +738,95 @@ export default function AdminDashboard() {
   return (
     <div className="flex min-h-screen overflow-x-clip bg-slate-50">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand-950 lg:flex">
-        <div className="flex items-center gap-2.5 border-b border-white/10 px-6 py-5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center"><img src="/copito-avatar.png" alt="Copito" className="h-full w-full object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" /></span>
-          <div>
-            <div className="font-display text-sm font-extrabold text-white leading-none">Fresh Service</div>
-            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-400">Panel Taller</div>
-          </div>
+      <aside className={`fixed inset-y-0 left-0 z-40 hidden flex-col bg-brand-950 transition-all duration-300 ease-in-out lg:flex ${collapsed ? 'w-[72px]' : 'w-64'}`}>
+        <div className={`flex border-b border-white/10 px-4 py-5 ${collapsed ? 'flex-col items-center gap-2' : 'items-center'}`}>
+          <span className="grid h-10 w-10 shrink-0 place-items-center">
+            <img src="/copito-avatar.png" alt="Copito" className="h-full w-full object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" />
+          </span>
+          {!collapsed && (
+            <div className="ml-2.5 min-w-0">
+              <div className="font-display text-sm font-extrabold text-white leading-none">Fresh Service</div>
+              <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-400">Panel Taller</div>
+            </div>
+          )}
+          <button
+            onClick={toggleSidebar}
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-brand-300 transition hover:bg-white/10 hover:text-white ${collapsed ? '' : 'ml-auto'}`}
+            title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+            type="button"
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className={`flex-1 space-y-1 overflow-visible ${collapsed ? 'p-2' : 'p-4'}`}>
           {nav.map((n) => (
-            <button key={n.id} type="button" onClick={() => setView(n.id)}
-              className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold transition touch-manipulation ${view === n.id ? 'bg-white/10 text-white ring-1 ring-white/10' : 'text-brand-100/70 hover:bg-white/5 hover:text-white active:bg-white/5 active:text-white'}`}>
-              <n.icon size={18} /> {n.label}
-              {n.badge > 0 && <span className="ml-auto rounded-full bg-brand-500 px-2 py-0.5 text-xs font-bold text-white">{n.badge}</span>}
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => setView(n.id)}
+              title={collapsed ? n.label : undefined}
+              className={`group relative flex min-h-11 w-full items-center rounded-xl transition touch-manipulation ${
+                collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-4 py-2.5'
+              } ${
+                view === n.id
+                  ? 'bg-white/10 text-white ring-1 ring-white/10'
+                  : 'text-brand-100/70 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <n.icon size={18} className="shrink-0" />
+              {!collapsed && <span className="text-sm font-semibold">{n.label}</span>}
+              {!collapsed && n.badge > 0 && (
+                <span className="ml-auto rounded-full bg-brand-500 px-2 py-0.5 text-xs font-bold text-white">{n.badge}</span>
+              )}
+              {collapsed && n.badge > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white">{n.badge}</span>
+              )}
+              {collapsed && (
+                <span className="pointer-events-none absolute left-full z-50 ml-3 hidden whitespace-nowrap rounded-lg bg-brand-800 px-3 py-1.5 text-xs font-semibold text-white shadow-lg group-hover:block">
+                  {n.label}
+                </span>
+              )}
             </button>
           ))}
         </nav>
-        <div className="space-y-2 border-t border-white/10 p-4">
-          <Link to="/" target="_blank" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 active:brightness-95 sheen touch-manipulation"><img src="/copito-avatar.png" alt="" className="h-5 w-5 object-contain" /> Ver sitio web</Link>
-          <button type="button" onClick={() => { logout(); navigate('/'); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 px-4 py-2.5 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 hover:ring-rose-300/50 active:bg-rose-500/40 cursor-pointer touch-manipulation"><LogOut size={17} /> Cerrar sesión</button>
-          <div className="flex items-center gap-2.5 pt-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-bold text-white">{user.firstName} {user.lastName}</div>
-              <div className="text-xs text-brand-400">Taller · S.J. de los Morros</div>
+        <div className={`space-y-2 border-t border-white/10 ${collapsed ? 'p-2' : 'p-4'}`}>
+          <Link
+            to="/"
+            target="_blank"
+            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-gradient text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen touch-manipulation ${collapsed ? 'px-2 py-2.5' : 'px-4 py-2.5'}`}
+            title={collapsed ? 'Ver sitio web' : undefined}
+          >
+            <img src="/copito-avatar.png" alt="" className="h-5 w-5 shrink-0 object-contain" />
+            {!collapsed && 'Ver sitio web'}
+          </Link>
+          <button
+            type="button"
+            onClick={() => { logout(); navigate('/'); }}
+            className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-rose-500/25 text-sm font-bold text-rose-100 ring-1 ring-rose-400/30 transition hover:bg-rose-500/40 cursor-pointer touch-manipulation ${collapsed ? 'px-2 py-2.5' : 'px-4 py-2.5'}`}
+            title={collapsed ? 'Cerrar sesión' : undefined}
+          >
+            <LogOut size={17} className="shrink-0" />
+            {!collapsed && 'Cerrar sesión'}
+          </button>
+          {!collapsed && (
+            <div className="flex items-center gap-2.5 pt-3">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold text-white">{user.firstName} {user.lastName}</div>
+                <div className="text-xs text-brand-400">Taller · S.J. de los Morros</div>
+              </div>
             </div>
-          </div>
+          )}
+          {collapsed && (
+            <div className="flex justify-center pt-3" title={`${user.firstName} ${user.lastName}`}>
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-bold text-white">{user.firstName[0]}</div>
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Main */}
-      <div className="flex-1 lg:ml-64">
+      <div className={`flex-1 transition-all duration-300 ease-in-out ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-64'}`}>
         {/* Topbar */}
         <header className="sticky top-0 z-30 flex min-h-16 flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-8">
           <div className="min-w-0">

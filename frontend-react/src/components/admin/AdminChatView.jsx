@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Send, UserCheck, UserX } from 'lucide-react';
+import { MessageCircle, Send, UserCheck, UserX, Volume2, VolumeX, Search, X, Zap } from 'lucide-react';
 import { API_BASE } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from './ConfirmModal';
 import EmojiPicker from './EmojiPicker';
+import QuickReplies from './QuickReplies';
 
 function avatarColor(sessionId) {
   let hash = 0;
@@ -54,9 +55,16 @@ export default function AdminChatView() {
   const inputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showQuickReplies, setShowQuickReplies] = useState(false);
   const [viewMode, setViewMode] = useState('active'); // 'active' | 'archived'
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [modal, setModal] = useState({ open: false, title: '', message: '', confirmText: '', confirmColor: 'blue', onConfirm: () => {} });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try { return localStorage.getItem('chat-sound') !== 'false'; } catch { return true; }
+  });
+  const soundRef = useRef(null);
+  const soundEnabledRef = useRef(soundEnabled);
 
   // Connect to Socket.IO
   useEffect(() => {
@@ -97,6 +105,10 @@ export default function AdminChatView() {
       if (msg.sessionId && msg.sessionId === selectedRef.current) {
         setMessages(prev => [...prev, { ...msg, sessionId: msg.sessionId }]);
       }
+
+      if (msg.role === 'user' && soundEnabledRef.current) {
+        playNotificationSound();
+      }
     });
 
     return () => socket.disconnect();
@@ -106,6 +118,51 @@ export default function AdminChatView() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      soundRef.current = new AudioCtx();
+    } catch { /* ignore */ }
+    return () => {
+      try { soundRef.current?.close(); } catch { /* ignore */ }
+    };
+  }, []);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  function playNotificationSound() {
+    try {
+      const ctx = soundRef.current;
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+    } catch { /* ignore */ }
+  }
+
+  function toggleSound() {
+    try { soundRef.current?.resume?.(); } catch { /* ignore */ }
+    setSoundEnabled(prev => {
+      const next = !prev;
+      try { localStorage.setItem('chat-sound', String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
 
   // Load conversation messages when selected
   const selectConversation = async (conv) => {
@@ -257,7 +314,15 @@ export default function AdminChatView() {
     });
   }
 
-  const list = viewMode === 'active' ? conversations : archivedConversations;
+  const rawList = viewMode === 'active' ? conversations : archivedConversations;
+  const list = searchTerm.trim()
+    ? rawList.filter(conv => {
+        const term = searchTerm.toLowerCase();
+        const content = (conv.lastMessage?.content || '').toLowerCase();
+        const session = conv.sessionId.toLowerCase();
+        return content.includes(term) || session.includes(term);
+      })
+    : rawList;
   const selectedConv = conversations.find(c => c.sessionId === selected)
     || archivedConversations.find(c => c.sessionId === selected);
 
@@ -269,8 +334,42 @@ export default function AdminChatView() {
           <h3 className="font-semibold text-ink-900 flex items-center gap-2">
             <MessageCircle size={18} />
             Conversaciones
-            <span className={`ml-auto h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <button
+              type="button"
+              onClick={toggleSound}
+              className={`ml-auto rounded-lg p-1.5 transition ${
+                soundEnabled
+                  ? 'text-brand-500 hover:bg-brand-50'
+                  : 'text-ink-300 hover:bg-gray-100'
+              }`}
+              title={soundEnabled ? 'Silenciar notificaciones' : 'Activar notificaciones'}
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+            <span className={`h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
           </h3>
+        </div>
+        {/* Buscador */}
+        <div className="border-b border-brand-100 px-3 py-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar conversación..."
+              className="w-full rounded-lg border border-brand-200 bg-brand-50 py-1.5 pl-9 pr-8 text-xs outline-none transition placeholder:text-ink-300 focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-ink-300 transition hover:bg-brand-200 hover:text-ink-600"
+                title="Limpiar búsqueda"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2 border-b border-brand-100 px-4 py-2">
           <button
@@ -297,7 +396,11 @@ export default function AdminChatView() {
         <div className="flex-1 overflow-y-auto">
           {list.length === 0 ? (
             <p className="p-4 text-sm text-ink-400">
-              {viewMode === 'archived' ? 'No hay conversaciones archivadas' : 'No hay conversaciones activas'}
+              {searchTerm.trim()
+                ? `No se encontraron resultados para "${searchTerm}"`
+                : viewMode === 'archived'
+                  ? 'No hay conversaciones archivadas'
+                  : 'No hay conversaciones activas'}
             </p>
           ) : (
             list.map((conv, i) => {
@@ -312,6 +415,7 @@ export default function AdminChatView() {
                     ? 'border-l-green-500'
                     : 'border-l-brand-500';
               const isSelected = selected === conv.sessionId;
+              const hasUnread = (conv.unreadByAdmin || 0) > 0;
 
               return (
                 <div key={conv.id || conv.sessionId}>
@@ -327,9 +431,11 @@ export default function AdminChatView() {
                     className={`w-full cursor-pointer border-b border-b-brand-50 border-l-[3px] px-4 py-3 text-left transition hover:bg-brand-100 dark:hover:bg-brand-700/50 ${statusBorder} ${
                       isSelected
                         ? 'bg-brand-50 ring-1 ring-inset ring-brand-200 dark:bg-brand-800/60'
-                        : i % 2 === 0
-                          ? ''
-                          : 'bg-gray-50 dark:bg-brand-800/30'
+                        : hasUnread
+                          ? 'bg-blue-50/60 dark:bg-blue-900/20'
+                          : i % 2 === 0
+                            ? ''
+                            : 'bg-gray-50 dark:bg-brand-800/30'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -338,8 +444,8 @@ export default function AdminChatView() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-ink-900 truncate">
-                            {conv.lastMessage?.content?.slice(0, 30) || 'Sin mensajes'}
+                          <span className={`text-sm truncate ${hasUnread ? 'font-bold text-ink-950' : 'font-semibold text-ink-900'}`}>
+                            {conv.lastMessage?.content?.slice(0, 22) || 'Sin mensajes'}
                           </span>
                           {conv.unreadByAdmin > 0 && (
                             <span className="rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
@@ -347,6 +453,17 @@ export default function AdminChatView() {
                             </span>
                           )}
                         </div>
+                        {conv.lastMessage && (
+                          <p className={`mt-0.5 truncate text-xs ${hasUnread ? 'font-semibold text-ink-600' : 'text-ink-400'}`}>
+                            {conv.lastMessage.type === 'image'
+                              ? '📷 Foto enviada'
+                              : conv.lastMessage.role === 'operator'
+                                ? `Tú: ${conv.lastMessage.content?.slice(0, 38) || ''}`
+                                : conv.lastMessage.role === 'assistant'
+                                  ? `Copito: ${conv.lastMessage.content?.slice(0, 35) || ''}`
+                                  : conv.lastMessage.content?.slice(0, 42) || ''}
+                          </p>
+                        )}
                         <div className="mt-1 flex items-center gap-2 text-xs text-ink-400">
                           <span>{conv.messageCount} msgs</span>
                           {conv.operatorActive && (
@@ -420,15 +537,35 @@ export default function AdminChatView() {
           <>
             {/* Chat header with controls */}
             <div className="flex items-center justify-between border-b border-brand-100 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-ink-900">
-                  Sesión: {selected.slice(0, 8)}...
-                </p>
-                <p className="text-xs text-ink-400">
-                  {selectedConv?.operatorActive
-                    ? `${selectedConv.operatorName} tiene el control`
-                    : 'Copito IA respondiendo'}
-                </p>
+              <div className="min-w-0 flex-1 mr-3">
+                <div className="flex items-center gap-2">
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${avatarColor(selected)}`}>
+                    {selectedConv ? avatarInitial(selectedConv) : '#'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink-900 truncate">
+                      {messages[0]?.content?.slice(0, 35) || selectedConv?.lastMessage?.content?.slice(0, 35) || 'Conversación'}
+                    </p>
+                    <div className="flex items-center gap-2 text-[11px] text-ink-400">
+                      <span>{selectedConv?.messageCount || messages.length} msgs</span>
+                      <span>·</span>
+                      <span>
+                        {selectedConv?.startedAt
+                          ? new Date(selectedConv.startedAt).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                          : ''}
+                      </span>
+                      <span>·</span>
+                      {selectedConv?.operatorActive ? (
+                        <span className="flex items-center gap-1 font-semibold text-green-600">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                          {selectedConv.operatorName} en control
+                        </span>
+                      ) : (
+                        <span className="text-brand-400">Copito IA respondiendo</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
                 {!selectedConv?.operatorActive ? (
@@ -522,6 +659,17 @@ export default function AdminChatView() {
                     ) : (
                       msg.content
                     )}
+                    <div className={`mt-1 text-right text-[10px] ${
+                      msg.role === 'user'
+                        ? 'text-white/60'
+                        : msg.role === 'operator'
+                          ? 'text-green-500/70'
+                          : 'text-ink-300'
+                    }`}>
+                      {msg.createdAt
+                        ? new Date(msg.createdAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
+                        : ''}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -561,6 +709,26 @@ export default function AdminChatView() {
                           inputRef.current?.focus();
                         }}
                         onClose={() => setShowEmoji(false)}
+                      />
+                    )}
+                  </div>
+                  <div className="relative">
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => setShowQuickReplies(!showQuickReplies)}
+                      className="rounded-xl px-3 py-2.5 text-brand-500 transition hover:bg-brand-100"
+                      type="button"
+                      title="Respuestas rápidas"
+                    >
+                      <Zap size={18} />
+                    </button>
+                    {showQuickReplies && (
+                      <QuickReplies
+                        onSelect={(text) => {
+                          setDraft(prev => prev + text);
+                          inputRef.current?.focus();
+                        }}
+                        onClose={() => setShowQuickReplies(false)}
                       />
                     )}
                   </div>
