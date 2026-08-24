@@ -344,6 +344,7 @@ export class AppointmentsService {
     serviceId?: string;
     scheduledAt: string;
     notes?: string;
+    address?: string;
     sessionId?: string;
   }) {
     let phone = data.clientPhone.replace(/[^\d+]/g, '');
@@ -420,6 +421,7 @@ export class AppointmentsService {
           priceUsd,
           serviceId: resolvedServiceId,
           notes,
+          address: data.address?.trim() || null,
         },
       });
 

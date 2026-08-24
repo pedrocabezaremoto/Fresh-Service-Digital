@@ -117,7 +117,7 @@ export class MailService {
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://fresh.pedroservicios.xyz/logo.png" alt="Fresh Service" width="46" height="46" style="display:inline-block;vertical-align:middle;border-radius:10px;background:#ffffff;padding:4px" />
+      <img src="https://fresh.pedroservicios.xyz/copito-avatar.png" alt="Fresh Service" width="46" height="46" style="display:inline-block;vertical-align:middle;border-radius:10px;background:#ffffff;padding:4px" />
       <span style="vertical-align:middle;margin-left:10px;font-size:22px;font-weight:800;color:#ffffff;font-family:'Exo 2','Segoe UI',sans-serif">Fresh<span style="color:#38BDF8"> Service Digital</span></span>
     </div>
     <div class="content">
@@ -200,7 +200,7 @@ export class MailService {
 </style></head><body>
   <div class="container">
     <div class="header">
-      <img src="https://fresh.pedroservicios.xyz/logo.png" alt="Fresh Service" width="42" height="42" style="display:inline-block;vertical-align:middle;border-radius:9px;background:#ffffff;padding:4px" />
+      <img src="https://fresh.pedroservicios.xyz/copito-avatar.png" alt="Fresh Service" width="42" height="42" style="display:inline-block;vertical-align:middle;border-radius:9px;background:#ffffff;padding:4px" />
       <span style="vertical-align:middle;margin-left:9px;font-size:20px;font-weight:800;color:#ffffff">Fresh<span style="color:#38BDF8"> Service</span></span>
     </div>
     <div class="content">
@@ -256,7 +256,7 @@ export class MailService {
 </style></head><body>
   <div class="container">
     <div class="header">
-      <img src="https://fresh.pedroservicios.xyz/logo.png" alt="Fresh Service" width="46" height="46" style="display:inline-block;vertical-align:middle;border-radius:10px;background:#fff;padding:4px" />
+      <img src="https://fresh.pedroservicios.xyz/copito-avatar.png" alt="Fresh Service" width="46" height="46" style="display:inline-block;vertical-align:middle;border-radius:10px;background:#fff;padding:4px" />
       <span style="vertical-align:middle;margin-left:10px;font-size:22px;font-weight:800;color:#fff">Fresh<span style="color:#38BDF8"> Service Digital</span></span>
     </div>
     <div class="content">

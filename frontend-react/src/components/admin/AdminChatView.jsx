@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Send, UserCheck, UserX, Volume2, VolumeX, Search, X, Zap, CalendarPlus } from 'lucide-react';
+import { MessageCircle, Send, UserCheck, UserX, Volume2, VolumeX, Search, X, LayoutList, CalendarPlus, ClipboardList, MoreVertical } from 'lucide-react';
 import { API_BASE, api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from './ConfirmModal';
@@ -65,6 +65,8 @@ export default function AdminChatView() {
   const [apptServices, setApptServices] = useState([]);
   const [apptSaving, setApptSaving] = useState(false);
   const [apptMsg, setApptMsg] = useState('');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [formSent, setFormSent] = useState(false);
   const [clientTyping, setClientTyping] = useState(null); // sessionId del cliente que escribe
   const clientTypingTimeoutRef = useRef(null);
   const lastOperatorTypingRef = useRef(0);
@@ -154,6 +156,11 @@ export default function AdminChatView() {
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  useEffect(() => {
+    setShowMoreMenu(false);
+    setFormSent(false);
+  }, [selected]);
 
   function playNotificationSound() {
     try {
@@ -710,13 +717,47 @@ export default function AdminChatView() {
                     🔓 Desbloquear
                   </button>
                 )}
-                <button
-                  onClick={openAppointmentModal}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-brand-700 transition"
-                  title="Agendar cita para este cliente"
-                >
-                  <CalendarPlus size={14} /> Agendar cita
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowMoreMenu(v => !v)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-slate-700 transition"
+                    title="Mas acciones"
+                  >
+                    <MoreVertical size={14} /> Mas
+                  </button>
+                  {showMoreMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-52 rounded-xl bg-white shadow-xl ring-1 ring-slate-200 py-1">
+                        <button
+                          onClick={() => { setShowMoreMenu(false); openAppointmentModal(); }}
+                          className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 transition"
+                        >
+                          <CalendarPlus size={16} className="text-brand-500" /> Agendar cita
+                        </button>
+                        <button
+                          disabled={formSent}
+                          onClick={() => {
+                            if (socketRef.current && selected) {
+                              setShowMoreMenu(false);
+                              setFormSent(true);
+                              socketRef.current.emit('sendAppointmentForm', { sessionId: selected });
+                              socketRef.current.emit('operatorMessage', {
+                                sessionId: selected,
+                                message: 'Le he enviado un formulario rapido para agendar su cita. Por favor, llene los datos y presione Enviar.',
+                              });
+                              setTimeout(() => setFormSent(false), 5000);
+                            }
+                          }}
+                          className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm transition ${formSent ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'}`}
+                        >
+                          <ClipboardList size={16} className={formSent ? 'text-slate-400' : 'text-emerald-500'} />
+                          {formSent ? 'Formulario enviado' : 'Enviar formulario'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -729,7 +770,9 @@ export default function AdminChatView() {
                       ? 'bg-brand-600 text-white'
                       : msg.role === 'operator'
                         ? 'bg-green-100 text-green-900 ring-1 ring-green-200'
-                        : 'bg-brand-50 text-ink-900'
+                        : msg.role === 'system'
+                          ? 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200'
+                          : 'bg-brand-50 text-ink-900'
                   }`}>
                     {msg.role === 'operator' && (
                       <span className="mb-1 block text-[10px] font-bold text-green-600">{msg.operatorName || 'Operador'}</span>
@@ -746,7 +789,7 @@ export default function AdminChatView() {
                         loading="lazy"
                       />
                     ) : (
-                      msg.content
+                      <span className="whitespace-pre-wrap">{msg.content}</span>
                     )}
                     <div className={`mt-1 text-right text-[10px] ${
                       msg.role === 'user'
@@ -821,7 +864,7 @@ export default function AdminChatView() {
                       type="button"
                       title="Respuestas rápidas"
                     >
-                      <Zap size={18} />
+                      <LayoutList size={18} />
                     </button>
                     {showQuickReplies && (
                       <QuickReplies

@@ -142,6 +142,12 @@ export default function Copito() {
   const [imageCount, setImageCount] = useState(() => loadMessages().filter(m => m.type === 'image').length);
   const [moderationMsg, setModerationMsg] = useState('');
   const [operatorTyping, setOperatorTyping] = useState(false);
+  const [showApptForm, setShowApptForm] = useState(false);
+  const [apptFormData, setApptFormData] = useState({ clientName: '', clientPhone: '', clientEmail: '', address: '', description: '' });
+  const [apptFormServices, setApptFormServices] = useState([]);
+  const [apptFormServiceId, setApptFormServiceId] = useState('');
+  const [apptFormSending, setApptFormSending] = useState(false);
+  const [apptFormMsg, setApptFormMsg] = useState('');
   const typingTimeoutRef = useRef(null);
   const lastTypingRef = useRef(0);
 
@@ -177,7 +183,7 @@ export default function Copito() {
     if (stickRef.current && messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messages, streaming, operatorTyping]);
+  }, [messages, streaming, operatorTyping, showApptForm]);
 
   // Focus textarea when open
   useEffect(() => {
@@ -264,6 +270,29 @@ export default function Copito() {
       clearTimeout(typingTimeoutRef.current);
     });
 
+    socket.on('appointmentForm', async () => {
+      setApptFormData({ clientName: '', clientPhone: '', clientEmail: '', address: '', description: '' });
+      setApptFormServiceId('');
+      setApptFormMsg('');
+      setShowApptForm(true);
+      try {
+        const res = await fetch(`${API_BASE}/services`);
+        const svcs = await res.json();
+        setApptFormServices(Array.isArray(svcs) ? svcs.filter(s => s.isActive) : []);
+      } catch { setApptFormServices([]); }
+    });
+
+    socket.on('appointmentConfirmed', (data) => {
+      setApptFormSending(false);
+      setApptFormMsg(data.message);
+      if (data.success) {
+        setTimeout(() => {
+          setShowApptForm(false);
+          setApptFormMsg('');
+        }, 3000);
+      }
+    });
+
     return () => { socket.disconnect(); socketRef.current = null; };
   }, [open, socketSessionId]);
 
@@ -345,6 +374,24 @@ export default function Copito() {
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function submitApptForm() {
+    if (!apptFormData.clientName.trim() || !apptFormData.clientPhone.trim()) {
+      setApptFormMsg('Nombre y telefono WhatsApp son obligatorios');
+      return;
+    }
+    setApptFormSending(true);
+    setApptFormMsg('');
+    socketRef.current?.emit('submitAppointmentForm', {
+      clientName: apptFormData.clientName.trim(),
+      clientPhone: apptFormData.clientPhone.trim(),
+      clientEmail: apptFormData.clientEmail.trim() || undefined,
+      serviceId: apptFormServiceId || undefined,
+      address: apptFormData.address.trim() || undefined,
+      description: apptFormData.description.trim() || undefined,
+    });
+    setTimeout(() => setApptFormSending(false), 2000);
   }
 
   async function sendMessage() {
@@ -597,6 +644,117 @@ export default function Copito() {
                     <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
                   </span>
                   {' '}escribiendo...
+                </div>
+              </div>
+            )}
+            {showApptForm && (
+              <div className="mx-2 my-3 rounded-2xl bg-white p-4 shadow-md ring-1 ring-brand-200">
+                <div className="mb-3 flex items-center gap-2">
+                  <img src="/copito-avatar.png" alt="" width={24} height={24} className="rounded-full" />
+                  <span className="text-sm font-bold text-brand-700">Agendar cita</span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">Nombre y apellido *</label>
+                    <input
+                      value={apptFormData.clientName}
+                      onChange={e => setApptFormData(f => ({ ...f, clientName: e.target.value }))}
+                      placeholder="Ej: Roberto Perez"
+                      className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">WhatsApp * <span className="font-normal text-ink-400">(obligatorio)</span></label>
+                    <input
+                      value={apptFormData.clientPhone}
+                      onChange={e => setApptFormData(f => ({ ...f, clientPhone: e.target.value }))}
+                      placeholder="Ej: 0412-1234567"
+                      className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">Correo <span className="font-normal text-ink-400">(opcional)</span></label>
+                    <input
+                      type="email"
+                      value={apptFormData.clientEmail}
+                      onChange={e => setApptFormData(f => ({ ...f, clientEmail: e.target.value }))}
+                      placeholder="tucorreo@gmail.com"
+                      className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">Direccion del servicio</label>
+                    <input
+                      value={apptFormData.address}
+                      onChange={e => setApptFormData(f => ({ ...f, address: e.target.value }))}
+                      placeholder="Ej: Calle 5, casa 12, Barrio Sur"
+                      className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                    />
+                  </div>
+
+                  {apptFormServices.length > 0 && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">Tipo de servicio</label>
+                      <select
+                        value={apptFormServiceId}
+                        onChange={e => setApptFormServiceId(e.target.value)}
+                        className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400 bg-white"
+                      >
+                        <option value="">-- Seleccionar --</option>
+                        {apptFormServices.map(s => {
+                          const eqLabel = { VENTANA: 'Ventana', SPLIT: 'Split', TONELADA_1: '1 Ton', TONELADA_2: '2 Ton', TONELADA_3: '3 Ton', GENERAL: 'General' }[s.equipmentType] || '';
+                          return (
+                            <option key={s.id} value={s.id}>
+                              {s.name} — {eqLabel} {s.priceUsd ? `($${s.priceUsd})` : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-ink-500 mb-0.5">Describa que necesita</label>
+                    <textarea
+                      value={apptFormData.description}
+                      onChange={e => setApptFormData(f => ({ ...f, description: e.target.value }))}
+                      placeholder="Ej: Mi aire split no enfria, hace ruido..."
+                      rows={2}
+                      className="w-full rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400 resize-none"
+                    />
+                  </div>
+                </div>
+
+                {apptFormMsg && (
+                  <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${
+                    apptFormMsg.includes('exitosamente') || apptFormMsg.includes('registrada')
+                      ? 'bg-green-50 text-green-700'
+                      : apptFormMsg.includes('obligatorios')
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-red-50 text-red-700'
+                  }`}>
+                    {apptFormMsg}
+                  </div>
+                )}
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => setShowApptForm(false)}
+                    className="flex-1 rounded-lg border border-brand-200 px-3 py-2 text-xs font-medium text-ink-600 hover:bg-brand-50 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={submitApptForm}
+                    disabled={apptFormSending}
+                    className="flex-1 rounded-lg bg-brand-600 px-3 py-2 text-xs font-bold text-white hover:bg-brand-700 transition disabled:opacity-50"
+                  >
+                    {apptFormSending ? 'Enviando...' : 'Enviar solicitud'}
+                  </button>
                 </div>
               </div>
             )}

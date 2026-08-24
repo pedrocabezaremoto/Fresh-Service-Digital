@@ -8,5 +8,6 @@ import { RateModule } from '../rate/rate.module';
   imports: [MailModule, RateModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],
+  exports: [AppointmentsService],
 })
 export class AppointmentsModule {}

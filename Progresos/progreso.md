@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (fix agendar cita: tipo equipo + email + confirmación chat)  
+**Última actualización:** 2026-08-24 (icono respuestas rápidas → LayoutList)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1278,12 +1278,29 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Técnico asignado (Saul ELduro) → correo de asignación enviado al cliente con referencia, técnico, precio en Bs ($60 = Bs 47.079,8)
 - Correo recibido en inbox de Gmail (no spam). Flujo completo E2E verificado.
 
+**Formulario de cita en el widget (2026-08-24 noche):** ✅
+- Operador: botón verde "Enviar formulario" junto a "Agendar cita". Manda el form al widget + mensaje explicativo.
+- Cliente: formulario inline (nombre, WhatsApp, correo, dirección, servicio con tipo de equipo, descripción).
+- Socket `sendAppointmentForm` / `submitAppointmentForm` / `appointmentConfirmed`. Reusa `createQuickFromChat`. Fecha = mañana. Dirección se guarda en Appointment.
+- Mensaje sistema 📅 en el panel del operador. Sin migración Prisma.
+- Bundle `index-Kk2K4HkZ.js`. En prod.
+
+**Menú Más + bugs chat (2026-08-24 noche):** ✅
+- "Agendar cita" y "Enviar formulario" viven en menú gris "⋮ Mas". Overlay cierra al click afuera.
+- "Enviar formulario" se desactiva 5s (anti-spam). Al cambiar de conversación se resetea.
+- Confirmación real en el chat del cliente (mensaje operator persistido + popup). Operadores ven ese mensaje y el 📅 de sistema.
+- `appointmentForm` se emite una sola vez (socket o room, no ambos).
+- Emails: logo `copito-avatar.png`. Respuestas rápidas: icono Sparkles.
+- Bundle `index-nb_07EOW.js`. En prod.
+
+**Icono respuestas rápidas (2026-08-24):** ✅
+- Sparkles → `LayoutList` (lista minimalista). Solo AdminChatView. Bundle `index-xAY7nPs6.js`. En prod.
+
 ### Backlog actualizado
-1. **Formulario interactivo del cliente** — mini formulario dentro del chat de Copito para que el cliente agende cita sin registrarse (en desarrollo)
-2. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller
-3. **PWA** — convertir en Progressive Web App (instalar como app en celular)
-4. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-5. **Panel taller** — seguir creciendo
-6. **Deliverability email** — reputación Resend mejora con volumen
-7. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-8. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+1. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller
+2. **PWA** — convertir en Progressive Web App (instalar como app en celular)
+3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+4. **Panel taller** — seguir creciendo
+5. **Deliverability email** — reputación Resend mejora con volumen
+6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat

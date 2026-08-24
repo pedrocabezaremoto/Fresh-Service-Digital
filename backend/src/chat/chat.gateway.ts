@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { AppointmentsService } from '../appointments/appointments.service';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -27,6 +28,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly appointmentsService: AppointmentsService,
   ) {}
 
   async handleConnection(socket: Socket) {
@@ -352,6 +354,118 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.to('operators').emit('stopTyping', {
         from: 'client',
         sessionId: socket.data.sessionId,
+      });
+    }
+  }
+
+  @SubscribeMessage('sendAppointmentForm')
+  handleSendAppointmentForm(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { sessionId: string },
+  ) {
+    if (socket.data.type !== 'operator') return;
+    if (!data?.sessionId) return;
+    const clientSocket = this.clients.get(data.sessionId);
+    if (clientSocket) {
+      clientSocket.emit('appointmentForm', {});
+    } else {
+      this.server.to(`session:${data.sessionId}`).emit('appointmentForm', {});
+    }
+  }
+
+  @SubscribeMessage('submitAppointmentForm')
+  async handleSubmitAppointmentForm(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: {
+      clientName: string;
+      clientPhone: string;
+      clientEmail?: string;
+      serviceId?: string;
+      address?: string;
+      description?: string;
+    },
+  ) {
+    if (socket.data.type !== 'client') return;
+    const sessionId = socket.data.sessionId;
+    if (!sessionId) return;
+
+    try {
+      await this.appointmentsService.createQuickFromChat({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        clientEmail: data.clientEmail,
+        serviceId: data.serviceId,
+        scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        notes: `${data.description || 'Cita desde chat'}\nDirección: ${data.address || 'No indicada'}`,
+        address: data.address,
+        sessionId,
+      });
+
+      socket.emit('appointmentConfirmed', {
+        success: true,
+        message: 'Su cita ha sido registrada exitosamente. Le contactaremos por WhatsApp para confirmar fecha y hora.',
+      });
+
+      const conv = await this.prisma.chatConversation.findUnique({
+        where: { sessionId },
+      });
+
+      if (conv) {
+        const clientContent = `✅ Su cita ha sido registrada exitosamente.\n\nNombre: ${data.clientName}\nTelefono: ${data.clientPhone}${data.address ? `\nDireccion: ${data.address}` : ''}\n\nLe contactaremos por WhatsApp para confirmar fecha y hora. Gracias por confiar en Fresh Service Digital.`;
+
+        const clientMsg = await this.prisma.chatMessage.create({
+          data: {
+            conversationId: conv.id,
+            role: 'operator',
+            content: clientContent,
+          },
+        });
+
+        this.server.to(`session:${sessionId}`).emit('message', {
+          id: clientMsg.id,
+          role: 'operator',
+          content: clientContent,
+          createdAt: clientMsg.createdAt,
+          operatorName: 'Fresh Service',
+        });
+
+        const operatorContent = `📅 Cita agendada desde el chat: ${data.clientName} — ${data.clientPhone}${data.address ? ` — ${data.address}` : ''}`;
+
+        const opMsg = await this.prisma.chatMessage.create({
+          data: {
+            conversationId: conv.id,
+            role: 'system',
+            content: operatorContent,
+          },
+        });
+
+        await this.prisma.chatConversation.update({
+          where: { id: conv.id },
+          data: { lastMessageAt: new Date(), messageCount: { increment: 2 } },
+        });
+
+        this.server.to('operators').emit('message', {
+          sessionId,
+          id: clientMsg.id,
+          role: 'operator',
+          content: clientContent,
+          createdAt: clientMsg.createdAt,
+          operatorName: 'Fresh Service',
+        });
+
+        this.server.to('operators').emit('message', {
+          sessionId,
+          id: opMsg.id,
+          role: 'system',
+          content: operatorContent,
+          createdAt: opMsg.createdAt,
+        });
+      }
+    } catch (err) {
+      this.logger.warn(`submitAppointmentForm falló: ${(err as Error).message}`);
+      socket.emit('appointmentConfirmed', {
+        success: false,
+        message: 'Hubo un error al registrar la cita. Intente de nuevo o escriba sus datos en el chat.',
       });
     }
   }

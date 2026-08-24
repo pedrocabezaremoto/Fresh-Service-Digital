@@ -5,12 +5,14 @@ import { ChatService } from './chat.service';
 import { LlmService } from './llm.service';
 import { ChatTelegramService } from './chat-telegram.service';
 import { ChatGateway } from './chat.gateway';
+import { AppointmentsModule } from '../appointments/appointments.module';
 
 @Module({
   imports: [
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'freshservice-jwt-secret',
     }),
+    AppointmentsModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, LlmService, ChatTelegramService, ChatGateway],
