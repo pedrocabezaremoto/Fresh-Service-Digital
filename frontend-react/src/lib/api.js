@@ -108,6 +108,8 @@ export const api = {
   // Citas
   createAppointment: (payload) =>
     request('/appointments', { method: 'POST', body: payload, auth: true }),
+  createQuickAppointment: (payload) =>
+    request('/appointments/quick', { method: 'POST', body: payload, auth: true }),
   getAllAppointments: () => request('/appointments', { auth: true }),
   getClientAppointments: (clientId) =>
     request(`/appointments/client/${clientId}`, { auth: true }),

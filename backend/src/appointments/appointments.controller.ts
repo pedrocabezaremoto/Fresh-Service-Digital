@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -16,6 +16,28 @@ export class AppointmentsController {
   @UseGuards(JwtAuthGuard)
   async create(@Body() createDto: CreateAppointmentDto) {
     return this.appointmentsService.create(createDto);
+  }
+
+  // Cita rápida desde chat en vivo (solo ADMIN)
+  @Post('quick')
+  @UseGuards(JwtAuthGuard)
+  async createQuick(
+    @Body()
+    body: {
+      clientName: string;
+      clientPhone: string;
+      clientEmail?: string;
+      serviceId?: string;
+      scheduledAt: string;
+      notes?: string;
+      sessionId?: string;
+    },
+    @Req() req: any,
+  ) {
+    if (req.user.role !== 'ADMIN') {
+      throw new ForbiddenException();
+    }
+    return this.appointmentsService.createQuickFromChat(body);
   }
 
   // ADMIN: todas. TECHNICIAN: solo las asignadas por el taller.

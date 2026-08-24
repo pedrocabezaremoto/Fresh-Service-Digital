@@ -332,4 +332,118 @@ export class AppointmentsService {
       panelUrl: `${base}/panel`,
     });
   }
+
+  /**
+   * Cita rápida desde el chat en vivo: vincula cliente por teléfono
+   * o crea un usuario guest. No requiere schema nuevo.
+   */
+  async createQuickFromChat(data: {
+    clientName: string;
+    clientPhone: string;
+    clientEmail?: string;
+    serviceId?: string;
+    scheduledAt: string;
+    notes?: string;
+    sessionId?: string;
+  }) {
+    let phone = data.clientPhone.replace(/[^\d+]/g, '');
+    if (phone.startsWith('0')) phone = '+58' + phone.slice(1);
+    if (!phone.startsWith('+')) phone = '+58' + phone;
+
+    let client = await this.prisma.user.findFirst({
+      where: { phone },
+    });
+
+    // Si no lo encontro por telefono pero tiene email, buscar por email
+    if (!client && data.clientEmail?.trim()) {
+      client = await this.prisma.user.findFirst({
+        where: { email: data.clientEmail.trim() },
+      });
+    }
+
+    if (!client) {
+      const nameParts = data.clientName.trim().split(/\s+/);
+      const firstName = nameParts[0] || 'Cliente';
+      const lastName = nameParts.slice(1).join(' ') || 'Chat';
+      const randomSuffix = Math.random().toString(36).slice(2, 8);
+      const guestEmail = data.clientEmail?.trim() || `chat-${randomSuffix}@guest.local`;
+      client = await this.prisma.user.create({
+        data: {
+          email: guestEmail,
+          password: '$2b$10$placeholder_not_usable_for_login',
+          firstName,
+          lastName,
+          phone,
+          role: 'CLIENT',
+          isVerified: false,
+        },
+      });
+    } else if (
+      data.clientEmail?.trim() &&
+      client.email.endsWith('@guest.local')
+    ) {
+      try {
+        client = await this.prisma.user.update({
+          where: { id: client.id },
+          data: { email: data.clientEmail.trim() },
+        });
+      } catch {
+        // email ya tomado: se deja el guest y se sigue con la cita
+      }
+    }
+
+    let priceUsd: number | null = null;
+    let equipBrand = 'Por definir';
+    let equipModel = 'Por definir';
+    let resolvedServiceId: string | null = null;
+    if (data.serviceId) {
+      const svc = await this.prisma.service.findUnique({ where: { id: data.serviceId } });
+      if (svc) {
+        priceUsd = svc.priceUsd;
+        equipBrand = svc.name;
+        equipModel = svc.equipmentType || 'General';
+        resolvedServiceId = svc.id;
+      }
+    }
+
+    const notes =
+      data.notes ||
+      (data.sessionId
+        ? `Agendada desde chat (sesion ${data.sessionId})`
+        : 'Agendada desde chat en vivo');
+
+    const appointment = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.appointment.create({
+        data: {
+          clientId: client.id,
+          scheduledAt: new Date(data.scheduledAt),
+          priceUsd,
+          serviceId: resolvedServiceId,
+          notes,
+        },
+      });
+
+      await tx.equipment.create({
+        data: {
+          appointmentId: created.id,
+          brand: equipBrand,
+          model: equipModel,
+          btuCapacity: 0,
+          failureDescription: data.notes || 'Servicio agendado desde chat en vivo',
+        },
+      });
+
+      return created;
+    });
+
+    return {
+      ...appointment,
+      client: {
+        id: client.id,
+        firstName: client.firstName,
+        lastName: client.lastName,
+        phone: client.phone,
+      },
+    };
+  }
 }

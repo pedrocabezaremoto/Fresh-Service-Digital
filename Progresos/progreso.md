@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (5 mejoras UX chat completadas)  
+**Última actualización:** 2026-08-24 (fix agendar cita: tipo equipo + email + confirmación chat)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1257,11 +1257,33 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Timeout 3s auto-oculta. `stopTyping` al enviar mensaje para ocultar inmediato.
 - Backend rebuild + frontend rebuild. Bundle `index-Ci4dZHo6.js`. En prod.
 
+**Agendar cita desde el chat (2026-08-24 tarde):** ✅
+- Botón azul "Agendar cita" en el header del chat (junto a Tomar control / Pausar / Bloquear).
+- Modal: nombre, teléfono, servicio (catálogo activo + precio), fecha, hora, notas.
+- Backend `POST /appointments/quick` (solo ADMIN). Vincula cliente por teléfono o crea guest `chat-xxxxx@guest.local`.
+- Teléfono normalizado (`0412-1234567` → `+584121234567`). `serviceId` se guarda en Appointment.
+- Sin migración Prisma. QuickReplies / Copito / gateway intactos.
+- Bundle `index-CDKQbtPE.js`. En prod (fresh-service + fresh-frontend).
+
+**Fix agendar cita (2026-08-24 tarde):** ✅
+- Dropdown: `Instalación — Split ($70)` (tipo de equipo visible; ya no hay ambigüedad Ventana/Split/Ton).
+- Campo correo opcional. Si viene, se crea/vincula con ese email. Guest `@guest.local` se actualiza si luego llega un email real.
+- Tras agendar, el operador envía automáticamente un `operatorMessage` con servicio, fecha, hora y precio. El cliente lo ve en el widget.
+- Bundle `index-C0xnx82Q.js`. En prod.
+
+**Verificación completa del flujo de citas desde chat (2026-08-24):** ✅
+- Operador llena modal → cita creada como "Reparación · SPLIT" (tipo correcto)
+- Cliente Tony Perez creado con email real `inversionespegaca@gmail.com` (no guest.local)
+- Confirmación automática enviada al chat del cliente con detalles completos
+- Técnico asignado (Saul ELduro) → correo de asignación enviado al cliente con referencia, técnico, precio en Bs ($60 = Bs 47.079,8)
+- Correo recibido en inbox de Gmail (no spam). Flujo completo E2E verificado.
+
 ### Backlog actualizado
-1. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller (próxima sesión 2026-08-25)
-2. **Agendar cita desde el chat** — botón modal en panel operador (nombre/tel/servicio/fecha/hora), tabla Appointment Prisma
-3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-4. **Panel taller** — seguir creciendo
-5. **Deliverability email** — reputación Resend mejora con volumen
-6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+1. **Formulario interactivo del cliente** — mini formulario dentro del chat de Copito para que el cliente agende cita sin registrarse (en desarrollo)
+2. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller
+3. **PWA** — convertir en Progressive Web App (instalar como app en celular)
+4. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+5. **Panel taller** — seguir creciendo
+6. **Deliverability email** — reputación Resend mejora con volumen
+7. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+8. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat

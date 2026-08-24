@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Send, UserCheck, UserX, Volume2, VolumeX, Search, X, Zap } from 'lucide-react';
-import { API_BASE } from '../../lib/api';
+import { MessageCircle, Send, UserCheck, UserX, Volume2, VolumeX, Search, X, Zap, CalendarPlus } from 'lucide-react';
+import { API_BASE, api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from './ConfirmModal';
 import EmojiPicker from './EmojiPicker';
@@ -60,6 +60,11 @@ export default function AdminChatView() {
   const [archivedConversations, setArchivedConversations] = useState([]);
   const [modal, setModal] = useState({ open: false, title: '', message: '', confirmText: '', confirmColor: 'blue', onConfirm: () => {} });
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAppointment, setShowAppointment] = useState(false);
+  const [apptForm, setApptForm] = useState({ clientName: '', clientPhone: '', clientEmail: '', serviceId: '', date: '', time: '', notes: '' });
+  const [apptServices, setApptServices] = useState([]);
+  const [apptSaving, setApptSaving] = useState(false);
+  const [apptMsg, setApptMsg] = useState('');
   const [clientTyping, setClientTyping] = useState(null); // sessionId del cliente que escribe
   const clientTypingTimeoutRef = useRef(null);
   const lastOperatorTypingRef = useRef(0);
@@ -211,6 +216,65 @@ export default function AdminChatView() {
   const release = () => {
     if (!selected || !socketRef.current) return;
     socketRef.current.emit('release', { sessionId: selected });
+  };
+
+  const openAppointmentModal = async () => {
+    setApptForm({ clientName: '', clientPhone: '', clientEmail: '', serviceId: '', date: '', time: '09:00', notes: '' });
+    setApptMsg('');
+    setShowAppointment(true);
+    try {
+      const svcs = await api.getServices();
+      setApptServices(Array.isArray(svcs) ? svcs.filter(s => s.isActive) : []);
+    } catch { setApptServices([]); }
+  };
+
+  const saveAppointment = async () => {
+    if (!apptForm.clientName.trim() || !apptForm.clientPhone.trim() || !apptForm.date) {
+      setApptMsg('Nombre, telefono y fecha son obligatorios');
+      return;
+    }
+    setApptSaving(true);
+    setApptMsg('');
+    try {
+      const scheduledAt = new Date(`${apptForm.date}T${apptForm.time || '09:00'}:00`).toISOString();
+      await api.createQuickAppointment({
+        clientName: apptForm.clientName.trim(),
+        clientPhone: apptForm.clientPhone.trim(),
+        clientEmail: apptForm.clientEmail.trim() || undefined,
+        serviceId: apptForm.serviceId || undefined,
+        scheduledAt,
+        notes: apptForm.notes.trim() || undefined,
+        sessionId: selected || undefined,
+      });
+      setApptMsg('Cita agendada exitosamente');
+
+      if (socketRef.current && selected) {
+        const svc = apptServices.find(s => s.id === apptForm.serviceId);
+        const equipLabel = svc ? ({
+          VENTANA: 'Ventana',
+          SPLIT: 'Split',
+          TONELADA_1: '1 Tonelada',
+          TONELADA_2: '2 Toneladas',
+          TONELADA_3: '3 Toneladas',
+          GENERAL: 'General',
+        }[svc.equipmentType] || '') : '';
+        const svcName = svc ? `${svc.name} — ${equipLabel}` : 'Por definir';
+        const precio = svc?.priceUsd ? `$${svc.priceUsd}` : 'Por cotizar';
+        const fechaStr = new Date(`${apptForm.date}T${apptForm.time || '09:00'}:00`).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const horaStr = apptForm.time || '09:00';
+
+        const confirmMsg = `Su cita ha sido agendada:\n\nServicio: ${svcName}\nFecha: ${fechaStr}\nHora: ${horaStr}\nPrecio: ${precio}\n\nLe confirmaremos el tecnico asignado. Gracias por confiar en Fresh Service Digital.`;
+
+        socketRef.current.emit('operatorMessage', {
+          sessionId: selected,
+          message: confirmMsg,
+        });
+      }
+
+      setTimeout(() => setShowAppointment(false), 1500);
+    } catch (err) {
+      setApptMsg('Error al agendar: ' + (err.message || 'intente de nuevo'));
+    } finally { setApptSaving(false); }
   };
 
   // Send message
@@ -646,6 +710,13 @@ export default function AdminChatView() {
                     🔓 Desbloquear
                   </button>
                 )}
+                <button
+                  onClick={openAppointmentModal}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-brand-700 transition"
+                  title="Agendar cita para este cliente"
+                >
+                  <CalendarPlus size={14} /> Agendar cita
+                </button>
               </div>
             </div>
 
@@ -801,6 +872,136 @@ export default function AdminChatView() {
         onConfirm={modal.onConfirm}
         onCancel={closeModal}
       />
+      {showAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowAppointment(false)}>
+          <div className="w-full max-w-md mx-4 rounded-2xl bg-white p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-ink-900 flex items-center gap-2">
+                <CalendarPlus size={20} className="text-brand-600" /> Agendar cita
+              </h3>
+              <button onClick={() => setShowAppointment(false)} className="text-ink-400 hover:text-ink-600">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-ink-500 mb-1">Nombre del cliente *</label>
+                <input
+                  value={apptForm.clientName}
+                  onChange={e => setApptForm(f => ({ ...f, clientName: e.target.value }))}
+                  placeholder="Juan Perez"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-500 mb-1">Telefono *</label>
+                <input
+                  value={apptForm.clientPhone}
+                  onChange={e => setApptForm(f => ({ ...f, clientPhone: e.target.value }))}
+                  placeholder="0412-1234567"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-500 mb-1">Correo electronico <span className="font-normal text-ink-400">(opcional)</span></label>
+                <input
+                  type="email"
+                  value={apptForm.clientEmail}
+                  onChange={e => setApptForm(f => ({ ...f, clientEmail: e.target.value }))}
+                  placeholder="cliente@gmail.com"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-500 mb-1">Servicio</label>
+                <select
+                  value={apptForm.serviceId}
+                  onChange={e => setApptForm(f => ({ ...f, serviceId: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                >
+                  <option value="">-- Seleccionar servicio --</option>
+                  {apptServices.map(s => {
+                    const equipLabel = {
+                      VENTANA: 'Ventana',
+                      SPLIT: 'Split',
+                      TONELADA_1: '1 Ton',
+                      TONELADA_2: '2 Ton',
+                      TONELADA_3: '3 Ton',
+                      GENERAL: 'General',
+                    }[s.equipmentType] || s.equipmentType || '';
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.name} — {equipLabel} {s.priceUsd ? `($${s.priceUsd})` : '(cotizar)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-ink-500 mb-1">Fecha *</label>
+                  <input
+                    type="date"
+                    value={apptForm.date}
+                    onChange={e => setApptForm(f => ({ ...f, date: e.target.value }))}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ink-500 mb-1">Hora</label>
+                  <input
+                    type="time"
+                    value={apptForm.time}
+                    onChange={e => setApptForm(f => ({ ...f, time: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-ink-500 mb-1">Notas</label>
+                <textarea
+                  value={apptForm.notes}
+                  onChange={e => setApptForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Detalles adicionales del servicio..."
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 resize-none"
+                />
+              </div>
+            </div>
+
+            {apptMsg && (
+              <div className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${
+                apptMsg.includes('exitosamente') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              }`}>
+                {apptMsg}
+              </div>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setShowAppointment(false)}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-ink-600 hover:bg-slate-100 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveAppointment}
+                disabled={apptSaving}
+                className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 transition disabled:opacity-50"
+              >
+                {apptSaving ? 'Guardando...' : 'Agendar cita'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
