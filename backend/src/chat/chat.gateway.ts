@@ -31,6 +31,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly appointmentsService: AppointmentsService,
   ) {}
 
+  notifyNewLead(lead: {
+    id: string;
+    name: string;
+    phone: string | null;
+    serviceInterest: string | null;
+    message: string | null;
+    createdAt: Date;
+  }) {
+    if (!this.server) return;
+    this.server.to('operators').emit('newLead', lead);
+  }
+
   async handleConnection(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const sessionId = socket.handshake.auth?.sessionId;

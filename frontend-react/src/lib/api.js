@@ -117,4 +117,8 @@ export const api = {
     request(`/appointments/${id}/status`, { method: 'PATCH', body: { status }, auth: true }),
   assignTechnician: (id, technicianId) =>
     request(`/appointments/${id}/assign`, { method: 'PATCH', body: { technicianId }, auth: true }),
+
+  // Leads de Copito
+  getUnreadLeads: () => request('/chat/leads/unread', { auth: true }),
+  markLeadRead: (id) => request(`/chat/leads/${id}/read`, { method: 'PATCH', auth: true }),
 };

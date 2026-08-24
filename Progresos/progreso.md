@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (icono respuestas rápidas → LayoutList)  
+**Última actualización:** 2026-08-24 (campanita de leads + Copito pregunta servicio)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1295,6 +1295,13 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 
 **Icono respuestas rápidas (2026-08-24):** ✅
 - Sparkles → `LayoutList` (lista minimalista). Solo AdminChatView. Bundle `index-xAY7nPs6.js`. En prod.
+
+**Campanita de leads (2026-08-24 noche):** ✅
+- Migración `20260824200000_add_read_at_to_chat_lead` (`ChatLead.readAt`).
+- GET `/chat/leads/unread` + PATCH `/chat/leads/:id/read` (ADMIN). Socket `newLead` a operadores.
+- Copito pregunta tipo de servicio ANTES de nombre/WhatsApp.
+- Campanita en header (junto al tema). Badge rojo, dropdown, click marca leído. Tiempo real en cualquier vista.
+- Bundle `index-DUG75Mlt.js`. En prod.
 
 ### Backlog actualizado
 1. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller

@@ -5,10 +5,14 @@ import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('status')
   async getStatus() {
@@ -20,6 +24,27 @@ export class ChatController {
   @Roles('ADMIN')
   async getArchivedConversations() {
     return this.chatService.getArchivedConversations();
+  }
+
+  @Get('leads/unread')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getUnreadLeads() {
+    return this.prisma.chatLead.findMany({
+      where: { readAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+  }
+
+  @Patch('leads/:id/read')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async markLeadRead(@Param('id') id: string) {
+    return this.prisma.chatLead.update({
+      where: { id },
+      data: { readAt: new Date() },
+    });
   }
 
   @Get('conversations/:id/messages')

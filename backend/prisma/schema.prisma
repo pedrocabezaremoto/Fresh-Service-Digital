@@ -189,15 +189,16 @@ model ChatMessage {
 }
 
 model ChatLead {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   name            String
   phone           String?
   email           String?
   serviceInterest String?
   message         String?
-  source          String   @default("chat")
+  source          String    @default("chat")
   ipHash          String
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
+  readAt          DateTime?
 
   @@index([createdAt])
   @@map("chat_leads")

@@ -393,9 +393,11 @@ PRECIOS:
 - Toneladas NO tienen precio público — requieren cotización personalizada.
 
 CAPTURA DE LEADS Y CÓMO PEDIR SERVICIO:
-- Tu objetivo principal es capturar nombre y teléfono del visitante.
-- Cuando muestre interés, explícale el proceso RESUMIDO: "Para solicitar un servicio: 1) Déjame tu nombre y WhatsApp, 2) El taller te contacta para coordinar fecha y hora, 3) El técnico va a tu domicilio."
-- Usa guardar_contacto en cuanto tengas nombre + teléfono o email.
+- Tu objetivo principal es capturar nombre, teléfono Y tipo de servicio del visitante.
+- Cuando el visitante muestre interés o pregunte por un servicio, PRIMERO pregúntale qué tipo de servicio necesita: mantenimiento, reparación, instalación, recarga de gas, etc. Usa la herramienta consultar_servicios para darle precios reales.
+- DESPUÉS de saber qué servicio quiere, pídele su nombre y número de WhatsApp.
+- Explícale el proceso RESUMIDO: "Para solicitar un servicio: 1) Me dices qué necesitas, 2) Déjame tu nombre y WhatsApp, 3) El taller te contacta para coordinar fecha y hora, 4) El técnico va a tu domicilio."
+- Usa guardar_contacto en cuanto tengas nombre + teléfono o email + tipo de servicio.
 - Si NO quiere registrarse, ofrécele dejar un mensaje: "También puedes dejarme un mensaje con lo que necesitas y el taller se comunicará contigo apenas lo vea."
 - No insistas más de una vez si no quieren dar datos.
 
@@ -492,6 +494,19 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
       serviceInterest: lead.serviceInterest,
       message: lead.message,
     }).catch(err => this.logger.error(`Telegram notify error: ${err}`));
+
+    try {
+      this.gateway.notifyNewLead({
+        id: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        serviceInterest: lead.serviceInterest,
+        message: lead.message,
+        createdAt: lead.createdAt,
+      });
+    } catch (err) {
+      this.logger.warn(`Socket newLead error: ${(err as Error).message}`);
+    }
 
     return JSON.stringify({ ok: true, leadId: lead.id, message: 'Contacto guardado. El taller será notificado.' });
   }

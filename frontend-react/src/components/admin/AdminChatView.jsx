@@ -102,6 +102,10 @@ export default function AdminChatView() {
       );
     });
 
+    socket.on('newLead', (lead) => {
+      window.dispatchEvent(new CustomEvent('copito-new-lead', { detail: lead }));
+    });
+
     socket.on('message', (msg) => {
       // Update conversation list (last message preview)
       setConversations(prev =>

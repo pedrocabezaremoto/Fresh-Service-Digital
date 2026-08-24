@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import {
   LayoutDashboard, ClipboardList, Users, LogOut, RefreshCw,
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   Download, Sparkles, UserCog, Power, PowerOff,
   TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Bell,
 } from 'lucide-react';
-import { api } from '../lib/api';
+import { API_BASE, api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useRate } from '../context/RateContext';
@@ -96,7 +97,7 @@ function FilterInput({ label, value, onChange, options, placeholder }) {
 }
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const { rate } = useRate();
   const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
@@ -161,6 +162,8 @@ export default function AdminDashboard() {
       ? '280px'
       : '400px',
   );
+  const [unreadLeads, setUnreadLeads] = useState([]);
+  const [showLeads, setShowLeads] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -184,6 +187,46 @@ export default function AdminDashboard() {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  useEffect(() => {
+    async function loadLeads() {
+      try {
+        const leads = await api.getUnreadLeads();
+        setUnreadLeads(Array.isArray(leads) ? leads : []);
+      } catch { setUnreadLeads([]); }
+    }
+    loadLeads();
+
+    function pushLead(lead) {
+      if (!lead?.id) return;
+      setUnreadLeads(prev => prev.some(l => l.id === lead.id) ? prev : [lead, ...prev]);
+    }
+    function handleNewLead(e) {
+      pushLead(e.detail);
+    }
+    window.addEventListener('copito-new-lead', handleNewLead);
+
+    let socket;
+    if (token) {
+      socket = io(`${API_BASE}/live-chat`, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+      });
+      socket.on('newLead', pushLead);
+    }
+
+    return () => {
+      window.removeEventListener('copito-new-lead', handleNewLead);
+      socket?.disconnect();
+    };
+  }, [token]);
+
+  async function markLeadRead(leadId) {
+    try {
+      await api.markLeadRead(leadId);
+      setUnreadLeads(prev => prev.filter(l => l.id !== leadId));
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     if (!techFlash) return undefined;
@@ -840,6 +883,69 @@ export default function AdminDashboard() {
             <select value={view} onChange={(e) => setView(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm touch-manipulation sm:flex-none lg:hidden">
               <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="chat">Chat en vivo</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Configuración</option>
             </select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowLeads(v => !v)}
+                className="relative grid h-11 w-11 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation"
+                title="Leads de Copito"
+              >
+                <Bell size={17} />
+                {unreadLeads.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {unreadLeads.length}
+                  </span>
+                )}
+              </button>
+              {showLeads && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowLeads(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-80 max-h-96 overflow-y-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200">
+                    <div className="sticky top-0 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
+                      <span className="text-sm font-bold text-ink-900">Leads de Copito</span>
+                      {unreadLeads.length > 0 && (
+                        <span className="text-xs text-ink-500">{unreadLeads.length} sin leer</span>
+                      )}
+                    </div>
+                    {unreadLeads.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-ink-400">No hay leads nuevos</div>
+                    ) : (
+                      unreadLeads.map(lead => (
+                        <button
+                          key={lead.id}
+                          onClick={() => { markLeadRead(lead.id); }}
+                          className="flex w-full flex-col gap-1 border-b border-slate-50 px-4 py-3 text-left transition hover:bg-brand-50"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-ink-900">{lead.name}</span>
+                            <span className="text-[10px] text-ink-400">
+                              {(() => {
+                                const mins = Math.round((Date.now() - new Date(lead.createdAt).getTime()) / 60000);
+                                if (mins < 1) return 'ahora';
+                                if (mins < 60) return `hace ${mins} min`;
+                                const hrs = Math.round(mins / 60);
+                                if (hrs < 24) return `hace ${hrs}h`;
+                                return `hace ${Math.round(hrs / 24)}d`;
+                              })()}
+                            </span>
+                          </div>
+                          {lead.phone && (
+                            <span className="text-xs text-emerald-600">{lead.phone}</span>
+                          )}
+                          {lead.serviceInterest && (
+                            <span className="text-xs text-brand-600">{lead.serviceInterest}</span>
+                          )}
+                          {lead.message && (
+                            <span className="text-xs text-ink-500 line-clamp-2">{lead.message}</span>
+                          )}
+                          <span className="text-[10px] text-ink-400">Click para marcar como leido</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
             <button type="button" onClick={toggleTheme} title="Cambiar tema" className="grid h-11 w-11 place-items-center rounded-full text-ink-600 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
               {isDark ? <Sun size={17} className="text-amber-500" /> : <Moon size={17} className="text-brand-700" />}
             </button>
