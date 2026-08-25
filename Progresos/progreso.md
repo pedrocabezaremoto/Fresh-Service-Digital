@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (modal eliminar + reordenar categorías/tipos)  
+**Última actualización:** 2026-08-25 (Rename Configuración → Imágenes del sitio)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1331,6 +1331,16 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Basura abre modal estilizado (z-60), no `confirm()` nativo. Error del API dentro del modal.
 - Flechas arriba/abajo persisten `sortOrder` (PATCH de los 2 ítems).
 - Bundle `index-Cn-dSsUe.js`. En prod. Solo frontend.
+
+**Ingresos por fecha de completado (2026-08-24 noche):** ✅
+- Tarjetas, tabla, filtro y CSV usan `updatedAt` (COMPLETED), no `scheduledAt`. Solicitudes sigue con fecha programada.
+- Almanaque en Hoy/Semana/Mes abre date picker nativo. Columna Servicio: tipo · nombre si hay `service`.
+- Bundle `index-DUaLJL1a.js`. En prod. Solo frontend.
+
+**Rename "Configuración" → "Imágenes del sitio" (2026-08-25):** ✅
+- Sidebar label, header title, mobile select: todos renombrados.
+- El `id` interno sigue siendo `'configuracion'` (no rompe lógica).
+- Build + deploy. Solo frontend.
 
 ### Backlog actualizado
 1. **PWA** — convertir en Progressive Web App (instalar como app en celular)

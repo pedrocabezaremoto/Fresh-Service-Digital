@@ -127,6 +127,7 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState(false);
   // Ingresos: período activo (día/semana/mes/año o null=todos) + filtros de columna
   const [ingPeriodo, setIngPeriodo] = useState(null);
+  const [ingFechaCustom, setIngFechaCustom] = useState('');
   const [fiFecha, setFiFecha] = useState('');
   const [fiCliente, setFiCliente] = useState('');
   const [fiServicio, setFiServicio] = useState('');
@@ -401,7 +402,11 @@ export default function AdminDashboard() {
   }
 
   // Texto "servicio" y "estado" de una cita (para filtrar)
-  const servTxt = (a) => { const e = a.equipment?.[0]; return e ? `${e.brand} · ${e.model}` : (a.notes || ''); };
+  const servTxt = (a) => {
+    if (a.service) return `${eqLabel(a.service.equipmentType)} · ${a.service.name}`;
+    const e = a.equipment?.[0];
+    return e ? `${e.brand} · ${e.model}` : (a.notes || '');
+  };
   const estadoTxt = (a) => STATUS[a.status]?.label || a.status;
 
   const filteredAppts = appts.filter((a) => {
@@ -776,42 +781,48 @@ export default function AdminDashboard() {
     }
     if (period === 'month') return dt.getFullYear() === now.getFullYear() && dt.getMonth() === now.getMonth();
     if (period === 'year') return dt.getFullYear() === now.getFullYear();
+    if (period === 'custom' && ingFechaCustom) {
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}` === ingFechaCustom;
+    }
     return true;
   };
   const completedAppts = appts.filter((a) => a.status === 'COMPLETED');
   const earnings = (period) =>
-    completedAppts.filter((a) => inPeriod(a.scheduledAt, period)).reduce((s, a) => s + priceOf(a), 0);
+    completedAppts.filter((a) => inPeriod(a.updatedAt, period)).reduce((s, a) => s + priceOf(a), 0);
   const money = (usd) => formatBs(usd, rate) || formatUsd(usd);
 
   // Tabla de servicios completados: filtrada por período (calendario) + filtros de columna
   const completedFiltered = completedAppts.filter((a) => {
-    if (ingPeriodo && !inPeriod(a.scheduledAt, ingPeriodo)) return false;
+    if (ingPeriodo && !inPeriod(a.updatedAt, ingPeriodo)) return false;
     const cli = `${a.client.firstName} ${a.client.lastName} ${a.client.email}`.toLowerCase();
     return (
-      (!fiFecha || fmtDate(a.scheduledAt).toLowerCase().includes(fiFecha.toLowerCase())) &&
+      (!fiFecha || fmtDate(a.updatedAt).toLowerCase().includes(fiFecha.toLowerCase())) &&
       (!fiCliente || cli.includes(fiCliente.toLowerCase())) &&
       (!fiServicio || servTxt(a).toLowerCase().includes(fiServicio.toLowerCase())) &&
       (!fiTecnico || techName(a).toLowerCase().includes(fiTecnico.toLowerCase())) &&
       (!fiMonto || formatUsd(priceOf(a)).toLowerCase().includes(fiMonto.toLowerCase()) || money(priceOf(a)).toLowerCase().includes(fiMonto.toLowerCase()))
     );
   });
-  const optIFecha = uniq(completedAppts.map((a) => fmtDate(a.scheduledAt)));
+  const optIFecha = uniq(completedAppts.map((a) => fmtDate(a.updatedAt)));
   const optICliente = uniq(completedAppts.map((a) => `${a.client.firstName} ${a.client.lastName}`));
   const optIServicio = uniq(completedAppts.map(servTxt));
   const optITecnico = uniq(completedAppts.map(techName));
   const optIMonto = uniq(completedAppts.map((a) => formatUsd(priceOf(a))));
   const hayFiltrosI = fiFecha || fiCliente || fiServicio || fiTecnico || fiMonto || ingPeriodo;
-  const limpiarFiltrosI = () => { setFiFecha(''); setFiCliente(''); setFiServicio(''); setFiTecnico(''); setFiMonto(''); setIngPeriodo(null); };
+  const limpiarFiltrosI = () => { setFiFecha(''); setFiCliente(''); setFiServicio(''); setFiTecnico(''); setFiMonto(''); setIngPeriodo(null); setIngFechaCustom(''); };
 
   function exportEarnings(period) {
     const label = { day: 'diario', week: 'semanal', month: 'mensual', year: 'anual' }[period];
-    const list = completedAppts.filter((a) => inPeriod(a.scheduledAt, period));
+    const list = completedAppts.filter((a) => inPeriod(a.updatedAt, period));
     const cols = ['Fecha', 'Cliente', 'Servicio', 'Técnico', 'Precio USD', 'Precio Bs'];
     const rows = list.map((a) => {
       const eq = a.equipment?.[0];
       const usd = priceOf(a);
-      return [fmtDate(a.scheduledAt), `${a.client.firstName} ${a.client.lastName}`,
-        eq ? `${eq.brand} ${eq.model}` : '', techName(a), usd, rate ? (usd * rate).toFixed(2) : ''];
+      return [fmtDate(a.updatedAt), `${a.client.firstName} ${a.client.lastName}`,
+        servTxt(a) || (eq ? `${eq.brand} ${eq.model}` : ''), techName(a), usd, rate ? (usd * rate).toFixed(2) : ''];
     });
     const totalUsd = rows.reduce((s, r) => s + r[4], 0);
     const totalRow = ['TOTAL', '', '', '', totalUsd, rate ? (totalUsd * rate).toFixed(2) : ''];
@@ -834,7 +845,7 @@ export default function AdminDashboard() {
     { id: 'servicios', label: 'Servicios', icon: Settings, badge: services.length },
     { id: 'clientes', label: 'Clientes', icon: Users, badge: stats.clients },
     { id: 'tecnicos', label: 'Técnicos', icon: UserCog, badge: techs.length },
-    { id: 'configuracion', label: 'Configuración', icon: Settings2 },
+    { id: 'configuracion', label: 'Imágenes del sitio', icon: Settings2 },
   ];
 
   return (
@@ -933,14 +944,14 @@ export default function AdminDashboard() {
         <header className="sticky top-0 z-30 flex min-h-16 flex-col gap-2 border-b border-slate-200 bg-white/90 px-4 py-2 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-8">
           <div className="min-w-0">
             <div className="truncate font-display font-bold text-ink-900">
-              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'chat' ? 'Chat en Vivo — Copito' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : view === 'configuracion' ? 'Configuración del sitio' : 'Clientes del Taller'}
+              {view === 'dashboard' ? 'Panel de Control' : view === 'solicitudes' ? 'Gestión de Solicitudes' : view === 'chat' ? 'Chat en Vivo — Copito' : view === 'ingresos' ? 'Control de Servicios Realizados' : view === 'servicios' ? 'Catálogo de Servicios' : view === 'tecnicos' ? 'Equipo Técnico' : view === 'configuracion' ? 'Imágenes del sitio' : 'Clientes del Taller'}
             </div>
             <div className="hidden text-xs text-ink-500 sm:block">Fresh Service Digital · Taller de Refrigeración</div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
             {/* Mobile nav — alternativa a los KPIs para ir a Solicitudes / Ingresos / Clientes */}
             <select value={view} onChange={(e) => setView(e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm touch-manipulation sm:flex-none lg:hidden">
-              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="chat">Chat en vivo</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Configuración</option>
+              <option value="dashboard">Dashboard</option><option value="solicitudes">Solicitudes</option><option value="chat">Chat en vivo</option><option value="ingresos">Ingresos</option><option value="servicios">Servicios</option><option value="clientes">Clientes</option><option value="tecnicos">Técnicos</option><option value="configuracion">Imágenes del sitio</option>
             </select>
             <div className="relative">
               <button
@@ -1238,7 +1249,7 @@ export default function AdminDashboard() {
                 ].map(({ p, label, accent, icon: Icon }) => {
                   const active = ingPeriodo === p;
                   return (
-                    <button key={p} type="button" onClick={() => setIngPeriodo(active ? null : p)}
+                    <button key={p} type="button" onClick={() => { if (ingPeriodo === 'custom') { setIngPeriodo(null); setIngFechaCustom(''); } else { setIngPeriodo(active ? null : p); } }}
                       title="Filtrar la tabla por este período"
                       style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
                       className={`group relative min-h-11 overflow-hidden rounded-2xl p-4 text-left shadow-sm transition touch-manipulation sm:p-5 ${active ? 'shadow-glow ring-2 ring-brand-500' : 'ring-1 ring-white/60 hover:-translate-y-0.5 hover:shadow-glow-lg active:ring-brand-200'}`}>
@@ -1247,7 +1258,20 @@ export default function AdminDashboard() {
                       <div className="relative">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wide text-ink-500">{label}</span>
-                          <Icon size={16} style={{ color: accent }} />
+                          {p !== 'year' ? (
+                            <label className="relative cursor-pointer" title="Elegir fecha" onClick={(e) => e.stopPropagation()}>
+                              <Calendar size={16} style={{ color: accent }} />
+                              <input type="date" value={ingFechaCustom}
+                                onChange={(e) => {
+                                  setIngFechaCustom(e.target.value);
+                                  setIngPeriodo(e.target.value ? 'custom' : null);
+                                }}
+                                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                              />
+                            </label>
+                          ) : (
+                            <Icon size={16} style={{ color: accent }} />
+                          )}
                         </div>
                         <div className="mt-3 font-display text-2xl font-extrabold text-ink-900">{money(earnings(p))}</div>
                         <div className="text-xs text-ink-400">Ref. {formatUsd(earnings(p))}</div>
@@ -1256,6 +1280,9 @@ export default function AdminDashboard() {
                           <Download size={13} /> CSV
                         </span>
                         {active && <span className="mt-2 block text-[11px] font-bold text-brand-600">● Filtrando la tabla ↓ (clic para quitar)</span>}
+                        {ingPeriodo === 'custom' && ingFechaCustom && p === 'day' && (
+                          <span className="mt-2 block text-[11px] font-bold text-brand-600">● Filtrando: {new Date(ingFechaCustom + 'T12:00:00').toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })} (clic para quitar)</span>
+                        )}
                       </div>
                     </button>
                   );
@@ -1300,13 +1327,13 @@ export default function AdminDashboard() {
                       {completedFiltered.length === 0 ? (
                         <tr><td colSpan={5} className="px-5 py-10 text-center text-ink-500">No hay servicios completados con esos filtros.</td></tr>
                       ) : (
-                        [...completedFiltered].sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)).map((a) => {
+                        [...completedFiltered].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).map((a) => {
                           const eq = a.equipment?.[0];
                           return (
                             <tr key={a.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                              <td className="px-5 py-3 text-ink-700">{fmtDate(a.scheduledAt)}</td>
+                              <td className="px-5 py-3 text-ink-700">{fmtDate(a.updatedAt)}</td>
                               <td className="px-3 py-3 font-medium text-ink-900">{a.client.firstName} {a.client.lastName}</td>
-                              <td className="px-3 py-3 text-ink-700">{eq ? `${eq.brand} · ${eq.model}` : '—'}</td>
+                              <td className="px-3 py-3 text-ink-700">{a.service ? `${eqLabel(a.service.equipmentType)} · ${a.service.name}` : eq ? `${eq.brand} · ${eq.model}` : '—'}</td>
                               <td className="px-3 py-3 text-ink-600">{techName(a)}</td>
                               <td className="px-5 py-3 text-right"><div className="font-semibold text-ink-900">{money(priceOf(a))}</div><div className="text-[11px] text-ink-400">Ref. {formatUsd(priceOf(a))}</div></td>
                             </tr>
