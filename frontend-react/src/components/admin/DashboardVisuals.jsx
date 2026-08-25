@@ -86,7 +86,7 @@ export function Sparkline({ values = [], color = '#0ea5e9' }) {
   );
 }
 
-export function KPI({ icon: Icon, value, label, color, accent, onClick, active, hint, sparkline }) {
+export function KPI({ icon: Icon, value, label, color, accent, onClick, hint, sparkline }) {
   const shown = useCountUp(value, 800);
   const Tag = onClick ? 'button' : 'div';
   return (
@@ -96,11 +96,7 @@ export function KPI({ icon: Icon, value, label, color, accent, onClick, active, 
       style={{ background: `linear-gradient(135deg, ${accent}22, #ffffff 62%)` }}
       className={`group relative w-full min-h-11 overflow-hidden rounded-2xl p-4 text-left shadow-sm backdrop-blur transition duration-300 sm:p-5 touch-manipulation ${
         onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-glow-lg active:scale-[0.99] active:shadow-glow' : ''
-      } ${
-        active
-          ? 'ring-2 ring-brand-500 shadow-glow'
-          : 'ring-1 ring-white/60 hover:ring-brand-200 active:ring-brand-200'
-      }`}
+      } ring-1 ring-white/60 hover:ring-brand-200 active:ring-brand-200`}
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
       <Icon size={104} className="pointer-events-none absolute -bottom-5 -right-4 opacity-[0.08] transition duration-300 group-hover:scale-110 group-hover:opacity-[0.12]" style={{ color: accent }} />
@@ -111,7 +107,7 @@ export function KPI({ icon: Icon, value, label, color, accent, onClick, active, 
         <div className="text-sm font-medium text-ink-500">{label}</div>
         {onClick && (
           <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-600">
-            {hint || (active ? 'Filtro activo' : 'Filtrar mapa')} <ArrowRight size={12} />
+            {hint || 'Ver detalle'} <ArrowRight size={12} />
           </span>
         )}
       </div>

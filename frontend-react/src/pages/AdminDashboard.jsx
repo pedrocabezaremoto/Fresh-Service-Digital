@@ -154,8 +154,6 @@ export default function AdminDashboard() {
   const [svcMsg, setSvcMsg] = useState('');
   const [svcFlash, setSvcFlash] = useState('');
   const [deleteSvcError, setDeleteSvcError] = useState('');
-  // Filtro del mapa de servicios (null = todos). Solo afecta el Dashboard.
-  const [mapFilter, setMapFilter] = useState(null);
   // Altura del mapa: 280px en móvil (<640px), 400px en desktop
   const [mapHeight, setMapHeight] = useState(
     typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
@@ -342,7 +340,7 @@ export default function AdminDashboard() {
       (!q || cli.includes(q.toLowerCase())) &&
       (!fServicio || servTxt(a).toLowerCase().includes(fServicio.toLowerCase())) &&
       (!fFecha || fmtDate(a.scheduledAt).toLowerCase().includes(fFecha.toLowerCase())) &&
-      (!fEstado || estadoTxt(a).toLowerCase().includes(fEstado.toLowerCase()))
+      (!fEstado || fEstado.split(',').some(f => estadoTxt(a).toLowerCase().includes(f.trim().toLowerCase())))
     );
   });
   // Orden por defecto: más reciente primero
@@ -379,17 +377,8 @@ export default function AdminDashboard() {
   function goToSolicitudes(filter) {
     limpiarFiltros();
     if (filter === 'PENDING') setFEstado('Pendiente');
-    else if (filter === 'PROGRESS') setFEstado('proceso');
+    else if (filter === 'IN_PROGRESS') setFEstado('Asignada,En proceso');
     setView('solicitudes');
-  }
-
-  /** Toggle filtro del mapa: mismo KPI otra vez → quita filtro (todos). */
-  function toggleMapFilter(status) {
-    if (status === null) {
-      setMapFilter(null);
-      return;
-    }
-    setMapFilter((prev) => (prev === status ? null : status));
   }
 
   // Exportar reporte real de solicitudes (CSV, abre en Excel)
@@ -989,9 +978,8 @@ export default function AdminDashboard() {
                   color="bg-brand-100 text-brand-600"
                   accent="#0ea5e9"
                   sparkline={months.map((m) => m.v)}
-                  active={mapFilter === null}
-                  hint={mapFilter === null ? 'Mostrando todos' : 'Ver todos en el mapa'}
-                  onClick={() => toggleMapFilter(null)}
+                  hint="Ver solicitudes"
+                  onClick={() => goToSolicitudes()}
                 />
                 <KPI
                   icon={Clock3}
@@ -999,8 +987,8 @@ export default function AdminDashboard() {
                   label="Pendientes de atender"
                   color="bg-amber-100 text-amber-600"
                   accent="#f59e0b"
-                  active={mapFilter === 'PENDING'}
-                  onClick={() => toggleMapFilter('PENDING')}
+                  hint="Ver pendientes"
+                  onClick={() => goToSolicitudes('PENDING')}
                 />
                 <KPI
                   icon={Wrench}
@@ -1008,8 +996,8 @@ export default function AdminDashboard() {
                   label="En proceso"
                   color="bg-violet-100 text-violet-600"
                   accent="#8b5cf6"
-                  active={mapFilter === 'IN_PROGRESS'}
-                  onClick={() => toggleMapFilter('IN_PROGRESS')}
+                  hint="Ver en proceso"
+                  onClick={() => goToSolicitudes('IN_PROGRESS')}
                 />
                 <KPI
                   icon={Users}
@@ -1042,20 +1030,10 @@ export default function AdminDashboard() {
                     <h3 className="font-display font-bold text-ink-900">Mapa de servicios</h3>
                     <p className="text-xs text-ink-500">Ubicación de las solicitudes registradas</p>
                   </div>
-                  {mapFilter && (
-                    <button
-                      type="button"
-                      onClick={() => setMapFilter(null)}
-                      className="inline-flex min-h-11 w-fit shrink-0 items-center self-start rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-ink-600 transition hover:bg-slate-200 active:bg-slate-200 touch-manipulation sm:self-auto"
-                    >
-                      Quitar filtro · {STATUS[mapFilter]?.label || mapFilter}
-                    </button>
-                  )}
                 </div>
                 <div className="w-full min-w-0 overflow-hidden">
                   <ServiceMap
                     appointments={appts}
-                    filterStatus={mapFilter}
                     height={mapHeight}
                   />
                 </div>

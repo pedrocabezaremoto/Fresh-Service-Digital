@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (campanita de leads + Copito pregunta servicio)  
+**Última actualización:** 2026-08-24 (KPIs del dashboard navegan a Solicitudes)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1303,11 +1303,26 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Campanita en header (junto al tema). Badge rojo, dropdown, click marca leído. Tiempo real en cualquier vista.
 - Bundle `index-DUG75Mlt.js`. En prod.
 
+**KPIs navegan a Solicitudes (2026-08-24 noche):** ✅
+- Solicitudes → lista completa. Pendientes → filtro Pendiente. En proceso → filtro En proceso. Clientes igual.
+- Se quitó el filtro del mapa desde las tarjetas. Hints: "Ver solicitudes / pendientes / en proceso".
+- Bundle `index-wUyzLB3L.js`. En prod. Solo frontend.
+
+**Fix filtro En proceso coincide con tarjeta KPI (2026-08-25):** ✅
+- La tarjeta "En proceso" suma ASSIGNED + IN_PROGRESS. Ahora el filtro muestra ambos estados (no solo IN_PROGRESS).
+- Filtro soporta valores múltiples separados por coma. Fix directo (sin prompt).
+- Bundle `index-0EZBJo2g.js`. En prod. Solo frontend.
+
+**Servicios dinámicos (2026-08-25):** 🔧 EN PROGRESO
+- Categoría y Tipo de equipo actualmente son enums hardcodeados en Prisma.
+- Objetivo: convertirlos en tablas dinámicas para que el admin cree categorías y tipos de equipo desde el panel.
+- Incluye agregar servicios de nevera/refrigeración y corregir las toneladas (1-2 son comerciales, no industriales).
+- Prompt preparado: `Progresos/prompt-servicios-dinamicos.md`.
+
 ### Backlog actualizado
-1. **Navegación botones Dashboard** — mejorar los KPIs y botones del Resumen del Taller
-2. **PWA** — convertir en Progressive Web App (instalar como app en celular)
-3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-4. **Panel taller** — seguir creciendo
-5. **Deliverability email** — reputación Resend mejora con volumen
-6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+1. **PWA** — convertir en Progressive Web App (instalar como app en celular)
+2. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+3. **Panel taller** — seguir creciendo
+4. **Deliverability email** — reputación Resend mejora con volumen
+5. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+6. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
