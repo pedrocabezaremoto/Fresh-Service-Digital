@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, MapPin, Clock, Zap, MessageCircle, Snowflake } from 'lucide-react';
+import { CheckCircle2, AlertCircle, MapPin, Clock, MessageCircle, Snowflake } from 'lucide-react';
 import Button from '../components/Button';
-import Price from '../components/Price';
 import { Field, inputClass } from '../components/AuthShell';
 import LocationPicker from '../components/maps/LocationPicker';
 import { api } from '../lib/api';
@@ -10,9 +9,8 @@ import { priceUsd } from '../lib/prices';
 import { useAuth } from '../context/AuthContext';
 import { FALLBACK_EQUIPOS, FALLBACK_SERVICIOS } from '../lib/services';
 const horarios = [
-  { v: 'manana', t: 'Mañana (8:00 AM – 12:00 PM)', h: '09:00:00' },
-  { v: 'tarde', t: 'Tarde (12:00 PM – 5:00 PM)', h: '14:00:00' },
-  { v: 'noche', t: 'Noche (5:00 PM – 7:00 PM)', h: '18:00:00' },
+  { v: 'manana', t: 'Mañana (8:30 AM – 12:00 PM)', h: '09:00:00' },
+  { v: 'tarde', t: 'Tarde (12:00 PM – 6:00 PM)', h: '14:00:00' },
 ];
 
 const PREFIJOS = ['412', '414', '424', '416', '426'];
@@ -339,19 +337,11 @@ export default function Solicitud() {
 
         {/* Sidebar info */}
         <aside className="space-y-5">
-          <div className="rounded-3xl border-2 border-brand-200 bg-brand-50/60 p-4 shadow-sm sm:p-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600">Precio estimado del servicio</h3>
-            <div className="mt-2">
-              <Price usd={displayPrice} size="lg" />
-            </div>
-            <p className="mt-3 text-xs text-ink-500">{displayEquipo} · {displayServicio}. Monto en Bs sujeto a la tasa oficial del BCV del día de pago.</p>
-          </div>
           <div className="rounded-3xl bg-white p-4 ring-1 ring-slate-100 shadow-sm sm:p-6">
             <h3 className="mb-4 font-display font-bold text-ink-900">Información de contacto</h3>
             <ul className="space-y-4 text-sm">
               <li className="flex gap-3"><MapPin size={18} className="mt-0.5 text-brand-500" /><span className="text-ink-700"><strong className="block text-ink-900">Área de servicio</strong>San Juan de los Morros y alrededores</span></li>
-              <li className="flex gap-3"><Clock size={18} className="mt-0.5 text-brand-500" /><span className="text-ink-700"><strong className="block text-ink-900">Horario</strong>Lun a Sáb · 8:00 AM – 7:00 PM</span></li>
-              <li className="flex gap-3"><Zap size={18} className="mt-0.5 text-brand-500" /><span className="text-ink-700"><strong className="block text-ink-900">Respuesta</strong>Máximo 2 horas hábiles</span></li>
+              <li className="flex gap-3"><Clock size={18} className="mt-0.5 text-brand-500" /><span className="text-ink-700"><strong className="block text-ink-900">Horario</strong>Lun a Sáb · 8:30 AM – 6:00 PM</span></li>
             </ul>
           </div>
           <div className="rounded-3xl bg-brand-gradient p-4 text-white shadow-glow sm:p-6">

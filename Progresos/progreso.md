@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (ticker promocional + footer minimalista)  
+**Última actualización:** 2026-08-25 (Fix ticker PC + prompt Solicitud + PWA pendiente)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1348,10 +1348,29 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Panel → Imágenes del sitio → Ticker promocional.
 - Bundle `index-Cw2__xgt.js`. En prod.
 
+**Fix Solicitud (2026-08-24 noche):** ✅
+- Sin tarjeta "Precio estimado" (el `priceUsd` sigue guardándose en la cita).
+- Sidebar: horario Lun a Sáb · 8:30 AM – 6:00 PM. Se quitó **Respuesta / Máximo 2 horas hábiles**.
+- Select de horario: solo Mañana (8:30–12:00) y Tarde (12:00–18:00). Sin Noche.
+- Seed admin: Pedro García, V-10234567 (no se corrió seed en prod).
+- Bundle `index-DKUNzyib.js`. En prod. Solo frontend.
+
+**Fix ticker estático en PC (2026-08-25):** ✅
+- **Causa raíz:** Windows de Pedro tiene "Efectos de animación" desactivado (Accesibilidad > Efectos visuales). Chrome respeta `prefers-reduced-motion: reduce` y aplicaba `animation: none` al ticker. En celular Android las animaciones están activas → funcionaba.
+- **Síntoma:** texto duplicado y estático en PC (las 2 copias visibles, sin movimiento). En móvil se movía perfecto.
+- **Fix:** cuando `prefers-reduced-motion: reduce` está activo, se oculta la segunda copia (`.ticker-copy:last-child { display: none }`) y se centra el texto → banner estático limpio en vez de texto roto/duplicado.
+- **Para que se MUEVA en PC:** Windows Settings → Accessibility → Visual effects → activar "Animation effects". O Chrome flags → buscar "reduced-motion" → Default.
+- Build + deploy. Solo frontend. Bundle `index-Cjv9122z.css`.
+
+**Prompt fix Solicitud entregado (2026-08-24):** 📝
+- `Progresos/prompt-fix-solicitud.md` listo para pasar al LLM.
+- Cambios: quitar "Precio estimado del servicio", horario 8:30–6:00 PM, quitar opción Noche, seed admin Pedro García V-10234567.
+
 ### Backlog actualizado
-1. **PWA** — convertir en Progressive Web App (instalar como app en celular)
-2. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-3. **Panel taller** — seguir creciendo
-4. **Deliverability email** — reputación Resend mejora con volumen
-5. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-6. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+1. **⭐ PWA** — convertir en Progressive Web App (instalar como app en celular). PENDIENTE PRÓXIMA SESIÓN
+2. **Prompt Solicitud** — pasar `prompt-fix-solicitud.md` al LLM
+3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
+4. **Panel taller** — seguir creciendo
+5. **Deliverability email** — reputación Resend mejora con volumen
+6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
+7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat

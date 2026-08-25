@@ -192,9 +192,13 @@
   }
   .ticker-inner {
     animation: none;
+    justify-content: center;
   }
   .ticker-copy {
     min-width: auto;
+  }
+  .ticker-copy:last-child {
+    display: none;
   }
 }
 
