@@ -1383,8 +1383,41 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 ### Backlog actualizado
 1. **PWA** — ✅ hecha e instalable
 2. **Prompt Solicitud** — ✅ aplicado
-3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
-4. **Panel taller** — seguir creciendo
-5. **Deliverability email** — reputación Resend mejora con volumen
-6. **Anti-abuso avanzado** — seguir entrenando vulnerabilidades del chatbot
-7. **Paginación** — cuando haya 10,000+ mensajes agregar paginación en el chat
+
+### Mejoras futuras (roadmap v1.2+)
+
+**UI / Interfaz de usuario:**
+- [ ] Mejorar visibilidad general: contraste de textos, tamaños de fuente en secciones clave, spacing entre elementos
+- [ ] Cards del catálogo: hover/tap más notorio, bordes más definidos en modo oscuro
+- [ ] Formulario de solicitud: feedback visual más claro al llenar campos (bordes verdes, checkmarks)
+- [ ] Navbar mobile: mejorar transición del menú hamburguesa
+- [ ] Landing: sección de "antes y después" o galería de trabajos reales
+
+**Modales y colores:**
+- [ ] Unificar paleta de modales (confirmación=verde, advertencia=amarillo, eliminación=rojo, info=azul)
+- [ ] Modales de éxito: animación checkmark en vez de solo texto
+- [ ] Modal de agendar cita desde chat: mejorar layout en mobile (campos muy apretados)
+- [ ] Toasts/notificaciones flotantes en vez de banners estáticos para acciones exitosas
+
+**Agendamiento de citas:**
+- [ ] Calendario visual para seleccionar fecha (en vez de date picker nativo)
+- [ ] Vista de disponibilidad del técnico (horarios ocupados vs libres)
+- [ ] Recordatorio automático por correo/WhatsApp 24h antes de la cita
+- [ ] Re-agendar cita desde el panel del cliente (hoy solo la cancela)
+- [ ] Historial de citas del cliente con filtro por estado
+
+**Mejoras de nivel Senior (arquitectura + escalabilidad):**
+- [ ] Code splitting / lazy loading por ruta (React.lazy + Suspense) — reducir bundle de 746KB
+- [ ] Optimistic UI en el panel admin (actualizar UI antes de esperar respuesta del API)
+- [ ] WebSocket reconexión automática con backoff exponencial (hoy se pierde si cae la red)
+- [ ] Rate limiting por usuario autenticado (no solo por IP) para evitar abuso del chat
+- [ ] Logs estructurados en backend (Winston/Pino) con niveles y rotación
+- [ ] Tests E2E con Playwright (flujo cliente→cita→técnico→completar)
+- [ ] CI/CD con GitHub Actions (lint + build + test en cada PR, deploy automático solo si pasa)
+- [ ] Separar uploads a un CDN o bucket S3 (hoy están en el filesystem del VPS)
+- [ ] Refresh tokens con rotación (hoy el JWT expira y el usuario tiene que re-loguearse)
+- [ ] Monitoreo de uptime (UptimeRobot o similar) + alertas a Telegram si el sitio cae
+- [ ] Carrusel admin: drag-and-drop para reordenar imágenes
+- [ ] Paginación en chat cuando haya 10,000+ mensajes
+- [ ] Deliverability email: reputación Resend mejora con volumen
+- [ ] Anti-abuso avanzado del chatbot (detección de patrones, ban temporal)
