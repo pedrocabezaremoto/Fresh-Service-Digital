@@ -231,3 +231,14 @@ model CarouselImage {
 
   @@map("carousel_images")
 }
+
+model TickerMessage {
+  id        String   @id @default(cuid())
+  text      String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ticker_messages")
+}

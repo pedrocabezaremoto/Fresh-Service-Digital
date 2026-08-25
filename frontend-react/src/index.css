@@ -161,6 +161,17 @@
   to { opacity: 1; }
 }
 
+/* Ticker marquee */
+.ticker-inner {
+  display: inline-flex;
+  animation: ticker-slide 25s linear infinite;
+}
+
+@keyframes ticker-slide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Respeta a quien prefiere menos movimiento */
 @media (prefers-reduced-motion: reduce) {
   .animate-logo-float { animation: none; }
@@ -170,6 +181,9 @@
   .admin-donut-seg,
   .admin-bar-grow {
     transition: none !important;
+  }
+  .ticker-inner {
+    animation: none;
   }
 }
 

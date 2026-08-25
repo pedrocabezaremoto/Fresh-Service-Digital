@@ -119,6 +119,12 @@ export const api = {
   toggleCarouselImage: (id) => request(`/carousel/${id}/toggle`, { method: 'PATCH', auth: true }),
   deleteCarouselImage: (id) => request(`/carousel/${id}`, { method: 'DELETE', auth: true }),
 
+  getTicker: () => request('/ticker'),
+  getTickerAll: () => request('/ticker/all', { auth: true }),
+  createTicker: (text) => request('/ticker', { method: 'POST', body: { text }, auth: true }),
+  updateTicker: (id, data) => request(`/ticker/${id}`, { method: 'PATCH', body: data, auth: true }),
+  deleteTicker: (id) => request(`/ticker/${id}`, { method: 'DELETE', auth: true }),
+
   // Citas
   createAppointment: (payload) =>
     request('/appointments', { method: 'POST', body: payload, auth: true }),

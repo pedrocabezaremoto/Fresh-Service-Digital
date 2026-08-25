@@ -8,6 +8,7 @@ import { ServicesModule } from './services/services.module';
 import { SiteImagesModule } from './site-images/site-images.module';
 import { ChatModule } from './chat/chat.module';
 import { CarouselModule } from './carousel/carousel.module';
+import { TickerModule } from './ticker/ticker.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CarouselModule } from './carousel/carousel.module';
     SiteImagesModule,
     ChatModule,
     CarouselModule,
+    TickerModule,
   ],
 })
 export class AppModule {}

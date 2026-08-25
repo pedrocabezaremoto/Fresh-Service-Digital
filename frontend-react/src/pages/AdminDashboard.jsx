@@ -18,6 +18,7 @@ import { STATUS, fmtDate, fmtTime } from '../lib/status';
 import ServiceMap from '../components/maps/ServiceMap';
 import SiteImagesSection from '../components/admin/SiteImagesSection';
 import CarouselSection from '../components/admin/CarouselSection';
+import TickerSection from '../components/admin/TickerSection';
 import AdminChatView from '../components/admin/AdminChatView';
 import { Donut, KPI, MonthBars } from '../components/admin/DashboardVisuals';
 import Price from '../components/Price';
@@ -1620,6 +1621,9 @@ export default function AdminDashboard() {
               <SiteImagesSection />
               <div className="mt-10">
                 <CarouselSection />
+              </div>
+              <div className="mt-10">
+                <TickerSection />
               </div>
             </>
           ) : (

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Zap, Wrench, ShieldCheck, MapPin } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import HeroCarousel from '../components/HeroCarousel';
+import TickerBar from '../components/TickerBar';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
@@ -33,13 +34,6 @@ const SERVICE_CARDS = [
     imgKey: 'repair',
     hidePrice: true,
   },
-];
-
-const TRUST_ITEMS = [
-  { icon: Zap, label: 'Respuesta el mismo día' },
-  { icon: Wrench, label: 'Técnicos certificados' },
-  { icon: ShieldCheck, label: 'Garantía incluida' },
-  { icon: MapPin, label: 'San Juan de los Morros' },
 ];
 
 function minPriceForTypes(services, types, fallback) {
@@ -145,18 +139,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CONFIANZA ===== */}
-      <section className="bg-slate-100 py-4 dark:bg-slate-800">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-5 text-center text-sm font-medium text-ink-700 lg:px-8">
-          {TRUST_ITEMS.map((item, i) => (
-            <span key={item.label} className="inline-flex items-center gap-1.5">
-              {i > 0 && <span className="select-none text-ink-400" aria-hidden>·</span>}
-              <item.icon size={15} className="text-brand-600" />
-              {item.label}
-            </span>
-          ))}
-        </div>
-      </section>
+      {/* ===== TICKER / CONFIANZA ===== */}
+      <TickerBar />
     </div>
   );
 }

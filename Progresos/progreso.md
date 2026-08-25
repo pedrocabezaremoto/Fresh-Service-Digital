@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-25 (Rename Configuración → Imágenes del sitio)  
+**Última actualización:** 2026-08-24 (ticker promocional + footer minimalista)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1341,6 +1341,12 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Sidebar label, header title, mobile select: todos renombrados.
 - El `id` interno sigue siendo `'configuracion'` (no rompe lógica).
 - Build + deploy. Solo frontend.
+
+**Ticker promocional + footer (2026-08-24 noche):** ✅
+- Tabla `ticker_messages`. GET `/ticker` público. CRUD admin. Home: marquee o franja de confianza.
+- Footer: logo + contacto (Lun–Sáb 8:30–18:00). Sin columnas Servicios/Cuenta.
+- Panel → Imágenes del sitio → Ticker promocional.
+- Bundle `index-Cw2__xgt.js`. En prod.
 
 ### Backlog actualizado
 1. **PWA** — convertir en Progressive Web App (instalar como app en celular)
