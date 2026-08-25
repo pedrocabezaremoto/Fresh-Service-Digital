@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight, LayoutDashboard, LogOut, Sun, Moon } from 'lucide-react';
+import { Menu, X, ArrowRight, Sun, Moon } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -56,26 +56,24 @@ export default function Navbar() {
             <div className="flex items-center gap-2.5">
               <Link
                 to={panelLink}
-                className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen"
+                className="inline-flex items-center rounded-full bg-sky-500/70 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500/90"
               >
-                <LayoutDashboard size={16} />
                 {isAdmin ? 'Panel Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
               </Link>
               <button
                 onClick={handleLogout}
                 title="Cerrar sesión"
-                className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen cursor-pointer"
+                className="inline-flex items-center rounded-full bg-sky-500/70 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500/90 cursor-pointer"
               >
-                <LogOut size={16} />
                 Salir
               </button>
             </div>
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-5 py-2.5 text-sm font-bold text-white shadow-glow transition hover:shadow-glow-lg hover:brightness-105 sheen"
+              className="inline-flex items-center rounded-full bg-sky-500/70 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-sky-500/90"
             >
-              Iniciar sesión <ArrowRight size={16} />
+              Iniciar sesión
             </Link>
           )}
         </div>
@@ -124,16 +122,14 @@ export default function Navbar() {
                   <Link
                     to={panelLink}
                     onClick={() => setOpen(false)}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen"
+                    className="inline-flex items-center justify-center rounded-full bg-brand-500/80 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500"
                   >
-                    <LayoutDashboard size={16} />
                     {isAdmin ? 'Panel del Taller' : isTechnician ? 'Panel Técnico' : 'Mi Panel'}
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-full bg-brand-500/80 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500 cursor-pointer"
                   >
-                    <LogOut size={16} />
                     Salir
                   </button>
                 </>
@@ -141,9 +137,9 @@ export default function Navbar() {
                 <Link
                   to="/login"
                   onClick={() => setOpen(false)}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-bold text-white shadow-glow sheen"
+                  className="inline-flex items-center justify-center rounded-full bg-brand-500/80 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-500"
                 >
-                  Iniciar sesión <ArrowRight size={16} />
+                  Iniciar sesión
                 </Link>
               )}
             </div>

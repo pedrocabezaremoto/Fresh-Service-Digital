@@ -6,7 +6,7 @@ import {
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   Download, Sparkles, UserCog, Power, PowerOff,
   TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
-  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Bell,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Bell, Camera,
 } from 'lucide-react';
 import { API_BASE, api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -167,6 +167,7 @@ export default function AdminDashboard() {
   const [showEqManager, setShowEqManager] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newEqLabel, setNewEqLabel] = useState('');
+  const [newEqDesc, setNewEqDesc] = useState('');
   const [deleteOption, setDeleteOption] = useState(null);
   const [deleteOptionError, setDeleteOptionError] = useState('');
   const [deletingOption, setDeletingOption] = useState(false);
@@ -231,6 +232,31 @@ export default function AdminDashboard() {
       ]);
       setCategories(Array.isArray(cats) ? cats : []);
       setEquipmentTypes(Array.isArray(eqs) ? eqs : []);
+    } catch { /* ignore */ }
+  }
+
+  function eqImageSrc(eq) {
+    if (eq?.imageUrl) return eq.imageUrl.startsWith('http') ? eq.imageUrl : `${API_BASE}${eq.imageUrl}`;
+    if (eq?.imageFilename) return `${API_BASE}/uploads/equipment-types/${eq.imageFilename}`;
+    return null;
+  }
+
+  async function handleUploadImage(id, file) {
+    if (!file) return;
+    try {
+      const updated = await api.uploadEquipmentTypeImage(id, file);
+      setEquipmentTypes((prev) => prev.map((t) => (
+        t.id === id ? { ...t, ...updated, _editing: t._editing, _editLabel: t._editLabel, _editDesc: t._editDesc } : t
+      )));
+    } catch { /* ignore */ }
+  }
+
+  async function handleDeleteImage(id) {
+    try {
+      const updated = await api.deleteEquipmentTypeImage(id);
+      setEquipmentTypes((prev) => prev.map((t) => (
+        t.id === id ? { ...t, ...updated, _editing: t._editing, _editLabel: t._editLabel, _editDesc: t._editDesc } : t
+      )));
     } catch { /* ignore */ }
   }
 
@@ -2029,25 +2055,79 @@ export default function AdminDashboard() {
 
       {showEqManager && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => setShowEqManager(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="font-display text-lg font-bold text-ink-900">Tipos de equipo</h3>
               <button type="button" onClick={() => setShowEqManager(false)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
             </div>
-            <div className="mt-4 max-h-80 space-y-2 overflow-y-auto">
+            <div className="mt-4 max-h-[28rem] space-y-2 overflow-y-auto">
               {equipmentTypes.map((eq) => (
-                <div key={eq.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
-                  {eq._editing ? (
-                    <input autoFocus value={eq._editLabel || ''} onChange={(e) => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editLabel: e.target.value } : t)))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: false } : t)));
-                        if (e.key === 'Enter') e.currentTarget.closest('div')?.querySelector('[data-save]')?.click();
-                      }}
-                      className="mr-2 flex-1 rounded-lg border-2 border-brand-300 px-2 py-1 text-sm outline-none" />
-                  ) : (
-                    <span className="text-sm font-semibold text-ink-800">{eq.label}</span>
-                  )}
-                  <div className="flex shrink-0 items-center gap-1.5">
+                <div key={eq.id} className="rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
+                  <div className="flex items-start gap-3">
+                    {eqImageSrc(eq) ? (
+                      <div className="relative h-14 w-14 shrink-0">
+                        <label className="block cursor-pointer" title="Cambiar foto">
+                          <img src={eqImageSrc(eq)} alt={eq.label} className="h-14 w-14 rounded-lg object-cover ring-1 ring-slate-200" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              handleUploadImage(eq.id, e.target.files?.[0]);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage(eq.id)}
+                          className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-rose-600 text-[10px] font-bold text-white touch-manipulation"
+                          title="Quitar foto"
+                        >×</button>
+                      </div>
+                    ) : (
+                      <label className="grid h-14 w-14 shrink-0 cursor-pointer place-items-center rounded-lg border-2 border-dashed border-slate-300 text-ink-400 hover:border-brand-400 hover:text-brand-500 touch-manipulation">
+                        <Camera size={20} />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            handleUploadImage(eq.id, e.target.files?.[0]);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    )}
+                    {eq._editing ? (
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <input
+                          autoFocus
+                          value={eq._editLabel || ''}
+                          onChange={(e) => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editLabel: e.target.value } : t)))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: false } : t)));
+                          }}
+                          placeholder="Título"
+                          className="w-full rounded-lg border-2 border-brand-300 px-2 py-1 text-sm outline-none"
+                        />
+                        <input
+                          placeholder="Descripción (ej: Unidades de ventana de todas las marcas)"
+                          value={eq._editDesc || ''}
+                          onChange={(e) => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editDesc: e.target.value } : t)))}
+                          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+                        />
+                      </div>
+                    ) : (
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold text-ink-800">{eq.label}</span>
+                        {eq.description ? (
+                          <p className="mt-0.5 truncate text-xs text-ink-400">{eq.description}</p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
                     <button type="button" onClick={() => moveOption('equipment', eq.id, 'up')} disabled={equipmentTypes.findIndex((e) => e.id === eq.id) === 0}
                       className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 disabled:opacity-30 touch-manipulation" title="Subir"><ChevronUp size={14} /></button>
                     <button type="button" onClick={() => moveOption('equipment', eq.id, 'down')} disabled={equipmentTypes.findIndex((e) => e.id === eq.id) === equipmentTypes.length - 1}
@@ -2058,12 +2138,13 @@ export default function AdminDashboard() {
                         const label = eq._editLabel?.trim();
                         if (!label) return;
                         try {
-                          await api.updateEquipmentType(eq.id, { label });
-                          setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, label, _editing: false } : t)));
+                          const description = (eq._editDesc || '').trim();
+                          await api.updateEquipmentType(eq.id, { label, description });
+                          setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, label, description, _editing: false } : t)));
                         } catch { /* ignore */ }
                       }} className="rounded-full bg-brand-100 px-2 py-1 text-xs font-bold text-brand-700">Guardar</button>
                     ) : (
-                      <button type="button" onClick={() => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: true, _editLabel: t.label } : t)))}
+                      <button type="button" onClick={() => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: true, _editLabel: t.label, _editDesc: t.description || '' } : t)))}
                         className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 touch-manipulation" title="Editar"><Pencil size={13} /></button>
                     )}
                     <button type="button" onClick={() => { setDeleteOption({ type: 'equipment', item: eq }); setDeleteOptionError(''); }}
@@ -2080,16 +2161,23 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 flex gap-2">
-              <input value={newEqLabel} onChange={(e) => setNewEqLabel(e.target.value)} placeholder="Nuevo tipo de equipo…" className="flex-1 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+            <div className="mt-4 space-y-2">
+              <input value={newEqLabel} onChange={(e) => setNewEqLabel(e.target.value)} placeholder="Nuevo tipo de equipo…" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+              <input value={newEqDesc} onChange={(e) => setNewEqDesc(e.target.value)} placeholder="Descripción (ej: Unidades de ventana de todas las marcas)" className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
               <button type="button" disabled={!newEqLabel.trim()} onClick={async () => {
                 try {
                   const slug = newEqLabel.trim().toUpperCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                  const created = await api.createEquipmentType({ slug, label: newEqLabel.trim(), sortOrder: equipmentTypes.length + 1 });
+                  const created = await api.createEquipmentType({
+                    slug,
+                    label: newEqLabel.trim(),
+                    description: newEqDesc.trim() || undefined,
+                    sortOrder: equipmentTypes.length + 1,
+                  });
                   setEquipmentTypes((prev) => [...prev, created]);
                   setNewEqLabel('');
+                  setNewEqDesc('');
                 } catch { /* ignore */ }
-              }} className="min-h-11 rounded-full bg-brand-gradient px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50 touch-manipulation">Agregar</button>
+              }} className="min-h-11 w-full rounded-full bg-brand-gradient px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50 touch-manipulation">Agregar</button>
             </div>
           </div>
         </div>

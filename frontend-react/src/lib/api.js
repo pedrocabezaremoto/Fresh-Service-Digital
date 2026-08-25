@@ -12,8 +12,9 @@ function getToken() {
   return localStorage.getItem('fsd_token');
 }
 
-async function request(path, { method = 'GET', body, auth = false } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+async function request(path, { method = 'GET', body, auth = false, raw = false } = {}) {
+  const headers = {};
+  if (!raw) headers['Content-Type'] = 'application/json';
   if (auth) {
     const token = getToken();
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -21,7 +22,7 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined,
+    body: body ? (raw ? body : JSON.stringify(body)) : undefined,
   });
 
   let data = null;
@@ -106,6 +107,18 @@ export const api = {
   createEquipmentType: (data) => request('/services/equipment-types', { method: 'POST', auth: true, body: data }),
   updateEquipmentType: (id, data) => request(`/services/equipment-types/${id}`, { method: 'PATCH', auth: true, body: data }),
   deleteEquipmentType: (id) => request(`/services/equipment-types/${id}`, { method: 'DELETE', auth: true }),
+  uploadEquipmentTypeImage: (id, file) => {
+    const form = new FormData();
+    form.append('image', file);
+    return request(`/services/equipment-types/${id}/image`, {
+      method: 'POST',
+      auth: true,
+      raw: true,
+      body: form,
+    });
+  },
+  deleteEquipmentTypeImage: (id) =>
+    request(`/services/equipment-types/${id}/image`, { method: 'DELETE', auth: true }),
 
   // Imágenes del sitio
   getSiteImages: () => request('/site-images'),

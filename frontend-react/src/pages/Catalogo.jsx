@@ -5,7 +5,7 @@ import Button from '../components/Button';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
-import { api } from '../lib/api';
+import { api, API_BASE } from '../lib/api';
 
 const FALLBACK_CATEGORY_LABELS = {
   MANTENIMIENTO: 'Mantenimiento',
@@ -17,33 +17,6 @@ const FALLBACK_CATEGORY_LABELS = {
 };
 
 const CATEGORY_ORDER = ['MANTENIMIENTO', 'REPARACION', 'INSTALACION', 'RECARGA', 'DIAGNOSTICO', 'OTRO'];
-
-const SECTION_DEFS = [
-  {
-    key: 'ventana',
-    title: 'Aires de Ventana',
-    subtitle: 'Unidades de ventana de todas las marcas',
-    types: ['VENTANA'],
-    imgKey: 'maintenance',
-    mode: 'list',
-  },
-  {
-    key: 'split',
-    title: 'Aires Split',
-    subtitle: 'Sistemas mini y maxi split, interior y exterior',
-    types: ['SPLIT'],
-    imgKey: 'install',
-    mode: 'list',
-  },
-  {
-    key: 'toneladas',
-    title: 'Aires por Toneladas',
-    subtitle: 'Equipos de 3 a 5 toneladas para comercios y locales. Cotización personalizada.',
-    types: ['TONELADA_1', 'TONELADA_2', 'TONELADA_3'],
-    imgKey: 'repair',
-    mode: 'tonnage',
-  },
-];
 
 const FALLBACK_DESC = {
   MANTENIMIENTO: 'Limpieza de filtros, tinas y serpentines',
@@ -212,32 +185,53 @@ function TonnageTable({ groups }) {
 export default function Catalogo() {
   const { images } = useSiteImages();
   const [apiServices, setApiServices] = useState(null);
+  const [eqTypes, setEqTypes] = useState([]);
   const [catLabels, setCatLabels] = useState(FALLBACK_CATEGORY_LABELS);
   const [loading, setLoading] = useState(true);
   const [openKey, setOpenKey] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.getServices(), api.getCategories().catch(() => [])])
-      .then(([list, cats]) => {
+    Promise.all([
+      api.getServices(),
+      api.getCategories().catch(() => []),
+      api.getEquipmentTypes().catch(() => []),
+    ])
+      .then(([list, cats, types]) => {
         if (cancelled) return;
         const active = Array.isArray(list) ? list.filter((s) => s.isActive === true) : [];
         setApiServices(active.length ? active : null);
+        setEqTypes(Array.isArray(types) ? types : []);
         if (Array.isArray(cats) && cats.length) {
           const map = { ...FALLBACK_CATEGORY_LABELS };
           cats.forEach((c) => { if (c.slug) map[c.slug] = c.label || c.slug; });
           setCatLabels(map);
         }
       })
-      .catch(() => { if (!cancelled) setApiServices(null); })
+      .catch(() => {
+        if (cancelled) return;
+        setApiServices(null);
+        setEqTypes([]);
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
   const sections = useMemo(() => {
     const source = apiServices || fallbackServices();
-    return SECTION_DEFS.map((def) => {
-      const items = source.filter((s) => def.types.includes(s.equipmentType) && s.isActive !== false);
+    return eqTypes
+      .filter((t) => (t.serviceCount ?? 0) > 0)
+      .map((t) => {
+        const def = {
+          key: t.slug,
+          title: t.label,
+          subtitle: t.description || '',
+          types: [t.slug],
+          img: t.imageUrl ? `${API_BASE}${t.imageUrl}` : images.maintenance,
+          mode: t.minPriceUsd == null ? 'tonnage' : 'list',
+          serviceCount: t.serviceCount,
+        };
+        const items = source.filter((s) => def.types.includes(s.equipmentType) && s.isActive !== false);
       if (def.mode === 'tonnage') {
         const byCat = {};
         items.forEach((s) => {
@@ -254,7 +248,6 @@ export default function Catalogo() {
         const groups = CATEGORY_ORDER.filter((c) => byCat[c]).map((c) => byCat[c]);
         return {
           ...def,
-          img: images[def.imgKey],
           count: groups.length,
           minPrice: null,
           groups,
@@ -275,13 +268,12 @@ export default function Catalogo() {
         }));
       return {
         ...def,
-        img: images[def.imgKey],
         count: rows.length,
         minPrice: minUsd(items),
         rows,
       };
     }).filter((s) => (s.rows?.length || s.groups?.length));
-  }, [apiServices, images, catLabels]);
+  }, [eqTypes, apiServices, images, catLabels]);
 
   function toggle(key) {
     setOpenKey((prev) => (prev === key ? null : key));
@@ -339,7 +331,7 @@ export default function Catalogo() {
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="font-display text-lg font-extrabold text-ink-900 sm:text-xl">{s.title}</h2>
                         <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-brand-700 ring-1 ring-brand-100">
-                          {s.count} {s.count === 1 ? 'servicio' : 'servicios'}
+                          {s.serviceCount ?? s.count} {(s.serviceCount ?? s.count) === 1 ? 'servicio' : 'servicios'}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-ink-500">{s.subtitle}</p>

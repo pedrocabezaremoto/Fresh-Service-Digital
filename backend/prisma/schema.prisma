@@ -83,12 +83,14 @@ model ServiceCategoryOption {
 }
 
 model EquipmentTypeOption {
-  id        String   @id @default(uuid())
-  slug      String   @unique
-  label     String
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  label         String
+  description   String?
+  imageFilename String?
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   @@map("equipment_type_options")
 }

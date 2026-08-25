@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import Button from '../components/Button';
 import HeroCarousel from '../components/HeroCarousel';
@@ -6,66 +6,33 @@ import TickerBar from '../components/TickerBar';
 import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
-import { api } from '../lib/api';
-
-const SERVICE_CARDS = [
-  {
-    key: 'ventana',
-    title: 'Aires de Ventana',
-    types: ['VENTANA'],
-    fallbackUsd: 25,
-    desc: 'Reparación, mantenimiento e instalación de unidades de ventana.',
-    imgKey: 'maintenance',
-  },
-  {
-    key: 'split',
-    title: 'Aires Split',
-    types: ['SPLIT'],
-    fallbackUsd: 35,
-    desc: 'Servicio integral para mini y maxi split: interior y exterior.',
-    imgKey: 'install',
-  },
-  {
-    key: 'toneladas',
-    title: 'Aires por Toneladas',
-    types: ['TONELADA_1', 'TONELADA_2', 'TONELADA_3'],
-    fallbackUsd: 50,
-    desc: 'Equipos de 3 a 5 toneladas para locales y comercios.',
-    imgKey: 'repair',
-    hidePrice: true,
-  },
-];
-
-function minPriceForTypes(services, types, fallback) {
-  const prices = services
-    .filter((s) => types.includes(s.equipmentType) && Number.isFinite(Number(s.priceUsd)))
-    .map((s) => Number(s.priceUsd));
-  return prices.length ? Math.min(...prices) : fallback;
-}
+import { api, API_BASE } from '../lib/api';
 
 export default function Home() {
   const { images } = useSiteImages();
-  const [apiServices, setApiServices] = useState(null);
+  const [cards, setCards] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
-    api.getServices()
-      .then((list) => {
+    api.getEquipmentTypes()
+      .then((types) => {
         if (cancelled) return;
-        setApiServices(Array.isArray(list) && list.length ? list : null);
+        const validTypes = Array.isArray(types) ? types : [];
+        const result = validTypes
+          .filter((t) => t.serviceCount > 0)
+          .map((t) => ({
+            key: t.slug,
+            title: t.label,
+            desc: t.description || '',
+            priceFrom: t.minPriceUsd,
+            hidePrice: t.minPriceUsd == null,
+            img: t.imageUrl ? `${API_BASE}${t.imageUrl}` : images.maintenance,
+          }));
+        setCards(result);
       })
-      .catch(() => { if (!cancelled) setApiServices(null); });
+      .catch(() => { if (!cancelled) setCards([]); });
     return () => { cancelled = true; };
-  }, []);
-
-  const cards = useMemo(() => {
-    const list = apiServices || [];
-    return SERVICE_CARDS.map((card) => ({
-      ...card,
-      img: images[card.imgKey],
-      priceFrom: minPriceForTypes(list, card.types, card.fallbackUsd),
-    }));
-  }, [apiServices, images]);
+  }, [images]);
 
   return (
     <div className="overflow-hidden">
@@ -103,7 +70,7 @@ export default function Home() {
             Nuestros Servicios
           </h2>
 
-          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {cards.map((s) => (
               <div
                 key={s.key}

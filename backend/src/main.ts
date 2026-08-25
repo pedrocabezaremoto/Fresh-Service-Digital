@@ -13,6 +13,7 @@ async function bootstrap() {
   mkdirSync(join(uploadsDir, 'site'), { recursive: true });
   mkdirSync(join(uploadsDir, 'carousel'), { recursive: true });
   mkdirSync(join(uploadsDir, 'chat-images'), { recursive: true });
+  mkdirSync(join(uploadsDir, 'equipment-types'), { recursive: true });
   app.useStaticAssets(uploadsDir, { prefix: '/uploads/' });
 
   // Habilitar validación global de datos (DTOs)

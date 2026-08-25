@@ -1421,3 +1421,42 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - [ ] Paginación en chat cuando haya 10,000+ mensajes
 - [ ] Deliverability email: reputación Resend mejora con volumen
 - [ ] Anti-abuso avanzado del chatbot (detección de patrones, ban temporal)
+
+---
+
+## 🖼️ 2026-08-25 — Imágenes por tipo de equipo + botones navbar
+
+### Imágenes dinámicas por tipo de equipo
+| Cambio | Estado |
+|---|---|
+| Campo `imageFilename` en modelo `EquipmentTypeOption` (Prisma) | ✅ |
+| Migración `20260825193100_add_image_to_equipment_type` | ✅ |
+| Endpoints `POST/DELETE /services/equipment-types/:id/image` (ADMIN) | ✅ |
+| `GET /services/equipment-types` devuelve `imageUrl` por tipo | ✅ |
+| API frontend: `uploadEquipmentTypeImage` + `deleteEquipmentTypeImage` con FormData | ✅ |
+| Admin panel: miniatura + subir/quitar foto por tipo de equipo | ✅ |
+| Home.jsx: cards usan `t.imageUrl` del tipo (fallback a default) | ✅ |
+| Catalogo.jsx: acordeones usan `t.imageUrl` del tipo (fallback a default) | ✅ |
+| "Imágenes del sitio": reducido a 2 slots (Hero + Técnico), quitados los 3 de aires | ✅ |
+| Fotos seed copiadas para Ventana/Split/Toneladas | ✅ |
+| `backend/uploads/equipment-types/` creada y servida | ✅ |
+| `main.ts` crea directorio al iniciar | ✅ |
+
+**Flujo completo:** crear tipo → subirle foto desde el panel → aparece en Home + Catálogo con esa foto. Desactivar tipo → desaparece todo (título + foto + servicios). Cero hardcodeado.
+
+### Botones del navbar — limpieza
+| Cambio | Estado |
+|---|---|
+| Iconos eliminados de "Panel Taller", "Salir", "Iniciar sesión" (LayoutDashboard, LogOut, ArrowRight) | ✅ |
+| Estilo uniforme: `bg-sky-500/70` semitransparente, sin gradient, sin shadow-glow, sin sheen | ✅ |
+| Hover: `bg-sky-500/90` | ✅ |
+| Mobile: misma paleta (`bg-brand-500/80`) | ✅ |
+| Todos los botones se ven iguales (texto limpio, mismo border-radius, misma tipografía) | ✅ |
+
+### Prompt creado (no aplicado aún)
+- `prompt-imagenes-por-tipo-equipo.md` — instrucciones para el LLM (8 cambios detallados). ✅ APLICADO por LLM
+
+### Prompts pendientes de aplicar
+- `prompt-manual-cliente.md` — manual del cliente
+- `prompt-manual-casos-uso.md` — documento de casos de uso
+- `prompt-manual-desarrollador.md` — manual técnico para desarrolladores

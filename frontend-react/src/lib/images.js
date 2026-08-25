@@ -20,17 +20,11 @@ export const IMG = {
 
 export const SITE_IMAGE_SLOTS = [
   { slot: 'hero', label: 'Hero principal', hint: '1920×800 px', defaultKey: 'heroTech' },
-  { slot: 'service_ventana', label: 'Aires de Ventana', hint: '800×600 px', defaultKey: 'maintenance' },
-  { slot: 'service_split', label: 'Aires Split', hint: '800×600 px', defaultKey: 'install' },
-  { slot: 'service_toneladas', label: 'Aires por Toneladas', hint: '800×600 px', defaultKey: 'repair' },
   { slot: 'technician', label: 'Técnico', hint: '800×1000 px', defaultKey: 'technician' },
 ];
 
 const SLOT_TO_KEY = {
   hero: 'heroTech',
-  service_ventana: 'maintenance',
-  service_split: 'install',
-  service_toneladas: 'repair',
   technician: 'technician',
 };
 
