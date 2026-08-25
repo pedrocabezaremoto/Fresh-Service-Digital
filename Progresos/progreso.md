@@ -1370,8 +1370,18 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Iconos 192/512 ya existían. Instalar desde Chrome (Android) o Safari (iOS → Compartir → Agregar a pantalla de inicio).
 - Bundle `index-BqJYK6A4.js`. En prod. Solo frontend.
 
+**Fix icon-192 PWA (2026-08-25):** ✅
+- `icon-192.png` era el logo viejo (copo+llave fondo blanco). Regenerado desde Copito 512px.
+- `serve.mjs`: iconos/favicons/avatar ahora cachean 1 hora (no 1 año). `sw.js` y `manifest.json` sin cache.
+- Causa del logo viejo persistente: `max-age=31536000` le decía a Chrome "usa la copia por 1 año sin preguntar".
+- Para instalar con icono nuevo: limpiar datos del sitio en Chrome → reinstalar.
+
+**Teaser Copito (2026-08-25):** ✅
+- "¿Necesitas ayuda con tu aire?" → "Copito está para ayudarte"
+- Solo Copito.jsx. En prod.
+
 ### Backlog actualizado
-1. **PWA** — ✅ hecha
+1. **PWA** — ✅ hecha e instalable
 2. **Prompt Solicitud** — ✅ aplicado
 3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
 4. **Panel taller** — seguir creciendo

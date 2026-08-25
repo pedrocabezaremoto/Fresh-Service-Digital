@@ -500,7 +500,7 @@ export default function Copito() {
       {/* Teaser */}
       {showTeaser && !open && (
         <div className="absolute bottom-full right-0 mb-3 flex max-w-[220px] items-start gap-2 rounded-xl border border-brand-200 bg-white px-3 py-2 shadow-lg animate-[fadeIn_0.2s_ease-out]">
-          <p className="text-sm text-ink-700">¿Necesitas ayuda con tu aire?</p>
+          <p className="text-sm text-ink-700">Copito está para ayudarte</p>
           <button onClick={() => { setShowTeaser(false); sessionStorage.setItem(TEASER_KEY, '1'); }}
             className="shrink-0 rounded-md p-0.5 text-ink-500 hover:text-ink-900">
             <X size={14} />

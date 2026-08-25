@@ -27,7 +27,11 @@ async function send(res, file, status = 200) {
   const ext = extname(file);
   res.writeHead(status, {
     'Content-Type': MIME[ext] || 'application/octet-stream',
-    'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000',
+    'Cache-Control': ext === '.html' || file.endsWith('sw.js') || file.endsWith('manifest.json')
+      ? 'no-cache'
+      : file.match(/icon-|favicon|copito-avatar|apple-touch/)
+        ? 'public, max-age=3600'
+        : 'public, max-age=31536000',
   });
   res.end(data);
 }
