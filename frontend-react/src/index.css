@@ -163,7 +163,8 @@
 
 /* Ticker marquee */
 .ticker-inner {
-  display: flex;
+  display: inline-flex;
+  width: max-content;
   animation: ticker-slide 20s linear infinite;
 }
 
