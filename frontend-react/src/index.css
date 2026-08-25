@@ -163,13 +163,20 @@
 
 /* Ticker marquee */
 .ticker-inner {
-  display: inline-flex;
-  animation: ticker-slide 25s linear infinite;
+  display: flex;
+  animation: ticker-slide 20s linear infinite;
+}
+
+.ticker-copy {
+  flex-shrink: 0;
+  min-width: 100vw;
+  padding: 0 3rem;
+  white-space: nowrap;
 }
 
 @keyframes ticker-slide {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 /* Respeta a quien prefiere menos movimiento */
@@ -184,6 +191,9 @@
   }
   .ticker-inner {
     animation: none;
+  }
+  .ticker-copy {
+    min-width: auto;
   }
 }
 

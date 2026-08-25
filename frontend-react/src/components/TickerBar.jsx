@@ -40,15 +40,13 @@ export default function TickerBar() {
     );
   }
 
-  const segment = messages.map((m) => m.text).join('     ·     ') + '     ·     ';
-  const repeats = Math.max(2, Math.ceil(200 / segment.length));
-  const copy = segment.repeat(repeats);
+  const fullText = messages.map((m) => m.text).join('     ·     ');
 
   return (
     <section className="overflow-hidden bg-brand-600 py-2.5 dark:bg-brand-700">
-      <div className="ticker-inner whitespace-nowrap text-sm font-semibold text-white">
-        <span className="shrink-0">{copy}</span>
-        <span className="shrink-0">{copy}</span>
+      <div className="ticker-inner text-sm font-semibold text-white">
+        <span className="ticker-copy">{fullText}</span>
+        <span className="ticker-copy">{fullText}</span>
       </div>
     </section>
   );
