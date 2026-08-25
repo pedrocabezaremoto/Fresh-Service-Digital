@@ -33,7 +33,7 @@ Fresh-Service-Digital/
 │   │   ├── rate/               ← Tasa BCV (DolarAPI, cache 6h en DB)
 │   │   ├── carousel/           ← CRUD imágenes del carrusel hero
 │   │   ├── ticker/             ← CRUD ticker promocional
-│   │   ├── site-images/        ← Upload/gestión de fotos del sitio (5 slots)
+│   │   ├── site-images/        ← Upload/gestión de fotos del sitio (Hero + Técnico)
 │   │   └── common/prices.ts    ← Precios base en USD (fallback histórico)
 │   ├── prisma/
 │   │   ├── schema.prisma       ← 14 modelos (User, Appointment, Service, Chat*, etc.)
@@ -41,7 +41,8 @@ Fresh-Service-Digital/
 │   │   ├── seed.js             ← Seed principal (admin + clientes demo)
 │   │   └── seed-technicians.js ← Seed técnicos (upsert idempotente)
 │   ├── uploads/                ← Archivos subidos (gitignored)
-│   │   ├── site-images/        ← Fotos del sitio
+│   │   ├── site-images/        ← Fotos del sitio (Hero + Técnico)
+│   │   ├── equipment-types/    ← Fotos por tipo de equipo (dinámico)
 │   │   ├── carousel/           ← Fotos del carrusel
 │   │   └── chat-images/        ← Fotos del chat
 │   └── .env                    ← Variables de entorno (gitignored)
@@ -86,7 +87,7 @@ Fresh-Service-Digital/
 │       │   │   ├── AdminChatView.jsx    ← Chat en vivo completo
 │       │   │   ├── DashboardVisuals.jsx ← Gráficos SVG (donut, barras, sparklines)
 │       │   │   ├── CarouselSection.jsx  ← CRUD carrusel
-│       │   │   ├── SiteImagesSection.jsx← CRUD imágenes del sitio
+│       │   │   ├── SiteImagesSection.jsx← CRUD imágenes del sitio (Hero + Técnico)
 │       │   │   ├── TickerSection.jsx    ← CRUD ticker
 │       │   │   ├── ConfirmModal.jsx     ← Modal de confirmación reutilizable
 │       │   │   ├── EmojiPicker.jsx      ← Emojis para el chat

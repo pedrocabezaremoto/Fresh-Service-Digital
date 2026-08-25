@@ -1,62 +1,46 @@
-# Fresh Service Digital — Docker (offline local)
+# Fresh Service Digital — Docker (offline / portable)
 
-Levanta **db + backend + frontend** con los datos del respaldo, para correr el proyecto
-en tu laptop **sin depender del VPS**. Ideal como plan B para la presentación.
+Levanta **db + backend + frontend** con el respaldo actual (`docker/seed-data.sql`)
+para correr el proyecto en cualquier máquina con Docker, sin depender del VPS.
 
----
+## Levantar con Docker (offline / portable)
 
-## ⚠️ IMPORTANTÍSIMO — hazlo ANTES (con internet)
+### Requisitos
+- Docker Desktop o Docker Engine + Docker Compose
 
-**Construir la imagen la primera vez SÍ necesita internet** (descarga las imágenes base de
-Docker y los paquetes con pnpm). Por eso:
+### Primera vez (con internet)
+```bash
+docker compose up --build
+```
 
-1. **Hoy / antes de la defensa, CON internet**, construye todo una vez:
-   ```bash
-   docker compose up --build
-   ```
-   Espera a que los 3 servicios estén arriba y comprueba `http://localhost:8080`.
-   Luego apágalo con `Ctrl+C` (o `docker compose down`).
+Construir la imagen la primera vez **sí necesita internet** (imágenes base + pnpm).
+Espera a que los 3 servicios estén arriba y comprueba `http://localhost:8080`.
 
-2. **En la defensa, SIN internet**, levántalo **sin `--build`** (usa lo ya construido):
-   ```bash
-   docker compose up
-   ```
-
-> Regla simple: **`--build` = una sola vez con internet.** Después siempre `docker compose up` (sin `--build`).
-
----
-
-## Levantar (día de la defensa, offline)
-
+### Siguientes veces (offline)
 ```bash
 docker compose up
 ```
 
-Abre en el navegador: **http://localhost:8080**  ·  API: http://localhost:4000
+> Regla: `--build` = una sola vez con internet. Después siempre `docker compose up`.
 
-> El backend puede tardar ~10 s en arrancar la primera vez (intenta consultar la tasa BCV
-> y, sin internet, espera el timeout y sigue con la tasa cacheada). Es normal.
+### Acceder
+- **Sitio web:** http://localhost:8080
+- **API:** http://localhost:4000
+- **Login admin:** admin@freshservice.com / Admin1234
+- **Login técnico:** carlos.tecnico@freshservice.com / Tecnico1234
+- **Login cliente:** su correo / Demo1234
 
-## Apagar
+### Notas
+- El chatbot Copito necesita API key de DeepSeek para responder (sin key, el chat no responde pero no rompe nada)
+- Los correos se simulan en consola (ver logs del backend: `docker compose logs backend`)
+- Las fotos subidas desde el panel admin se guardan en el volumen `backend_uploads`
+- Sin internet, la tasa BCV usa la última cacheada del respaldo (el backend puede tardar ~10 s en el timeout; es normal)
+- Para resetear la DB: `docker compose down -v` y volver a `up --build`
+
+### Apagar
 
 ```bash
 docker compose down
 ```
 
-Para borrar también los datos de Postgres y recargar el respaldo en el próximo arranque:
-
-```bash
-docker compose down -v
-```
-
-## Credenciales demo
-
-- **Admin (Taller):** `admin@freshservice.com` / `Admin1234`
-- **Clientes:** su correo / `Demo1234`
-
-## Qué NO funciona offline (esperado, no son errores)
-
-- **Envío real de correos** (sin SMTP se simulan en la consola del contenedor `backend`).
-- **Actualizar la tasa BCV** (sin internet usa la última tasa guardada en el respaldo).
-
-Todo lo demás —login, solicitudes, panel del taller, ingresos, proforma, filtros— funciona.
+> **No levantar este compose en el VPS de producción:** el backend de Docker publica el puerto **4000**, el mismo que usa pm2 (`fresh-service`).

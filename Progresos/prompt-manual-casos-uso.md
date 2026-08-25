@@ -51,7 +51,7 @@ Genera un documento de casos de uso del sistema Fresh Service Digital. El archiv
 - CU-22: Admin gestiona categorías y tipos de equipo (CRUD dinámico)
 - CU-23: Admin gestiona técnicos (crear, editar, activar/desactivar, eliminar)
 - CU-24: Admin gestiona clientes (editar, eliminar)
-- CU-25: Admin sube imágenes del sitio (hero, catálogo, 5 slots)
+- CU-25: Admin sube imágenes del sitio (Hero + Técnico) y fotos por tipo de equipo (dinámico desde Servicios → Tipos de equipo)
 - CU-26: Admin gestiona carrusel de la landing (subir, activar/desactivar, eliminar)
 - CU-27: Admin gestiona ticker promocional (crear, editar, reordenar, activar/desactivar, eliminar)
 - CU-28: Admin ve dashboard con KPIs, gráficos y mapa de servicios

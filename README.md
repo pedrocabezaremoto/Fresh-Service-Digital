@@ -70,11 +70,13 @@ cd frontend-react && pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-**Docker offline** (tras un build previo con internet): ver `README-DOCKER.md`.
+**Docker offline / portable:** ver `README-DOCKER.md`.
 
 ```bash
-docker compose up
+docker compose up --build   # primera vez (con internet)
+docker compose up           # siguientes veces (offline)
 # Front http://localhost:8080 · API http://localhost:4000
+# Admin: admin@freshservice.com / Admin1234
 ```
 
 ---

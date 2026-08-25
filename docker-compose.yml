@@ -23,10 +23,28 @@ services:
       PORT: "4000"
       PUBLIC_API_URL: "http://localhost:4000"
       FRONTEND_URL: "http://localhost:8080"
-      # SIN variables SMTP → los correos se simulan en consola (offline OK)
-      # BCV_API_URL no se define → sin internet usa la tasa cacheada del respaldo
+      # Chatbot Copito — modo demo (sin API key real, el chat IA no responde pero el resto funciona)
+      # Para habilitar Copito: poner tu API key de DeepSeek aquí
+      CHATBOT_LLM_BASE_URL: "https://api.deepseek.com"
+      CHATBOT_LLM_API_KEY: ""
+      CHATBOT_LLM_MODEL: "deepseek-v4-flash"
+      CHATBOT_MONTHLY_BUDGET_USD: "5"
+      CHATBOT_MAX_MESSAGES_PER_CONVERSATION: "10"
+      CHATBOT_RATE_LIMIT_DAILY: "60"
+      # Telegram — vacío = sin notificaciones (no rompe nada)
+      CHATBOT_TELEGRAM_BOT_TOKEN: ""
+      CHATBOT_TELEGRAM_CHAT_ID: ""
+      # SMTP — vacío = correos se simulan en consola (offline OK)
+      # SMTP_HOST: "smtp.resend.com"
+      # SMTP_PORT: "465"
+      # SMTP_SECURE: "true"
+      # SMTP_USER: "resend"
+      # SMTP_PASS: ""
+      # SMTP_FROM: "Fresh Service Digital <noreply@localhost>"
     ports:
       - "4000:4000"
+    volumes:
+      - backend_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -42,3 +60,4 @@ services:
 
 volumes:
   fresh_db:
+  backend_uploads:

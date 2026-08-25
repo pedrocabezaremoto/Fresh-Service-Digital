@@ -1,7 +1,6 @@
 # ---- build ----
 FROM node:22-slim AS build
 WORKDIR /app
-# openssl es requerido por Prisma
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -19,6 +18,9 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/package.json ./
+
+# Directorios que main.ts espera (vacíos; se llenan desde el panel admin)
+RUN mkdir -p uploads/site uploads/equipment-types uploads/carousel uploads/chat-images
+
 EXPOSE 4000
-# migrate deploy es no-op porque el dump ya trae el esquema; sirve de seguro
-CMD ./node_modules/.bin/prisma migrate deploy; node dist/main
+CMD ./node_modules/.bin/prisma migrate deploy && node dist/main

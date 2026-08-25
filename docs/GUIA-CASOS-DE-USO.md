@@ -199,6 +199,8 @@ empaqueta con Docker (Postgres + backend + frontend).
   para llamarlo (`api.js`). El CORS del backend está abierto (`app.enableCors()`), por eso el
   frontend en `localhost:8080` habla con el backend en `localhost:4000` sin bloqueo.
 - **Offline:** los correos se simulan en consola (sin SMTP) y la tasa BCV usa la última cacheada.
+  Copito y Telegram van sin API keys en el compose (el chat no responde, el resto funciona).
+  Las fotos subidas quedan en el volumen `backend_uploads`.
 
 ---
 
