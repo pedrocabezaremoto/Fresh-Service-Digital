@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-25 (Fix ticker PC + prompt Solicitud + PWA pendiente)  
+**Última actualización:** 2026-08-25 (PWA instalable)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1362,13 +1362,17 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - **Para que se MUEVA en PC:** Windows Settings → Accessibility → Visual effects → activar "Animation effects". O Chrome flags → buscar "reduced-motion" → Default.
 - Build + deploy. Solo frontend. Bundle `index-Cjv9122z.css`.
 
-**Prompt fix Solicitud entregado (2026-08-24):** 📝
-- `Progresos/prompt-fix-solicitud.md` listo para pasar al LLM.
-- Cambios: quitar "Precio estimado del servicio", horario 8:30–6:00 PM, quitar opción Noche, seed admin Pedro García V-10234567.
+**Prompt fix Solicitud entregado (2026-08-24):** ✅ aplicado (ver Fix Solicitud arriba).
+
+**PWA (2026-08-25):** ✅
+- `manifest.json` + `sw.js` (cache `fsd-v1`). HTML network-first; assets cache-first. API/chat/uploads/sockets sin cache.
+- `index.html`: link manifest + theme-color `#0284c7`. `main.jsx` registra `/sw.js`. MIME `.webmanifest` en `serve.mjs`.
+- Iconos 192/512 ya existían. Instalar desde Chrome (Android) o Safari (iOS → Compartir → Agregar a pantalla de inicio).
+- Bundle `index-BqJYK6A4.js`. En prod. Solo frontend.
 
 ### Backlog actualizado
-1. **⭐ PWA** — convertir en Progressive Web App (instalar como app en celular). PENDIENTE PRÓXIMA SESIÓN
-2. **Prompt Solicitud** — pasar `prompt-fix-solicitud.md` al LLM
+1. **PWA** — ✅ hecha
+2. **Prompt Solicitud** — ✅ aplicado
 3. **Carrusel** — drag-and-drop para reordenar en admin (futuro)
 4. **Panel taller** — seguir creciendo
 5. **Deliverability email** — reputación Resend mejora con volumen
