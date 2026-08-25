@@ -6,7 +6,15 @@ import Price from '../components/Price';
 import { imgObjectClass } from '../lib/images';
 import { useSiteImages } from '../context/SiteImagesContext';
 import { api } from '../lib/api';
-import { CATEGORY_LABELS } from '../lib/services';
+
+const FALLBACK_CATEGORY_LABELS = {
+  MANTENIMIENTO: 'Mantenimiento',
+  REPARACION: 'Reparación',
+  INSTALACION: 'Instalación',
+  DIAGNOSTICO: 'Diagnóstico',
+  RECARGA: 'Recarga',
+  OTRO: 'Otro',
+};
 
 const CATEGORY_ORDER = ['MANTENIMIENTO', 'REPARACION', 'INSTALACION', 'RECARGA', 'DIAGNOSTICO', 'OTRO'];
 
@@ -58,16 +66,16 @@ function normalizeCategory(category) {
   return category;
 }
 
-function categoryLabel(category) {
+function categoryLabel(category, labels = FALLBACK_CATEGORY_LABELS) {
   const key = normalizeCategory(category);
-  return CATEGORY_LABELS[key] || category || 'Servicio';
+  return labels[key] || FALLBACK_CATEGORY_LABELS[key] || category || 'Servicio';
 }
 
 /** Descripción útil: no repetir el nombre; máximo 60 caracteres. */
-function usefulDesc(name, description, category) {
+function usefulDesc(name, description, category, labels = FALLBACK_CATEGORY_LABELS) {
   const d = (description || '').trim();
   if (!d) return '';
-  const candidates = [name, categoryLabel(category), CATEGORY_LABELS[normalizeCategory(category)]]
+  const candidates = [name, categoryLabel(category, labels), labels[normalizeCategory(category)] || FALLBACK_CATEGORY_LABELS[normalizeCategory(category)]]
     .filter(Boolean)
     .map((s) => s.trim().toLowerCase());
   if (candidates.includes(d.toLowerCase())) return '';
@@ -204,16 +212,22 @@ function TonnageTable({ groups }) {
 export default function Catalogo() {
   const { images } = useSiteImages();
   const [apiServices, setApiServices] = useState(null);
+  const [catLabels, setCatLabels] = useState(FALLBACK_CATEGORY_LABELS);
   const [loading, setLoading] = useState(true);
   const [openKey, setOpenKey] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.getServices()
-      .then((list) => {
+    Promise.all([api.getServices(), api.getCategories().catch(() => [])])
+      .then(([list, cats]) => {
         if (cancelled) return;
         const active = Array.isArray(list) ? list.filter((s) => s.isActive === true) : [];
         setApiServices(active.length ? active : null);
+        if (Array.isArray(cats) && cats.length) {
+          const map = { ...FALLBACK_CATEGORY_LABELS };
+          cats.forEach((c) => { if (c.slug) map[c.slug] = c.label || c.slug; });
+          setCatLabels(map);
+        }
       })
       .catch(() => { if (!cancelled) setApiServices(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -231,11 +245,11 @@ export default function Catalogo() {
           if (!byCat[cat]) {
             byCat[cat] = {
               category: cat,
-              label: categoryLabel(cat),
-              desc: usefulDesc(s.name, s.description, cat),
+              label: categoryLabel(cat, catLabels),
+              desc: usefulDesc(s.name, s.description, cat, catLabels),
             };
           }
-          if (!byCat[cat].desc) byCat[cat].desc = usefulDesc(s.name, s.description, cat);
+          if (!byCat[cat].desc) byCat[cat].desc = usefulDesc(s.name, s.description, cat, catLabels);
         });
         const groups = CATEGORY_ORDER.filter((c) => byCat[c]).map((c) => byCat[c]);
         return {
@@ -255,8 +269,8 @@ export default function Catalogo() {
         .sort((a, b) => orderIndex(a) - orderIndex(b) || String(a.name).localeCompare(String(b.name)))
         .map((s) => ({
           id: s.id || `${s.equipmentType}-${s.category}-${s.name}`,
-          label: categoryLabel(s.category) || s.name,
-          desc: usefulDesc(s.name, s.description, s.category),
+          label: categoryLabel(s.category, catLabels) || s.name,
+          desc: usefulDesc(s.name, s.description, s.category, catLabels),
           price: Number(s.priceUsd),
         }));
       return {
@@ -267,7 +281,7 @@ export default function Catalogo() {
         rows,
       };
     }).filter((s) => (s.rows?.length || s.groups?.length));
-  }, [apiServices, images]);
+  }, [apiServices, images, catLabels]);
 
   function toggle(key) {
     setOpenKey((prev) => (prev === key ? null : key));

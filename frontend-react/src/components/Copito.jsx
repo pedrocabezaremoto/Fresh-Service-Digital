@@ -145,6 +145,7 @@ export default function Copito() {
   const [showApptForm, setShowApptForm] = useState(false);
   const [apptFormData, setApptFormData] = useState({ clientName: '', clientPhone: '', clientEmail: '', address: '', description: '' });
   const [apptFormServices, setApptFormServices] = useState([]);
+  const [apptFormEqTypes, setApptFormEqTypes] = useState([]);
   const [apptFormServiceId, setApptFormServiceId] = useState('');
   const [apptFormSending, setApptFormSending] = useState(false);
   const [apptFormMsg, setApptFormMsg] = useState('');
@@ -276,10 +277,15 @@ export default function Copito() {
       setApptFormMsg('');
       setShowApptForm(true);
       try {
-        const res = await fetch(`${API_BASE}/services`);
-        const svcs = await res.json();
+        const [svcRes, eqRes] = await Promise.all([
+          fetch(`${API_BASE}/services`),
+          fetch(`${API_BASE}/services/equipment-types`),
+        ]);
+        const svcs = await svcRes.json();
+        const eqs = await eqRes.json();
         setApptFormServices(Array.isArray(svcs) ? svcs.filter(s => s.isActive) : []);
-      } catch { setApptFormServices([]); }
+        setApptFormEqTypes(Array.isArray(eqs) ? eqs : []);
+      } catch { setApptFormServices([]); setApptFormEqTypes([]); }
     });
 
     socket.on('appointmentConfirmed', (data) => {
@@ -706,7 +712,7 @@ export default function Copito() {
                       >
                         <option value="">-- Seleccionar --</option>
                         {apptFormServices.map(s => {
-                          const eqLabel = { VENTANA: 'Ventana', SPLIT: 'Split', TONELADA_1: '1 Ton', TONELADA_2: '2 Ton', TONELADA_3: '3 Ton', GENERAL: 'General' }[s.equipmentType] || '';
+                          const eqLabel = apptFormEqTypes.find((eq) => eq.slug === s.equipmentType)?.label || s.equipmentType;
                           return (
                             <option key={s.id} value={s.id}>
                               {s.name} — {eqLabel} {s.priceUsd ? `($${s.priceUsd})` : ''}

@@ -13,17 +13,6 @@ const heicConvert = require('heic-convert');
 
 const MAX_TOOL_ROUNDS = 3;
 
-const CHAT_SERVICES = [
-  'Diagnóstico',
-  'Mantenimiento Preventivo',
-  'Reparación',
-  'Recarga de Gas',
-  'Instalación',
-  'Cambio de Componentes',
-  'Instalación de Compresor',
-  'Otro',
-] as const;
-
 const CHAT_TOOLS = [
   {
     type: 'function',
@@ -38,8 +27,7 @@ const CHAT_TOOLS = [
           email: { type: 'string', description: 'Correo electrónico' },
           servicio: {
             type: 'string',
-            enum: [...CHAT_SERVICES],
-            description: 'Tipo de servicio que necesita',
+            description: 'Tipo de servicio que necesita (ej: Mantenimiento, Reparación, Recarga de Gas, etc.)',
           },
           resumen: { type: 'string', description: 'Qué necesita el visitante (máximo 300 caracteres)' },
         },
@@ -57,8 +45,7 @@ const CHAT_TOOLS = [
         properties: {
           tipo_equipo: {
             type: 'string',
-            enum: ['VENTANA', 'SPLIT', 'TONELADA'],
-            description: 'Tipo de equipo (opcional; sin filtro devuelve todos)',
+            description: 'Tipo de equipo: slug en mayúsculas (ej: VENTANA, SPLIT, NEVERA). Opcional; sin filtro devuelve todos.',
           },
         },
         required: [],
@@ -514,39 +501,42 @@ WHATSAPP DEL TALLER: +58 416-376-6075 (solo si el visitante lo pide).`;
   private async executeConsultarServicios(args: any): Promise<string> {
     const where: any = { isActive: true };
     if (args.tipo_equipo) {
-      if (args.tipo_equipo === 'TONELADA') {
-        where.equipmentType = { in: ['TONELADA_1', 'TONELADA_2', 'TONELADA_3'] };
+      const slug = String(args.tipo_equipo).toUpperCase();
+      const matchingTypes = await this.prisma.equipmentTypeOption.findMany({
+        where: { slug: { startsWith: slug }, isActive: true },
+      });
+      if (matchingTypes.length > 0) {
+        where.equipmentType = { in: matchingTypes.map((t) => t.slug) };
       } else {
-        where.equipmentType = args.tipo_equipo;
+        where.equipmentType = slug;
       }
     }
 
     const services = await this.prisma.service.findMany({
       where,
-      orderBy: [{ equipmentType: 'asc' }, { sortOrder: 'asc' }],
       select: { name: true, category: true, equipmentType: true, priceUsd: true, description: true },
+      orderBy: [{ equipmentType: 'asc' }, { sortOrder: 'asc' }],
     });
 
-    if (services.length === 0) {
+    if (!services.length) {
       return JSON.stringify({ ok: true, services: [], texto: 'No hay servicios registrados para ese tipo de equipo.' });
     }
 
-    const equipLabels: Record<string, string> = {
-      VENTANA: 'Aire de Ventana',
-      SPLIT: 'Aire Split',
-      TONELADA_1: 'Tonelada 3T',
-      TONELADA_2: 'Tonelada 4T',
-      TONELADA_3: 'Tonelada 5T',
-    };
+    const eqTypes = await this.prisma.equipmentTypeOption.findMany({ where: { isActive: true } });
+    const eqMap = Object.fromEntries(eqTypes.map((t) => [t.slug, t.label]));
+    const catTypes = await this.prisma.serviceCategoryOption.findMany({ where: { isActive: true } });
+    const catMap = Object.fromEntries(catTypes.map((c) => [c.slug, c.label]));
 
-    const lines = services.map(s => {
-      const equip = equipLabels[s.equipmentType] || s.equipmentType;
-      const isTonelada = s.equipmentType.startsWith('TONELADA');
-      const price = isTonelada ? 'cotización personalizada' : `$${s.priceUsd}`;
-      return `• ${s.name} (${equip}): ${price}`;
-    });
+    const formatted = services.map((s) => ({
+      servicio: s.name,
+      categoria: catMap[s.category] || s.category,
+      equipo: eqMap[s.equipmentType] || s.equipmentType,
+      precio_usd: s.equipmentType.startsWith('TONELADA') ? null : s.priceUsd,
+      precio: s.equipmentType.startsWith('TONELADA') ? 'cotización personalizada' : `$${s.priceUsd}`,
+      descripcion: s.description || undefined,
+    }));
 
-    return JSON.stringify({ ok: true, texto: lines.join('\n') });
+    return JSON.stringify({ ok: true, services: formatted });
   }
 
   private async executeTool(name: string, argsJson: string, conversationId: string, ipHash: string): Promise<string> {

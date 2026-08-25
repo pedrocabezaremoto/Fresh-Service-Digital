@@ -21,24 +21,6 @@ enum AppointmentStatus {
   CANCELLED
 }
 
-enum ServiceCategory {
-  MANTENIMIENTO
-  REPARACION
-  INSTALACION
-  DIAGNOSTICO
-  RECARGA
-  OTRO
-}
-
-enum EquipmentType {
-  VENTANA
-  SPLIT
-  TONELADA_1
-  TONELADA_2
-  TONELADA_3
-  GENERAL
-}
-
 model User {
   id               String        @id @default(uuid())
   email            String        @unique
@@ -89,11 +71,33 @@ model Appointment {
   @@map("appointments")
 }
 
+model ServiceCategoryOption {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("service_category_options")
+}
+
+model EquipmentTypeOption {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("equipment_type_options")
+}
+
 model Service {
-  id            String          @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
-  category      ServiceCategory
-  equipmentType EquipmentType
+  category      String
+  equipmentType String
   priceUsd      Float
   description   String?
   isActive      Boolean         @default(true)

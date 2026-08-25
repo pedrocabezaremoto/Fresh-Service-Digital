@@ -6,7 +6,7 @@ import {
   ClipboardCheck, Clock3, Wrench, Loader2, Search, MessageCircle, CheckCircle2,
   Download, Sparkles, UserCog, Power, PowerOff,
   TrendingUp, Calendar, Pencil, Trash2, X, Sun, Moon, Settings, Settings2,
-  ChevronLeft, ChevronRight, Bell,
+  ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Bell,
 } from 'lucide-react';
 import { API_BASE, api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -21,10 +21,7 @@ import CarouselSection from '../components/admin/CarouselSection';
 import AdminChatView from '../components/admin/AdminChatView';
 import { Donut, KPI, MonthBars } from '../components/admin/DashboardVisuals';
 import Price from '../components/Price';
-import {
-  CATEGORY_LABELS, CATEGORY_STYLE, EQUIPMENT_LABELS, EQUIPMENT_STYLE,
-  SERVICE_CATEGORIES, EQUIPMENT_TYPES,
-} from '../lib/services';
+import { getCategoryStyle, getEquipmentStyle } from '../lib/services';
 
 const MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -162,6 +159,78 @@ export default function AdminDashboard() {
   );
   const [unreadLeads, setUnreadLeads] = useState([]);
   const [showLeads, setShowLeads] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [equipmentTypes, setEquipmentTypes] = useState([]);
+  const [showCatManager, setShowCatManager] = useState(false);
+  const [showEqManager, setShowEqManager] = useState(false);
+  const [newCatLabel, setNewCatLabel] = useState('');
+  const [newEqLabel, setNewEqLabel] = useState('');
+  const [deleteOption, setDeleteOption] = useState(null);
+  const [deleteOptionError, setDeleteOptionError] = useState('');
+  const [deletingOption, setDeletingOption] = useState(false);
+
+  const catLabel = (slug) => categories.find((c) => c.slug === slug)?.label || slug;
+  const eqLabel = (slug) => equipmentTypes.find((e) => e.slug === slug)?.label || slug;
+  const catStyleIdx = (slug) => categories.findIndex((c) => c.slug === slug);
+  const eqStyleIdx = (slug) => equipmentTypes.findIndex((e) => e.slug === slug);
+
+  async function confirmDeleteOption() {
+    if (!deleteOption) return;
+    setDeletingOption(true);
+    setDeleteOptionError('');
+    try {
+      if (deleteOption.type === 'category') {
+        await api.deleteCategory(deleteOption.item.id);
+        setCategories((prev) => prev.filter((c) => c.id !== deleteOption.item.id));
+      } else {
+        await api.deleteEquipmentType(deleteOption.item.id);
+        setEquipmentTypes((prev) => prev.filter((e) => e.id !== deleteOption.item.id));
+      }
+      setDeleteOption(null);
+    } catch (err) {
+      setDeleteOptionError(err?.message || 'No se pudo eliminar. Tiene servicios asignados.');
+    } finally {
+      setDeletingOption(false);
+    }
+  }
+
+  async function moveOption(type, id, direction) {
+    const list = type === 'category' ? [...categories] : [...equipmentTypes];
+    const idx = list.findIndex((x) => x.id === id);
+    if (idx < 0) return;
+    const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= list.length) return;
+    [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
+    const updates = list.map((item, i) => ({ ...item, sortOrder: i + 1 }));
+    if (type === 'category') {
+      setCategories(updates);
+      try {
+        await Promise.all([
+          api.updateCategory(updates[idx].id, { sortOrder: updates[idx].sortOrder }),
+          api.updateCategory(updates[newIdx].id, { sortOrder: updates[newIdx].sortOrder }),
+        ]);
+      } catch { /* revert silencioso — recargará al abrir de nuevo */ }
+    } else {
+      setEquipmentTypes(updates);
+      try {
+        await Promise.all([
+          api.updateEquipmentType(updates[idx].id, { sortOrder: updates[idx].sortOrder }),
+          api.updateEquipmentType(updates[newIdx].id, { sortOrder: updates[newIdx].sortOrder }),
+        ]);
+      } catch { /* revert silencioso */ }
+    }
+  }
+
+  async function loadOptions() {
+    try {
+      const [cats, eqs] = await Promise.all([
+        api.getAllCategories(),
+        api.getAllEquipmentTypes(),
+      ]);
+      setCategories(Array.isArray(cats) ? cats : []);
+      setEquipmentTypes(Array.isArray(eqs) ? eqs : []);
+    } catch { /* ignore */ }
+  }
 
   async function load() {
     setLoading(true);
@@ -180,6 +249,7 @@ export default function AdminDashboard() {
       } catch {
         setServices([]);
       }
+      await loadOptions();
     } catch (err) {
       if (err.status === 401 || err.status === 403) { logout(); navigate('/login'); }
     } finally { setLoading(false); }
@@ -1255,10 +1325,18 @@ export default function AdminDashboard() {
                   <h2 className="font-display text-2xl font-extrabold text-ink-900">Catálogo de Servicios</h2>
                   <p className="text-sm text-ink-500">{activeSvcCount} servicio{activeSvcCount === 1 ? '' : 's'} activo{activeSvcCount === 1 ? '' : 's'}</p>
                 </div>
-                <button type="button" onClick={openCreateSvc}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 sheen touch-manipulation">
-                  <Settings size={16} /> Nuevo servicio
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => { setShowCatManager(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-slate-50 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
+                    Categorías
+                  </button>
+                  <button type="button" onClick={() => { setShowEqManager(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-slate-50 px-4 py-2 text-sm font-semibold text-ink-700 ring-1 ring-slate-200 transition hover:bg-slate-100 active:bg-slate-100 touch-manipulation">
+                    Tipos de equipo
+                  </button>
+                  <button type="button" onClick={openCreateSvc}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-gradient px-5 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 active:brightness-95 sheen touch-manipulation">
+                    <Settings size={16} /> Nuevo servicio
+                  </button>
+                </div>
               </div>
               {svcFlash && (
                 <div className="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-emerald-100">{svcFlash}</div>
@@ -1270,17 +1348,17 @@ export default function AdminDashboard() {
                     className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-bold transition touch-manipulation ${!svcCategory ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
                     Todas
                   </button>
-                  {SERVICE_CATEGORIES.map((c) => (
-                    <button key={c} type="button" onClick={() => setSvcCategory(c)}
-                      className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-bold transition touch-manipulation ${svcCategory === c ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
-                      {CATEGORY_LABELS[c]}
+                  {categories.filter((c) => c.isActive).map((cat) => (
+                    <button key={cat.slug} type="button" onClick={() => setSvcCategory(cat.slug)}
+                      className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-bold transition touch-manipulation ${svcCategory === cat.slug ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 ring-1 ring-slate-200 hover:bg-slate-50'}`}>
+                      {cat.label}
                     </button>
                   ))}
                 </div>
                 <select value={svcEquipment} onChange={(e) => setSvcEquipment(e.target.value)}
                   className="min-h-11 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-ink-700 touch-manipulation">
                   <option value="">Todos los equipos</option>
-                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                  {equipmentTypes.filter((e) => e.isActive).map((eq) => <option key={eq.slug} value={eq.slug}>{eq.label}</option>)}
                 </select>
               </div>
 
@@ -1297,11 +1375,11 @@ export default function AdminDashboard() {
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-ink-900">{s.name}</div>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${CATEGORY_STYLE[s.category] || CATEGORY_STYLE.OTRO}`}>
-                                {CATEGORY_LABELS[s.category] || s.category}
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${getCategoryStyle(s.category, catStyleIdx(s.category))}`}>
+                                {catLabel(s.category)}
                               </span>
-                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${EQUIPMENT_STYLE[s.equipmentType] || EQUIPMENT_STYLE.GENERAL}`}>
-                                {EQUIPMENT_LABELS[s.equipmentType] || s.equipmentType}
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${getEquipmentStyle(s.equipmentType, eqStyleIdx(s.equipmentType))}`}>
+                                {eqLabel(s.equipmentType)}
                               </span>
                               <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${s.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                                 {s.isActive !== false ? 'Activo' : 'Inactivo'}
@@ -1348,13 +1426,13 @@ export default function AdminDashboard() {
                           <tr key={s.id} className="border-t border-slate-100 hover:bg-slate-50/60">
                             <td className="px-5 py-3 font-semibold text-ink-900">{s.name}</td>
                             <td className="px-3 py-3">
-                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${CATEGORY_STYLE[s.category] || CATEGORY_STYLE.OTRO}`}>
-                                {CATEGORY_LABELS[s.category] || s.category}
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${getCategoryStyle(s.category, catStyleIdx(s.category))}`}>
+                                {catLabel(s.category)}
                               </span>
                             </td>
                             <td className="px-3 py-3">
-                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${EQUIPMENT_STYLE[s.equipmentType] || EQUIPMENT_STYLE.GENERAL}`}>
-                                {EQUIPMENT_LABELS[s.equipmentType] || s.equipmentType}
+                              <span className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${getEquipmentStyle(s.equipmentType, eqStyleIdx(s.equipmentType))}`}>
+                                {eqLabel(s.equipmentType)}
                               </span>
                             </td>
                             <td className="px-3 py-3 font-semibold text-ink-900">{formatUsd(s.priceUsd)}</td>
@@ -1757,11 +1835,11 @@ export default function AdminDashboard() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Categoría</span>
                 <select required value={createSvc.category} onChange={(e) => setCreateSvc({ ...createSvc, category: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
-                  {SERVICE_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                  {categories.filter((c) => c.isActive).map((cat) => <option key={cat.slug} value={cat.slug}>{cat.label}</option>)}
                 </select></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Tipo de equipo</span>
                 <select required value={createSvc.equipmentType} onChange={(e) => setCreateSvc({ ...createSvc, equipmentType: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
-                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                  {equipmentTypes.filter((e) => e.isActive).map((eq) => <option key={eq.slug} value={eq.slug}>{eq.label}</option>)}
                 </select></label>
             </div>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Precio USD</span>
@@ -1791,11 +1869,11 @@ export default function AdminDashboard() {
             <div className="mt-3 grid grid-cols-2 gap-3">
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Categoría</span>
                 <select required value={editSvc.category} onChange={(e) => setEditSvc({ ...editSvc, category: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
-                  {SERVICE_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+                  {categories.filter((c) => c.isActive).map((cat) => <option key={cat.slug} value={cat.slug}>{cat.label}</option>)}
                 </select></label>
               <label className="block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Tipo de equipo</span>
                 <select required value={editSvc.equipmentType} onChange={(e) => setEditSvc({ ...editSvc, equipmentType: e.target.value })} className="w-full rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400">
-                  {EQUIPMENT_TYPES.map((t) => <option key={t} value={t}>{EQUIPMENT_LABELS[t]}</option>)}
+                  {equipmentTypes.filter((e) => e.isActive).map((eq) => <option key={eq.slug} value={eq.slug}>{eq.label}</option>)}
                 </select></label>
             </div>
             <label className="mt-3 block"><span className="mb-1 block text-xs font-bold uppercase text-ink-500">Precio USD</span>
@@ -1823,7 +1901,7 @@ export default function AdminDashboard() {
             </div>
             <h3 className="mt-4 font-display text-lg font-bold text-ink-900">¿Eliminar este servicio?</h3>
             <p className="mt-2 text-sm text-ink-500">
-              Vas a eliminar <strong className="text-ink-900">{deleteSvc.name}</strong> ({EQUIPMENT_LABELS[deleteSvc.equipmentType] || deleteSvc.equipmentType}).
+              Vas a eliminar <strong className="text-ink-900">{deleteSvc.name}</strong> ({eqLabel(deleteSvc.equipmentType)}).
               {svcApptCount(deleteSvc) > 0 && (
                 <> Tiene <strong className="text-rose-600">{svcApptCount(deleteSvc)} cita{svcApptCount(deleteSvc) === 1 ? '' : 's'}</strong> asociada{svcApptCount(deleteSvc) === 1 ? '' : 's'}. Si el servidor lo rechaza, desactívalo en lugar de borrarlo.</>
               )}
@@ -1845,6 +1923,175 @@ export default function AdminDashboard() {
                 </button>
               )}
               <button type="button" onClick={() => { setDeleteSvc(null); setDeleteSvcError(''); }} disabled={deleting} className="min-h-11 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 disabled:opacity-50 touch-manipulation">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCatManager && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => setShowCatManager(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Categorías de servicio</h3>
+              <button type="button" onClick={() => setShowCatManager(false)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            <div className="mt-4 max-h-80 space-y-2 overflow-y-auto">
+              {categories.map((cat) => (
+                <div key={cat.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
+                  {cat._editing ? (
+                    <input autoFocus value={cat._editLabel || ''} onChange={(e) => setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, _editLabel: e.target.value } : c)))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, _editing: false } : c)));
+                        if (e.key === 'Enter') e.currentTarget.closest('div')?.querySelector('[data-save]')?.click();
+                      }}
+                      className="mr-2 flex-1 rounded-lg border-2 border-brand-300 px-2 py-1 text-sm outline-none" />
+                  ) : (
+                    <span className="text-sm font-semibold text-ink-800">{cat.label}</span>
+                  )}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button type="button" onClick={() => moveOption('category', cat.id, 'up')} disabled={categories.findIndex((c) => c.id === cat.id) === 0}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 disabled:opacity-30 touch-manipulation" title="Subir"><ChevronUp size={14} /></button>
+                    <button type="button" onClick={() => moveOption('category', cat.id, 'down')} disabled={categories.findIndex((c) => c.id === cat.id) === categories.length - 1}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 disabled:opacity-30 touch-manipulation" title="Bajar"><ChevronDown size={14} /></button>
+                    <span className="font-mono text-[10px] text-ink-400">{cat.slug}</span>
+                    {cat._editing ? (
+                      <button data-save type="button" onClick={async () => {
+                        const label = cat._editLabel?.trim();
+                        if (!label) return;
+                        try {
+                          await api.updateCategory(cat.id, { label });
+                          setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, label, _editing: false } : c)));
+                        } catch { /* ignore */ }
+                      }} className="rounded-full bg-brand-100 px-2 py-1 text-xs font-bold text-brand-700">Guardar</button>
+                    ) : (
+                      <button type="button" onClick={() => setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, _editing: true, _editLabel: c.label } : c)))}
+                        className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 touch-manipulation" title="Editar"><Pencil size={13} /></button>
+                    )}
+                    <button type="button" onClick={() => { setDeleteOption({ type: 'category', item: cat }); setDeleteOptionError(''); }}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-rose-100 hover:text-rose-600 touch-manipulation" title="Eliminar"><Trash2 size={13} /></button>
+                    <button type="button" onClick={async () => {
+                      try {
+                        await api.updateCategory(cat.id, { isActive: !cat.isActive });
+                        setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, isActive: !c.isActive } : c)));
+                      } catch { /* ignore */ }
+                    }} className={`rounded-full px-2 py-1 text-xs font-bold ${cat.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-ink-500'}`}>
+                      {cat.isActive ? 'Activa' : 'Inactiva'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <input value={newCatLabel} onChange={(e) => setNewCatLabel(e.target.value)} placeholder="Nueva categoría…" className="flex-1 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+              <button type="button" disabled={!newCatLabel.trim()} onClick={async () => {
+                try {
+                  const slug = newCatLabel.trim().toUpperCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  const created = await api.createCategory({ slug, label: newCatLabel.trim(), sortOrder: categories.length + 1 });
+                  setCategories((prev) => [...prev, created]);
+                  setNewCatLabel('');
+                } catch { /* ignore */ }
+              }} className="min-h-11 rounded-full bg-brand-gradient px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50 touch-manipulation">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEqManager && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink-900/50 p-4" onClick={() => setShowEqManager(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-ink-900">Tipos de equipo</h3>
+              <button type="button" onClick={() => setShowEqManager(false)} className="grid h-11 w-11 place-items-center rounded-lg text-ink-500 hover:bg-slate-100 active:bg-slate-100 touch-manipulation"><X size={18} /></button>
+            </div>
+            <div className="mt-4 max-h-80 space-y-2 overflow-y-auto">
+              {equipmentTypes.map((eq) => (
+                <div key={eq.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
+                  {eq._editing ? (
+                    <input autoFocus value={eq._editLabel || ''} onChange={(e) => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editLabel: e.target.value } : t)))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: false } : t)));
+                        if (e.key === 'Enter') e.currentTarget.closest('div')?.querySelector('[data-save]')?.click();
+                      }}
+                      className="mr-2 flex-1 rounded-lg border-2 border-brand-300 px-2 py-1 text-sm outline-none" />
+                  ) : (
+                    <span className="text-sm font-semibold text-ink-800">{eq.label}</span>
+                  )}
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button type="button" onClick={() => moveOption('equipment', eq.id, 'up')} disabled={equipmentTypes.findIndex((e) => e.id === eq.id) === 0}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 disabled:opacity-30 touch-manipulation" title="Subir"><ChevronUp size={14} /></button>
+                    <button type="button" onClick={() => moveOption('equipment', eq.id, 'down')} disabled={equipmentTypes.findIndex((e) => e.id === eq.id) === equipmentTypes.length - 1}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 disabled:opacity-30 touch-manipulation" title="Bajar"><ChevronDown size={14} /></button>
+                    <span className="font-mono text-[10px] text-ink-400">{eq.slug}</span>
+                    {eq._editing ? (
+                      <button data-save type="button" onClick={async () => {
+                        const label = eq._editLabel?.trim();
+                        if (!label) return;
+                        try {
+                          await api.updateEquipmentType(eq.id, { label });
+                          setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, label, _editing: false } : t)));
+                        } catch { /* ignore */ }
+                      }} className="rounded-full bg-brand-100 px-2 py-1 text-xs font-bold text-brand-700">Guardar</button>
+                    ) : (
+                      <button type="button" onClick={() => setEquipmentTypes((prev) => prev.map((t) => (t.id === eq.id ? { ...t, _editing: true, _editLabel: t.label } : t)))}
+                        className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-slate-200 hover:text-ink-600 touch-manipulation" title="Editar"><Pencil size={13} /></button>
+                    )}
+                    <button type="button" onClick={() => { setDeleteOption({ type: 'equipment', item: eq }); setDeleteOptionError(''); }}
+                      className="grid h-7 w-7 place-items-center rounded-lg text-ink-400 hover:bg-rose-100 hover:text-rose-600 touch-manipulation" title="Eliminar"><Trash2 size={13} /></button>
+                    <button type="button" onClick={async () => {
+                      try {
+                        await api.updateEquipmentType(eq.id, { isActive: !eq.isActive });
+                        setEquipmentTypes((prev) => prev.map((e) => (e.id === eq.id ? { ...e, isActive: !e.isActive } : e)));
+                      } catch { /* ignore */ }
+                    }} className={`rounded-full px-2 py-1 text-xs font-bold ${eq.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-ink-500'}`}>
+                      {eq.isActive ? 'Activo' : 'Inactivo'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <input value={newEqLabel} onChange={(e) => setNewEqLabel(e.target.value)} placeholder="Nuevo tipo de equipo…" className="flex-1 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-400" />
+              <button type="button" disabled={!newEqLabel.trim()} onClick={async () => {
+                try {
+                  const slug = newEqLabel.trim().toUpperCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                  const created = await api.createEquipmentType({ slug, label: newEqLabel.trim(), sortOrder: equipmentTypes.length + 1 });
+                  setEquipmentTypes((prev) => [...prev, created]);
+                  setNewEqLabel('');
+                } catch { /* ignore */ }
+              }} className="min-h-11 rounded-full bg-brand-gradient px-4 py-2 text-sm font-bold text-white shadow-glow transition hover:brightness-105 disabled:opacity-50 touch-manipulation">Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteOption && (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-ink-900/50 p-4" onClick={() => !deletingOption && setDeleteOption(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-4 text-center shadow-xl sm:p-6">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-rose-100 text-rose-600">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="mt-4 font-display text-lg font-bold text-ink-900">
+              {deleteOption.type === 'category' ? '¿Eliminar esta categoría?' : '¿Eliminar este tipo de equipo?'}
+            </h3>
+            <p className="mt-2 text-sm text-ink-500">
+              Vas a eliminar <strong className="text-ink-900">{deleteOption.item.label}</strong> ({deleteOption.item.slug}).
+              {' '}Si tiene servicios asignados, el servidor lo rechazará.
+              {' '}Esta acción no se puede deshacer.
+            </p>
+            {deleteOptionError && (
+              <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-left text-sm font-medium text-amber-800 ring-1 ring-amber-100">
+                {deleteOptionError}
+              </div>
+            )}
+            <div className="mt-6 flex flex-col gap-2">
+              <button type="button" onClick={confirmDeleteOption} disabled={deletingOption}
+                className="min-h-11 rounded-full bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rose-700 active:bg-rose-800 disabled:opacity-50 touch-manipulation">
+                {deletingOption ? 'Eliminando…' : 'Sí, eliminar'}
+              </button>
+              <button type="button" onClick={() => { setDeleteOption(null); setDeleteOptionError(''); }} disabled={deletingOption}
+                className="min-h-11 rounded-full bg-slate-100 px-4 py-2.5 text-sm font-bold text-ink-700 transition hover:bg-slate-200 active:bg-slate-200 disabled:opacity-50 touch-manipulation">
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

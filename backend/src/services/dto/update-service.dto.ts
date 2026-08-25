@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
-  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -9,7 +8,6 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { EQUIPMENT_TYPES, SERVICE_CATEGORIES } from './create-service.dto';
 
 export class UpdateServiceDto {
   @IsOptional()
@@ -18,12 +16,12 @@ export class UpdateServiceDto {
   name?: string;
 
   @IsOptional()
-  @IsIn([...SERVICE_CATEGORIES], { message: 'Categoría no válida' })
-  category?: (typeof SERVICE_CATEGORIES)[number];
+  @IsString({ message: 'La categoría debe ser una cadena de texto' })
+  category?: string;
 
   @IsOptional()
-  @IsIn([...EQUIPMENT_TYPES], { message: 'Tipo de equipo no válido' })
-  equipmentType?: (typeof EQUIPMENT_TYPES)[number];
+  @IsString({ message: 'El tipo de equipo debe ser una cadena de texto' })
+  equipmentType?: string;
 
   @IsOptional()
   @Type(() => Number)

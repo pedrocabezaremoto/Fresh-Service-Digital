@@ -8,9 +8,7 @@ import LocationPicker from '../components/maps/LocationPicker';
 import { api } from '../lib/api';
 import { priceUsd } from '../lib/prices';
 import { useAuth } from '../context/AuthContext';
-import {
-  EQUIPMENT_BTU, EQUIPMENT_LABELS, FALLBACK_EQUIPOS, FALLBACK_SERVICIOS,
-} from '../lib/services';
+import { FALLBACK_EQUIPOS, FALLBACK_SERVICIOS } from '../lib/services';
 const horarios = [
   { v: 'manana', t: 'Mañana (8:00 AM – 12:00 PM)', h: '09:00:00' },
   { v: 'tarde', t: 'Tarde (12:00 PM – 5:00 PM)', h: '14:00:00' },
@@ -38,6 +36,7 @@ export default function Solicitud() {
   const [loading, setLoading] = useState(false);
   const [ref, setRef] = useState(null);
   const [apiServices, setApiServices] = useState(null);
+  const [eqTypes, setEqTypes] = useState([]);
   // Ubicación del mapa (opcional). El primer onLocationChange es el default del picker al montar → no confirma.
   const [location, setLocation] = useState(null);
   const [locationMarked, setLocationMarked] = useState(false);
@@ -60,6 +59,9 @@ export default function Solicitud() {
         }));
       })
       .catch(() => { /* fallback a prices.js — no romper el formulario */ });
+    api.getEquipmentTypes()
+      .then((eqs) => { if (!cancelled) setEqTypes(Array.isArray(eqs) ? eqs : []); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -70,10 +72,11 @@ export default function Solicitud() {
     return apiServices.reduce((acc, s) => {
       if (seen.has(s.equipmentType)) return acc;
       seen.add(s.equipmentType);
-      acc.push({ value: s.equipmentType, label: EQUIPMENT_LABELS[s.equipmentType] || s.equipmentType });
+      const label = eqTypes.find((eq) => eq.slug === s.equipmentType)?.label || s.equipmentType;
+      acc.push({ value: s.equipmentType, label });
       return acc;
     }, []);
-  }, [useApi, apiServices]);
+  }, [useApi, apiServices, eqTypes]);
 
   const servicioOptions = useMemo(() => {
     if (!useApi) return FALLBACK_SERVICIOS.map((name) => ({ value: name, label: name, id: '', priceUsd: priceUsd(f.equipo, name) }));
@@ -92,10 +95,14 @@ export default function Solicitud() {
   }, [useApi, apiServices, f.serviceId, f.equipo, f.servicio]);
 
   const displayPrice = selectedService?.priceUsd ?? priceUsd(
-    EQUIPMENT_LABELS[f.equipo] || f.equipo,
+    eqTypes.find((eq) => eq.slug === f.equipo)?.label
+      || FALLBACK_EQUIPOS.find((e) => e.type === f.equipo)?.v
+      || f.equipo,
     f.servicio,
   );
-  const displayEquipo = EQUIPMENT_LABELS[f.equipo] || f.equipo;
+  const displayEquipo = eqTypes.find((eq) => eq.slug === f.equipo)?.label
+    || FALLBACK_EQUIPOS.find((e) => e.type === f.equipo)?.v
+    || f.equipo;
   const displayServicio = selectedService?.name || f.servicio;
 
   function handleEquipoChange(e) {
@@ -150,7 +157,9 @@ export default function Solicitud() {
         scheduledAt: `${f.fecha}T${h}.000Z`,
         brand,
         model,
-        btuCapacity: EQUIPMENT_BTU[f.equipo] || null,
+        btuCapacity: FALLBACK_EQUIPOS.find((e) => e.type === f.equipo)?.btu
+          || FALLBACK_EQUIPOS.find((e) => e.v === f.equipo)?.btu
+          || null,
         priceUsd: displayPrice,
         cedula: `${f.cedTipo}-${f.cedNum}`,
         failureDescription: f.descripcion || 'Sin descripción adicional',

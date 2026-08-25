@@ -2,7 +2,7 @@
 
 > Este documento describe en qué etapa se encuentra el proyecto HOY y cuáles son los problemas pendientes de resolver.
 
-**Última actualización:** 2026-08-24 (KPIs del dashboard navegan a Solicitudes)  
+**Última actualización:** 2026-08-24 (modal eliminar + reordenar categorías/tipos)  
 **Fase del proyecto:** Fase 2 — Backend + Base de datos CONECTADOS y funcionando (local en VPS)  
 **Deploy activo (frontend):** [pedrocabezaremoto.github.io/Fresh-Service-Digital](https://pedrocabezaremoto.github.io/Fresh-Service-Digital/index.html)
 
@@ -1313,11 +1313,24 @@ Cuando una imagen PNG tiene pixeles semi-transparentes de un modelo de IA (rembg
 - Filtro soporta valores múltiples separados por coma. Fix directo (sin prompt).
 - Bundle `index-0EZBJo2g.js`. En prod. Solo frontend.
 
-**Servicios dinámicos (2026-08-25):** 🔧 EN PROGRESO
-- Categoría y Tipo de equipo actualmente son enums hardcodeados en Prisma.
-- Objetivo: convertirlos en tablas dinámicas para que el admin cree categorías y tipos de equipo desde el panel.
-- Incluye agregar servicios de nevera/refrigeración y corregir las toneladas (1-2 son comerciales, no industriales).
-- Prompt preparado: `Progresos/prompt-servicios-dinamicos.md`.
+**Servicios dinámicos (2026-08-24 noche):** ✅
+- Enums Prisma `ServiceCategory` / `EquipmentType` → `String`. Tablas `service_category_options` y `equipment_type_options`.
+- Migración `20260825010000_dynamic_categories_and_equipment` (6 categorías + 6 tipos sembrados). Los 25 servicios existentes siguen intactos.
+- CRUD admin: `GET/POST/PATCH/DELETE /services/categories` y `/services/equipment-types`. Públicos: `GET /services/categories` y `GET /services/equipment-types` (solo activas).
+- Panel: botones Categorías / Tipos de equipo + modales. Dropdowns y badges leen la BD.
+- Copito: `consultar_servicios` y labels del form de cita dinámicos. Solicitud y Catálogo cargan labels de la API.
+- Bundle `index-DMi9e4nj.js`. En prod (fresh-service + fresh-frontend).
+- Pendiente (no era este prompt): sembrar neveras y corregir labels de toneladas.
+
+**Editar/eliminar opciones (2026-08-24 noche):** ✅
+- Modales Categorías y Tipos de equipo: lápiz (edición inline, Enter/Escape), basura (confirm), toggle activo.
+- DELETE bloqueado si hay servicios asignados (alert con el mensaje del API).
+- Bundle `index-DKwXLlin.js`. En prod. Solo frontend.
+
+**Modal eliminar + reordenar opciones (2026-08-24 noche):** ✅
+- Basura abre modal estilizado (z-60), no `confirm()` nativo. Error del API dentro del modal.
+- Flechas arriba/abajo persisten `sortOrder` (PATCH de los 2 ítems).
+- Bundle `index-Cn-dSsUe.js`. En prod. Solo frontend.
 
 ### Backlog actualizado
 1. **PWA** — convertir en Progressive Web App (instalar como app en celular)

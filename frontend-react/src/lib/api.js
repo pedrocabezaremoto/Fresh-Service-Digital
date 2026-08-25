@@ -93,6 +93,20 @@ export const api = {
   updateService: (id, data) => request(`/services/${id}`, { method: 'PATCH', body: data, auth: true }),
   deleteService: (id) => request(`/services/${id}`, { method: 'DELETE', auth: true }),
 
+  // Categorías de servicio
+  getCategories: () => request('/services/categories'),
+  getAllCategories: () => request('/services/categories/all', { auth: true }),
+  createCategory: (data) => request('/services/categories', { method: 'POST', auth: true, body: data }),
+  updateCategory: (id, data) => request(`/services/categories/${id}`, { method: 'PATCH', auth: true, body: data }),
+  deleteCategory: (id) => request(`/services/categories/${id}`, { method: 'DELETE', auth: true }),
+
+  // Tipos de equipo
+  getEquipmentTypes: () => request('/services/equipment-types'),
+  getAllEquipmentTypes: () => request('/services/equipment-types/all', { auth: true }),
+  createEquipmentType: (data) => request('/services/equipment-types', { method: 'POST', auth: true, body: data }),
+  updateEquipmentType: (id, data) => request(`/services/equipment-types/${id}`, { method: 'PATCH', auth: true, body: data }),
+  deleteEquipmentType: (id) => request(`/services/equipment-types/${id}`, { method: 'DELETE', auth: true }),
+
   // Imágenes del sitio
   getSiteImages: () => request('/site-images'),
   uploadSiteImage: (slot, file) => uploadFile(`/site-images/${slot}`, file),
